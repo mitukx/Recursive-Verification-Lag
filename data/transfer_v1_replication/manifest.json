@@ -1,0 +1,16 @@
+{
+  "input_sha256": {
+    "transfer_v1_seed23_exact": "caad8204fc3486e9c066189a9fba92c49d0ed83a6793db6b9dcaca3ba786d0b7",
+    "transfer_v1_seed24_exact": "9cf555e85e9a02fcb68672af47a0cc498a9b949e37764bf58b0c27639deea306"
+  },
+  "runs": 8640,
+  "banks": 2,
+  "tasks": 8,
+  "bootstrap_unit": "task; all bank, audit-seed and optimizer rows within task retained",
+  "intervals": "descriptive percentile 95%, 1000 draws, no multiplicity correction",
+  "primary_contrasts": [
+    "early versus uniform",
+    "kl_05 versus uniform"
+  ],
+  "analysis_source_sha256": "311fd53dc15f9f2a3cc23573085c2a5c75ad8b5ddae6ae30d874884a62e0f51e"
+}

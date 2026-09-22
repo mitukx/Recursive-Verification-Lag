@@ -2,7 +2,8 @@
 
 Status: 7,200 completed runs on the already inspected recovered Qwen expression
 bank. No new pretrained generations, untouched tasks or model-weight updates.
-Code and results are local; GitHub upload is pending a usage-limit recovery.
+Code and results were initially local; persistence was recovered subsequently.
+All compact run records are committed in e254285cc16f907ca11ea0049845f01aff0fb596.
 
 ## Hypotheses and interventions
 
@@ -124,5 +125,6 @@ indices and all 12 rewards in `data/source_timing_qwen05b/runs.jsonl.gz`. The
 manifest records bank, execution-source and output hashes. Full policy vectors
 are reproducible but not in this compact archive. `summary.csv` includes both
 cohorts; `acquisition_effect.csv` records within-timing acquisition contrasts.
-No GitHub persistence is claimed for this follow-up: the prior write failed when
-automatic approval review could not complete because the usage limit was reached.
+The initial GitHub write failed when automatic approval review could not complete
+because the usage limit was reached. The later successful archive commit above
+resolves that persistence issue without altering recorded experimental outcomes.

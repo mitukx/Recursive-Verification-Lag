@@ -1,0 +1,29 @@
+{
+  "23": {
+    "candidates": 256,
+    "token_cap_count": 3,
+    "valid": 152,
+    "fully_correct": 0,
+    "parse_errors": {
+      "SyntaxError: invalid syntax (<unknown>, line 1)": 46,
+      "ValueError: unsupported call": 9,
+      "ValueError: unsupported expression": 44,
+      "ValueError: unknown name": 5
+    }
+  },
+  "24": {
+    "candidates": 256,
+    "token_cap_count": 2,
+    "valid": 153,
+    "fully_correct": 0,
+    "parse_errors": {
+      "ValueError: unsupported expression": 41,
+      "ValueError: unsupported call": 8,
+      "SyntaxError: invalid syntax (<unknown>, line 1)": 45,
+      "ValueError: unknown name": 6,
+      "ValueError: unsupported function wrapper": 1,
+      "SyntaxError: unmatched ')' (<unknown>, line 1)": 1,
+      "SyntaxError: '(' was never closed (<unknown>, line 7)": 1
+    }
+  }
+}

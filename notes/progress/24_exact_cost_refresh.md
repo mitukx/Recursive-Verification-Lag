@@ -99,5 +99,7 @@ schedule realization, never-trigger deadline behavior and invalid designs. All
 SHA256 hashes. The compressed JSONL can be read with gzip.open or pandas.read_json
 (lines=True). Full policy vectors are reproducible, not included in this archive.
 
-GitHub upload was not executed: automatic approval review could not complete
-because the usage limit was reached. This follow-up is currently local only.
+The initial GitHub upload was not executed because automatic approval review
+reached its usage limit. Persistence was recovered subsequently: compact run
+records are committed in e254285cc16f907ca11ea0049845f01aff0fb596. Execution-source
+snapshots retain the source versions hashed in the original manifest.

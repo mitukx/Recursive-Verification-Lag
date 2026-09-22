@@ -1,0 +1,84 @@
+{
+  "bank_sha256": "8753a37a92c8e4828f9362172371e4573697a5337ef9ca457860fecbbd0757ce",
+  "designs": {
+    "early": [
+      "fixed",
+      0.5,
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "uniform": [
+      "fixed",
+      0.5,
+      [
+        1,
+        4,
+        7,
+        10
+      ]
+    ],
+    "late": [
+      "fixed",
+      0.5,
+      [
+        1,
+        10,
+        11,
+        12
+      ]
+    ],
+    "kl_01": [
+      "kl",
+      0.1,
+      null
+    ],
+    "kl_05": [
+      "kl",
+      0.5,
+      null
+    ],
+    "maxlog_05": [
+      "maxlog",
+      0.5,
+      null
+    ],
+    "maxlog_15": [
+      "maxlog",
+      1.5,
+      null
+    ],
+    "geometry_10": [
+      "geometry",
+      10.0,
+      null
+    ],
+    "geometry_100": [
+      "geometry",
+      100.0,
+      null
+    ]
+  },
+  "rounds": 12,
+  "draws_per_audit": 8,
+  "audit_events": 4,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "status": "prospective_transfer_v1_locked_design",
+  "record_coordinates": true,
+  "source_sha256": {
+    "src/exact_cost_pilot.py": "0ddb32d44d91150c78220e38843e8b4fca947bdcc8bc65baccdc36bf8a08742e",
+    "src/candidate_bank_experiment.py": "c13c7543fa66582a6f87cda4359fb7d0be6860106a352430e56cb8a107e872f2"
+  },
+  "completed_runs": 4320,
+  "runs_jsonl_sha256": "5ff26c66e0894b6d726c8d4893fc04d21e6da2909029661f1568eb2d21832516",
+  "runs_gzip_sha256": "caad8204fc3486e9c066189a9fba92c49d0ed83a6793db6b9dcaca3ba786d0b7"
+}
