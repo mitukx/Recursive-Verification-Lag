@@ -126,7 +126,7 @@ def movement(p,q,X,score):
             'proxy_margin':float((q-p)@score),'total_variation':float(abs(q-p).sum()/2)}
 
 
-def run(df,cfg,*,return_trace=False, audit_schedule=None, exact_audit_events=None, audit_sampler=None):
+def run(df,cfg,*,return_trace=False, audit_schedule=None, exact_audit_events=None):
     """Refit from accumulated paid audits; no outcome reads in refresh decisions.
 
     Equal *maximum* label budget, actual paid draws and distinct labels reported.
@@ -165,10 +165,7 @@ def run(df,cfg,*,return_trace=False, audit_schedule=None, exact_audit_events=Non
         nonlocal theta,anchor,age,refreshes
         n=min(cfg.audit_per_refresh,cfg.total_audit_budget-len(audit))
         if n<=0: return False
-        idx=(rng.choice(len(df),size=n,replace=True,p=p) if audit_sampler is None
-             else np.asarray(audit_sampler(p.copy(),n,tuple(audit)),dtype=int))
-        if len(idx)!=n or np.any(idx<0) or np.any(idx>=len(df)):
-            raise ValueError('invalid audit sampler output')
+        idx=rng.choice(len(df),size=n,replace=True,p=p)
         audit.extend(idx.tolist())
         theta=fit_verifier(X[audit],y[audit],cfg.ridge)
         anchor=p.copy(); age=0; refreshes+=1
