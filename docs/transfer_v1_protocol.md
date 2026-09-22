@@ -38,3 +38,15 @@ Falsifiers: gain/failure direction reverses across banks; adaptive safety is
 bought with lower gain; effects are confined to syntax failures or a single task;
 or limited candidate support prevents the source-level comparison. Preserve each.
 Next decision: revise the proposed mechanism, not thresholds on these new outcomes.
+
+Secondary coordinate-transfer amendment, fixed while generation is running and
+before inspecting any new bank outcomes: fit one threshold/direction per coordinate
+and optimizer/representation stratum on the original development trajectories
+(fixed controllers, cap32, only pre-first-failure rows). Freeze this JSON before
+transfer sweeps. Test on new-bank early/uniform/late fixed schedules with the same
+onset-only filtering. Compare KL, max-log ratio, restricted geometry, geometry
+over proxy-margin squared, and eta-times-age (soft only). No threshold is refitted
+on new outcomes. This includes schedule shift as well as task shift and is a
+secondary exploratory analysis, not a pure held-task isolation. Single-class
+strata remain unidentified. Serialized nonfinite coordinates are missing, never
+replaced by favorable values.

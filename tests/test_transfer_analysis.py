@@ -1,19 +1,22 @@
 import unittest
-import numpy as np
-from src.analyze_candidate_sweep import fit_threshold, balanced_accuracy
+import pandas as pd
+from src.analyze_transfer_replication import contrasts,summarize
+
 
 class TransferAnalysisTest(unittest.TestCase):
-    def test_ties_are_not_split_and_fit_matches_bruteforce(self):
-        rng=np.random.default_rng(8)
-        for _ in range(30):
-            x=rng.integers(0,5,30).astype(float); y=rng.integers(0,2,30)
-            t,d=fit_threshold(x,y)
-            actual=balanced_accuracy(y,x>=t if d==1 else x<t)
-            unique=np.unique(x); thresholds=np.r_[-np.inf,(unique[1:]+unique[:-1])/2,np.inf]
-            expected=max(balanced_accuracy(y,p) for th in thresholds for p in [x>=th,x<th])
-            self.assertAlmostEqual(actual,expected)
-    def test_single_class_is_not_reported_as_perfect_transfer(self):
-        self.assertIsNone(fit_threshold([1,2,3],[0,0,0]))
-        self.assertTrue(np.isnan(balanced_accuracy([1,1],[1,1])))
+    def fixture(self):
+        return pd.DataFrame([dict(bank=b,task_id=t,optimizer='soft',strength=1,
+            representation='public',seed=0,design=d,cost=32,
+            failure=int(d=='uniform'),gain=(.1 if d=='uniform' else (.2 if b=='a' else 0)))
+            for b in ['a','b'] for t in ['x','y'] for d in ['early','uniform']])
 
-if __name__=='__main__': unittest.main()
+    def test_reversal_is_not_joint_replication(self):
+        s=summarize(contrasts(self.fixture())).set_index('design').loc['early']
+        self.assertTrue(s.failure_desired_in_every_bank)
+        self.assertFalse(s.gain_desired_in_every_bank)
+        self.assertFalse(s.joint_desired_in_every_bank)
+        self.assertEqual(s.tasks,2)
+
+    def test_unmatched_cost_rejected(self):
+        df=self.fixture();df.loc[0,'cost']=16
+        with self.assertRaises(ValueError):contrasts(df)

@@ -22,14 +22,11 @@ DESIGNS = {
 
 
 def main():
-    a=argparse.ArgumentParser();a.add_argument('bank',type=Path);a.add_argument('--output',type=Path,required=True)
-    a.add_argument('--record-coordinates',action='store_true')
-    a.add_argument('--evidence-status',default='exploratory on already inspected development bank; not preregistered confirmatory evidence')
-    args=a.parse_args()
+    a=argparse.ArgumentParser();a.add_argument('bank',type=Path);a.add_argument('--output',type=Path,required=True);args=a.parse_args()
     args.output.mkdir(parents=True,exist_ok=False)
     manifest={'bank_sha256':hashlib.sha256(args.bank.read_bytes()).hexdigest(),
       'designs':DESIGNS,'rounds':12,'draws_per_audit':8,'audit_events':4,'seeds':list(range(5)),
-      'status':args.evidence_status,'record_coordinates':args.record_coordinates,
+      'status':'exploratory on already inspected development bank; not preregistered confirmatory evidence',
       'source_sha256':{n:hashlib.sha256(Path(n).read_bytes()).hexdigest() for n in ['src/exact_cost_pilot.py','src/candidate_bank_experiment.py']}}
     (args.output/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     bank=load_jsonl(args.bank);records=[]
@@ -59,10 +56,6 @@ def main():
                                     'audit_rounds':h.loc[h.refresh==1,'round'].tolist(),
                                     'audit_indices':list(tr[-1]['audit_indices']),
                                     'rewards':h.true_reward.tolist()}
-                                if args.record_coordinates:
-                                    rec['coordinates']={c:[None if not np.isfinite(v) else float(v) for v in h[c]] for c in
-                                        ['kl_from_refresh','max_log_density_ratio','restricted_geometry','proxy_margin','eta_times_age']}
-                                    rec['below_initial']=h.below_initial.tolist()
                                 f.write(json.dumps(rec)+'\n');f.flush();records.append(rec)
             print('completed',task,flush=True)
     rows=pd.DataFrame(records);summaries=[]
