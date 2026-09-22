@@ -151,3 +151,56 @@ The experiment is complete only when the repository contains:
 6. collapse-coordinate comparison;
 7. adaptive-refresh cost/failure frontier;
 8. a short falsification report stating which claims survived.
+
+
+## Implementation addendum (2026-09-22, before model pilot outcomes)
+
+The original minimum (100 tasks, 128 samples) remains the confirmatory target.
+The new 12-task/16-sample run is a **development pilot**, deliberately much smaller,
+and cannot establish cross-family transfer or an Oral-level empirical result.
+Its task file and prompts are fixed in `src/finite_code_tasks.py`. Positive-only
+public inputs (0,1,2,3) and the remaining finite domain form an intentionally weak
+public verifier and a disjoint exhaustive hidden target. The target is hidden-domain
+pass fraction; the all-domain exhaustive score is separately archived. They are not
+identical estimands. The model knows the specification but never sees hidden outputs.
+
+All sampled occurrences remain in the bank, including duplicates and invalid or
+unsupported outputs. The default empirical base law is uniform over occurrences;
+using their LM likelihoods a second time would bias this empirical approximation.
+The generator archives the log probability under the **temperature/top-p sampling
+law**, not an unwarped model likelihood. Neither is used as an extra bank weight.
+The parser/interpreter is a bounded, explicit AST subset; it never executes generated
+Python. Grammar failures score zero and must be reported. This is a restricted
+expression-generation track, not general Python or a standard coding benchmark.
+
+The hidden target is exposed only when the harness spends audit draws. Offline
+trusted evaluation is analysis-only. Refits accumulate the paid transcript. A
+`public` representation is a learned affine calibration of public pass rate;
+`all` adds public execution/syntax features, not hidden test signatures. Refits do
+not refresh the public test suite. BoN N and soft eta are separate strength axes;
+eta-times-age is undefined for BoN, not relabeled log N. Random ties preserve
+within-score probabilities. Floating-point support loss is logged explicitly.
+
+The sweep uses `configs/pilot_sweep.json`: both optimizer families, strength,
+cadence, representation, 5 audit seeds, and 32/96 nominal audit-draw budgets. No
+claim of matched **actual** label cost follows merely from matched caps. Report
+both paid draws and unique candidate indices. Repeated exact labels provide no
+new information. Compute/generation seeds differ from audit resampling seeds;
+one frozen bank is not five independent model-generation replicates.
+
+Adaptive thresholds are heuristics using proposed movement **before** updating;
+if triggered, refit on the current distribution and recompute that proposal.
+A single large initial step has no preemptive refresh benefit from a second
+identical fit. A refit is not a safety certificate; after budget exhaustion the
+verifier freezes and the run continues. Do not interpret "adaptive" as guaranteed
+prevention. The exact-box certificate and conditional error-envelope proposition
+are kept separate in `docs/observable_refresh_frontier.md`.
+
+Analysis fits thresholds/directions on training folds and tests on excluded tasks,
+optimizer families, or representations; it excludes all rows after prior collapse.
+These are **exploratory cross-validation** on development data. They are not the
+sealed final evaluation required above. Single-class folds are reported as
+unidentified, not perfect transfer. Standard errors/bootstraps use tasks, not
+correlated trajectory rows, as sampling units. A new task-family split and second
+model family must be frozen after pilot-driven design changes and before the final
+experiment. No bank should be tuned or regenerated to induce a desired collapse.

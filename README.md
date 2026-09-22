@@ -146,7 +146,7 @@ The archived CSV files are the numerical outputs of the experiments run during t
 
 This is a research project in progress. In particular:
 
-- The real-model experiments use a small learned GRU/DSL generator, **not a pretrained frontier code LLM**.
+- The archived experiments use a small learned GRU/DSL generator, **not a pretrained frontier code LLM**. See the separately labeled pretrained expression pilot below.
 - Numerical thresholds such as `eta* ~= 22.54` are environment-specific.
 - There is no universal `eta * L`, KL, or density-ratio safety threshold.
 - More trusted data do not inherently make a policy worse; in the misspecified self-certification experiments, more data make the fitted wrong model more statistically stable.
@@ -173,3 +173,13 @@ The highest-value external validation is a pretrained code-model experiment with
 ---
 
 **Status:** active independent research, September 2026.
+
+
+## Pretrained candidate-bank pipeline
+
+The continuation of merged PR #1 adds generation, finite-domain evaluation,
+Best-of-N and soft selection, paid-audit budgets, preventive heuristic refresh,
+and exploratory held-group analysis. This is a finite-bank selection experiment;
+it does not update the code LM weights. See [the runbook](docs/pretrained_pilot_runbook.md),
+[conditional observable bounds](docs/observable_refresh_frontier.md), and
+[the progress report](notes/progress/23_pretrained_pilot.md) for evidence and limits.
