@@ -60,6 +60,10 @@ class ResearchPipelineTest(unittest.TestCase):
         t=tasks()[0]; s=score('x',t)
         self.assertEqual(s['public_score'],1.); self.assertLess(s['trusted_score'],1.)
 
+    def test_multistatement_function_is_not_silently_truncated(self):
+        program='def f(x):\n    if x < 0:\n        return -x\n    return x'
+        with self.assertRaises(ValueError): parse_expression(program)
+
     def test_no_python_execution_and_limits(self):
         for text in ["__import__('os').system('id')",'x.__class__','2**999999','[x for x in range(5)]','open(1)']:
             with self.assertRaises((ValueError,SyntaxError)): parse_expression(text)
@@ -81,3 +85,4 @@ class ResearchPipelineTest(unittest.TestCase):
         self.assertAlmostEqual(bound,float(d@worst))
 
 if __name__=='__main__': unittest.main()
+

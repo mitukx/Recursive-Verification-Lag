@@ -18,9 +18,19 @@ CALL = {'abs': abs, 'min': min, 'max': max}
 def extract_expression(text):
     fenced = re.search(r'```(?:python)?\s*\n(.*?)```', text, re.S)
     text = fenced.group(1) if fenced else text
-    if 'return ' in text:
-        text = text.split('return ', 1)[1]
-    return text.strip().splitlines()[0].strip().removeprefix('Expression:').strip().strip('`')
+    text = text.strip()
+    if text.startswith('def '):
+        module = ast.parse(text)
+        function = module.body[0]
+        if (not isinstance(function, ast.FunctionDef) or len(function.body) != 1
+                or not isinstance(function.body[0], ast.Return)
+                or len(function.args.args) != 1 or function.args.args[0].arg != 'x'
+                or function.args.defaults or function.decorator_list):
+            raise ValueError('unsupported function wrapper')
+        return ast.unparse(function.body[0].value)
+    if text.startswith('return '):
+        text = text.removeprefix('return ')
+    return text.splitlines()[0].strip().removeprefix('Expression:').strip().strip('`')
 
 
 def parse_expression(text):
@@ -135,3 +145,4 @@ def score(text, task):
             'trusted_score': sum(passed[x] for x in hidden)/len(hidden),
             'exhaustive_score': sum(passed.values())/len(task.domain),
             'features': features}
+

@@ -1,0 +1,68 @@
+name: pretrained-rvl-pilot
+on:
+  push:
+    branches: [research/rvl-pretrained-pilot]
+    paths:
+      - '.github/workflows/pretrained-pilot.yml'
+      - 'src/**'
+      - 'configs/**'
+      - 'requirements*.txt'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pretrained-rvl-pilot
+  cancel-in-progress: false
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HF_HUB_DISABLE_XET: '1'
+      HF_HUB_DOWNLOAD_TIMEOUT: '60'
+      HF_HUB_ETAG_TIMEOUT: '30'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CPU dependencies
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-model.txt
+      - name: Verify implementation
+        run: python -m unittest discover -s tests -v
+      - name: Generate immutable empirical bank
+        run: >-
+          python -m src.generate_candidate_bank
+          --revision ea3f2471cf1b1f0db85067f1ef93848e38e88c25
+          --samples 16 --threads 4 --output data/recovered_qwen05b_bank.jsonl
+      - name: Preserve raw bank before analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovered-qwen05b-bank-${{ github.run_id }}
+          path: |
+            data/recovered_qwen05b_bank.jsonl
+            data/recovered_qwen05b_bank.manifest.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Verify bank and execute factorial sweep
+        run: |
+          python -m src.inspect_candidate_bank data/recovered_qwen05b_bank.jsonl --output data/recovered_qwen05b_bank_quality.csv
+          python -m src.run_candidate_sweep data/recovered_qwen05b_bank.jsonl --output data/recovered_qwen05b
+      - name: Analyze transfer and refresh
+        run: |
+          python -m src.analyze_candidate_sweep data/recovered_qwen05b
+          python -m src.compare_refresh data/recovered_qwen05b
+          python -m src.initial_safe_cadence data/recovered_qwen05b
+          python -m src.plot_candidate_pilot data/recovered_qwen05b --output figures/recovered_pretrained_pilot.png
+      - name: Preserve all research artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovered-rvl-results-${{ github.run_id }}
+          path: |
+            data/recovered_qwen05b*
+            figures/recovered_pretrained_pilot.png
+          retention-days: 90
+          if-no-files-found: warn
