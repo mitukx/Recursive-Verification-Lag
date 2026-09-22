@@ -183,3 +183,8 @@ and exploratory held-group analysis. This is a finite-bank selection experiment;
 it does not update the code LM weights. See [the runbook](docs/pretrained_pilot_runbook.md),
 [conditional observable bounds](docs/observable_refresh_frontier.md), and
 [the progress report](notes/progress/23_pretrained_pilot.md) for evidence and limits.
+
+
+The prospective two-bank transfer study preserves both the favorable 32-draw result
+and a reversed six-source safety comparison. All 512 transfer candidates are
+imperfect. See [transfer evidence and limitations](notes/progress/26_prospective_transfer.md).
