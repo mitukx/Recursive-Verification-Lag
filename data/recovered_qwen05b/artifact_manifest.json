@@ -1,0 +1,51 @@
+{
+  "run_url": "https://github.com/mitukx/Recursive-Verification-Lag/actions/runs/35705123859",
+  "artifact_id": 10684256908,
+  "artifact_name": "recovered-rvl-results-35705123859",
+  "artifact_zip_sha256": "4967def2c167b43e17ffee6e9738b0a2bfa61e5b2def0ebe9e434e4da6594719",
+  "retention_days": 90,
+  "expires_date": "2026-12-21",
+  "files": {
+    "trajectories.csv.gz": {
+      "bytes": 9357903,
+      "sha256": "e254251dd64f5ffd334433952f33ffa184b1a028f43ccc671fb132be7956849c"
+    },
+    "crossfit_refresh_summary.csv": {
+      "bytes": 3551,
+      "sha256": "be4611dc547b8ccbaa3403a52b957b0ab47226c00888ad2bbf859340af61a264"
+    },
+    "initial_safe_pairs.csv": {
+      "bytes": 618407,
+      "sha256": "90e7565b1c458e59be6da004c7cf74c9df3c6705173234e2c87d4e9ee8197ec9"
+    },
+    "controller_summary.csv": {
+      "bytes": 9046,
+      "sha256": "5037cb9593f9c92c7dfa6c32a41f63246ddec9422ccd38ee2eacdbb18f2d7273"
+    },
+    "crossfit_refresh.csv": {
+      "bytes": 321675,
+      "sha256": "14aaa8992b5d7b9a2669e5b9738240e2946394945efe7c470c6365730f4388a8"
+    },
+    "initial_safe_summary.csv": {
+      "bytes": 1001,
+      "sha256": "af7eb385041702fb8479430f67e8d987b48ba4220b75bbf019a28224394d8128"
+    },
+    "manifest.json": {
+      "bytes": 2590,
+      "sha256": "9db9915f4c640ca86490829853300473eafa571b969d2aae16f51aa5ea9143bb"
+    },
+    "transfer.csv": {
+      "bytes": 6953,
+      "sha256": "9c8ba8b8c82ed930a370c91c20079938a3ca41a4f3af42ee8c45cf07cdccab6d"
+    },
+    "summary.json": {
+      "bytes": 604,
+      "sha256": "c10368cf28a2b1451da60eec027f0e506b72decc25f56e879f0dd843bcd4fb3b"
+    },
+    "runs.csv": {
+      "bytes": 2214443,
+      "sha256": "c65f8010f816afd8767c8969051de9af882beb1cdccebfc88f4d0e050f450d16"
+    }
+  },
+  "note": "Hashes describe local verified outputs. initial_safe_summary.csv was recomputed after the workflow to distinguish macro task means from pair rates; raw trajectories unchanged. Full trajectories, runs, crossfit rows and initial-safe pairs are artifact-only, reproducible from the committed bank."
+}

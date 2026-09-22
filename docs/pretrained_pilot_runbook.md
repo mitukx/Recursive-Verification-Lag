@@ -70,3 +70,20 @@ concentration to identify selection saturation and numerical limitations.
 
 Theoretical scope and the remaining completeness/optimality gap are explicit in
 `observable_refresh_frontier.md`. No new universal law is asserted.
+
+
+
+## Recovery artifacts and CPU workflow
+
+The auditable recovery uses `data/recovered_qwen05b_bank.jsonl` and
+`data/recovered_qwen05b/`; the original local output paths above describe the first
+execution, whose raw files were lost. See `docs/pilot_recovery_record.md`.
+The recovery model bank is committed to the research branch. GitHub Actions run
+35705123859 also saves the bank before selection and the full output artifact after
+selection, with 90-day artifact retention. The committed candidate bank and summary tables are durable. Full trajectories,
+per-run tables and paired diagnostic rows are in the full-results artifact, which
+expires on 2026-12-21; they are not committed. Recompute them from the committed
+bank after expiry. `data/recovered_qwen05b/artifact_manifest.json` records hashes
+and artifact identifiers. Use the same CLI commands with the recovered paths.
+`python -m src.initial_safe_cadence data/recovered_qwen05b` runs the additional
+post-hoc common-initial-state comparison.

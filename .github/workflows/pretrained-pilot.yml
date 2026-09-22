@@ -3,8 +3,6 @@ on:
   push:
     branches: [research/rvl-pretrained-pilot]
     paths:
-      - '.github/workflows/pretrained-pilot.yml'
-      - 'src/**'
       - 'configs/**'
       - 'requirements*.txt'
   workflow_dispatch:

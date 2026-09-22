@@ -33,8 +33,10 @@ def compare(runs,rows):
         paired['gain_difference']=paired.final_gain_stale-paired.final_gain_fresh
         paired['cost_difference']=paired.audit_labels_stale-paired.audit_labels_fresh
         rec={'stale_cadence':cadence,'comparisons':len(paired),
-            'fresh_failure':paired.ever_below_initial_fresh.mean(),
-            'stale_failure':paired.ever_below_initial_stale.mean(),
+            'fresh_failure':paired.groupby('task_id').ever_below_initial_fresh.mean().mean(),
+            'stale_failure':paired.groupby('task_id').ever_below_initial_stale.mean().mean(),
+            'fresh_pair_rate':paired.ever_below_initial_fresh.mean(),
+            'stale_pair_rate':paired.ever_below_initial_stale.mean(),
             'fresh_safe_stale_fails':int(((paired.ever_below_initial_fresh==0)&(paired.ever_below_initial_stale==1)).sum()),
             'fresh_fails_stale_safe':int(((paired.ever_below_initial_fresh==1)&(paired.ever_below_initial_stale==0)).sum()),
             'fresh_draws':paired.audit_labels_fresh.mean(),'stale_draws':paired.audit_labels_stale.mean()}
