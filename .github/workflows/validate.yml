@@ -1,0 +1,22 @@
+name: validate-rvl-framework
+
+on:
+  pull_request:
+  push:
+    branches:
+      - research/oral-grade-upgrade
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Phase-frontier analysis
+        run: python src/phase_frontier_analysis.py
