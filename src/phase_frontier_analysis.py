@@ -99,9 +99,11 @@ def main() -> None:
     out = out.sort_values(["boundary_cv", "balanced_accuracy"], ascending=[True, False])
     pd.set_option("display.max_columns", None)
     print(out.to_string(index=False, float_format=lambda z: f"{z:.6g}"))
-    print("\nInterpretation: lower boundary_cv means a more stable cross-eta frontier;")
+    print("\nDescriptive in-sample analysis only; this does not measure held-out transfer.")
+    print("Lower boundary_cv means less dispersion in the observed grid boundaries;")
     print("balanced_accuracy measures pooled safe/failure separation by one threshold.")
 
 
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,15 @@
+{
+  "runs": 14400,
+  "tasks": 12,
+  "collapse_runs": 1197,
+  "first_round_crossings": 620,
+  "first_crossing_with_stale_age_gt_1": 299,
+  "collapse_fraction": 0.083125,
+  "decline_gt_1pct_runs": 936,
+  "decline_gt_5pct_runs": 668,
+  "worst_baseline_change": -0.2440134099616859,
+  "mean_final_gain": 0.3159180911618036,
+  "evidence": "pretrained_code_lm_restricted_expression_pilot",
+  "scope": "Exploratory analysis; bootstrap unit is task; budget caps not matched actual cost",
+  "prediction_target": "first baseline crossing at the proposed update; no rows after prior collapse; fixed cadence only"
+}

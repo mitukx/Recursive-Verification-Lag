@@ -1,0 +1,15 @@
+{
+  "evidence": "development_pilot_only",
+  "rounds": 12,
+  "seeds": [0, 1, 2, 3, 4],
+  "soft_eta": [0.25, 1.0, 4.0],
+  "best_of_n": [2, 4, 16],
+  "fixed_intervals": [1, 2, 4, 12],
+  "kl_thresholds": [0.1, 0.5],
+  "maxlog_thresholds": [0.5, 1.5],
+  "geometry_thresholds": [10.0, 100.0],
+  "representations": ["public", "all"],
+  "audit_per_refresh": 8,
+  "total_audit_budgets": [32, 96],
+  "failure_tolerance": 1e-10
+}

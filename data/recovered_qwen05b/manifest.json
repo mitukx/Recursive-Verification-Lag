@@ -1,0 +1,75 @@
+{
+  "bank_sha256": "012adf92b2032a56e5f74d4e08d89e639a921e26405238e18624276e7575a327",
+  "config_sha256": "a80af6619c4823ffefab1f526a5401b5e6b0110edb6c0ef0136040863d4e1736",
+  "config": {
+    "evidence": "development_pilot_only",
+    "rounds": 12,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "soft_eta": [
+      0.25,
+      1.0,
+      4.0
+    ],
+    "best_of_n": [
+      2,
+      4,
+      16
+    ],
+    "fixed_intervals": [
+      1,
+      2,
+      4,
+      12
+    ],
+    "kl_thresholds": [
+      0.1,
+      0.5
+    ],
+    "maxlog_thresholds": [
+      0.5,
+      1.5
+    ],
+    "geometry_thresholds": [
+      10.0,
+      100.0
+    ],
+    "representations": [
+      "public",
+      "all"
+    ],
+    "audit_per_refresh": 8,
+    "total_audit_budgets": [
+      32,
+      96
+    ],
+    "failure_tolerance": 1e-10
+  },
+  "runs": 14400,
+  "rows": 172800,
+  "budget_semantics": "matched caps, actual paid draws may differ; no matched-cost superiority claim",
+  "evidence": "pretrained_code_lm_restricted_expression_pilot",
+  "scope": "development_pilot_only",
+  "code_sha256": {
+    "finite_code_tasks.py": "d442f375d65fdbead90dab503d97df6ca3d465ccf035802159cb3ab46fe470b1",
+    "inspect_candidate_bank.py": "b167766420f545796d3308a93912b5f7d43e3a3d2e409d8198b8a323af89d8fe",
+    "analyze_candidate_sweep.py": "f8012e3561b8a30994be3185d30c35af3dd8e9c161a55baab2e5ea771ade41a8",
+    "reproduce_key_figures.py": "0a29f73624292bff9c8f6a57bf704d1a4b00ee365acbec3bb4eeeb5883bfefbc",
+    "phase_frontier_analysis.py": "edf56a971e17ab3196499e653098912fcdc7a1fccbc7b064902daad1e724876d",
+    "compare_refresh.py": "3a8ce06f9e6f1824e7ff11a35d4efd9169a5604438772028817b7cfa18a8d6d0",
+    "initial_safe_cadence.py": "6f0830edcf914cb09241f0330d009c6f7ef4ec525ccc445bc2309c6b6505edf3",
+    "plot_candidate_pilot.py": "9d69b52d9df5109e122b81137322ae6a859a3acfca69938ef1e6af6ee6baefdb",
+    "run_candidate_sweep.py": "1f1d82e7d2bb8d1a963f06d98c34cba74dc536449673523a63fb49bb0f04c3b4",
+    "refresh_controller.py": "8325eb4750282c36e34fd7df9cfd5732463cae3d77e27e51a002cf157a185db6",
+    "observable_certificate.py": "8676538ee98c04f6922ef278842ef3f8e2b6ebd7540e8ef3e340e0475928be3d",
+    "composed_block_demo.py": "cae1be6ebcdb5f31beb27344452536962f7a336ebf59c29e6a50ad2f2f125ba8",
+    "summarize_results.py": "5bc880789f2850de4fe440b71747239a4282ed663af0145d3a870a158f58af9f",
+    "candidate_bank_experiment.py": "5a91f799934fdf71dab62f6f0546f1cdc27999943d724c9742b8f9e70fe966b9",
+    "generate_candidate_bank.py": "532a93bbb8f1c091f6cadf703cf11dbe6020a09bfc4b2c4ff59922046be70fb2"
+  }
+}
