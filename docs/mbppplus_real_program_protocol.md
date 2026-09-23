@@ -50,14 +50,13 @@ install the dependencies from `requirements-mbppplus.txt`, build a local arm64
 image, and obtain its immutable local ID:
 
 ```sh
+python -m pip install -r requirements-mbppplus.txt
 docker build --platform linux/arm64 -f docker/Dockerfile.mbppplus -t rvl-mbppplus:pilot .
-docker image inspect --format '{{.Id}}' rvl-mbppplus:pilot
+RVL_IMAGE_ID="$(docker image inspect --format '{{.Id}}' rvl-mbppplus:pilot)"
+python -m src.score_mbppplus_docker data/mbppplus_qwen15b_pilot_v1.jsonl --image "$RVL_IMAGE_ID" --output data/mbppplus_qwen15b_pilot_v1_scored.jsonl
 ```
 
-Pass that exact `sha256:...` ID to `--image`, alongside the frozen unscored
-bank, for example `python -m src.score_mbppplus_docker
-data/mbppplus_qwen15b_pilot_v1.jsonl --image sha256:YOUR_IMAGE_ID --output
-data/mbppplus_qwen15b_pilot_v1_scored.jsonl`. The scorer first tests all eight
+This passes the exact local `sha256:...` image ID to the scorer. It first tests all eight
 official reference implementations in
 fresh containers. If any reference fails, it aborts before assigning model
 scores. It then launches a fresh container per generated candidate with no
