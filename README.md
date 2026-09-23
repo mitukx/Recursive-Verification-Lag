@@ -4,11 +4,20 @@
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.
 
+**Evidence checkpoint (2026-09-23):** The first isolated, scored
+pretrained-code-model MBPP+ pilot has a largely **negative** timing result:
+early versus uniform verification differs by just one baseline failure among
+480 matched settings, and safe projection never activates. See the
+[scored pilot](notes/progress/33_mbppplus_first_scored_pilot.md) and the
+[claim/decision record](docs/oral_research_decision.md) before extrapolating
+from the controlled phase diagrams below. Eight benchmark tasks and a frozen
+candidate bank cannot establish learned self-improvement or an Oral result.
+
 The central question is:
 
 > How much genuinely fresh trusted verification is needed to sustain recursive policy improvement when the policy adaptively optimizes an imperfect verifier?
 
-The current answer is more nuanced than “verify every round.” The evidence in this repository supports the view that fresh verification is needed when optimization creates **statistically new or poorly covered policy comparisons faster than the verifier can generalize or refresh**.
+The working hypothesis is more nuanced than “verify every round”: fresh verification is needed when optimization creates **statistically new or poorly covered policy comparisons faster than the verifier can generalize or refresh**. The scored standard-program pilot has not confirmed a general failure boundary.
 
 ## Main findings
 
