@@ -20,6 +20,11 @@ def compare(old_path, projected_path, bank):
                 projected_mean_gain=end.gain_evaluation_only_new.mean(),
                 gain_delta=delta,task_bootstrap_95_low=lo,task_bootstrap_95_high=hi,
                 mean_paid_sources=end.paid_source_labels_new.mean(),
+                old_audited_mass=end.audited_policy_mass_old.mean(),
+                projected_audited_mass=end.audited_policy_mass_new.mean(),
+                initial_audited_mass=end.initial_audited_mass_new.mean(),
+                old_effective_support=end.effective_source_support_old.mean(),
+                projected_effective_support=end.effective_source_support_new.mean(),
                 projected_states=len(projected),
                 accepted_projected_states=int(projected.accepted.sum()),
                 baseline_failures=int((new.gain_evaluation_only< -1e-10).sum()),
@@ -30,10 +35,10 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--output',type=Path,required=True)
     args=ap.parse_args()
-    pairs=[('v1','results/certified_support_qwen15b_seed25/runs.csv.gz',
-            'results/certified_project_v1/runs.csv.gz'),
-           ('v2','results/transfer_v2_certified/runs.csv.gz',
-            'results/certified_project_v2/runs.csv.gz')]
+    pairs=[('v1','results/certified_abstain_v1_coverage/runs.csv.gz',
+            'results/certified_project_v1_coverage/runs.csv.gz'),
+           ('v2','results/certified_abstain_v2_coverage/runs.csv.gz',
+            'results/certified_project_v2_coverage/runs.csv.gz')]
     result=pd.DataFrame([compare(Path(o),Path(n),bank) for bank,o,n in pairs])
     result.to_csv(args.output,index=False)
     print(result.to_string(index=False))
