@@ -56,6 +56,32 @@ def load_selected(count=8,offset=0):
     return select_eligible_rows(pq.read_table(path).to_pylist(),count,offset)
 
 
+def validate_frozen_split(tasks,frozen,split,*,offset,count,seed,samples,max_new_tokens):
+    """Fail before model loading if task IDs, prompts or parameters drift."""
+    if split not in ('development_unscored','heldout_unscored'):
+        raise ValueError('unknown frozen split')
+    if (frozen.get('dataset_revision')!=REVISION or
+            frozen.get('dataset_file_sha256')!=FILE_SHA256 or
+            frozen.get('selection_salt')!=SALT or
+            frozen.get('generator_model')!=MODEL or
+            frozen.get('generator_revision')!=MODEL_REVISION):
+        raise ValueError('dataset, task rule or generator differs from frozen split')
+    locked=frozen['sections'][split]; settings=frozen['candidate_generation']
+    expected_seed=settings['development_seed' if split=='development_unscored' else 'heldout_seed']
+    if (len(locked)!=count or locked[0]['rank']!=offset or seed!=expected_seed or
+            samples!=settings['samples_per_task'] or
+            max_new_tokens!=settings['max_new_tokens'] or
+            settings['temperature']!=.8 or settings['top_p']!=.95):
+        raise ValueError('generation settings differ from pre-outcome lock')
+    if len(tasks)!=len(locked):raise ValueError('task count differs from frozen split')
+    for (task_id,entry,row),expected in zip(tasks,locked):
+        if (str(task_id)!=expected['task_id'] or entry!=expected['entry_point'] or
+                hashlib.sha256(row['prompt'].encode()).hexdigest()!=expected['prompt_sha256'] or
+                hashlib.sha256(json.dumps(row['test_list']).encode()).hexdigest()!=expected['public_tests_sha256'] or
+                hashlib.sha256(row['test'].encode()).hexdigest()!=expected['additional_tests_sha256']):
+            raise ValueError('task IDs or test/prompt hashes differ from frozen split')
+
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--output',type=Path,required=True)
@@ -66,12 +92,20 @@ def main():
     p.add_argument('--threads',type=int,default=4)
     p.add_argument('--task-offset',type=int,default=0)
     p.add_argument('--task-count',type=int,default=8)
+    p.add_argument('--frozen-split',type=Path)
+    p.add_argument('--split',choices=['development_unscored','heldout_unscored'])
     p.add_argument('--device',choices=['cpu','mps','cuda'],default='cpu')
     a=p.parse_args()
     if a.output.exists() or a.output.with_suffix('.manifest.json').exists():
         p.error('refuse to overwrite a frozen bank or manifest')
     if min(a.samples,a.max_new_tokens,a.batch_size,a.threads)<1:p.error('invalid settings')
+    if bool(a.frozen_split)!=bool(a.split):p.error('--split and --frozen-split must be supplied together')
     tasks=load_selected(count=a.task_count,offset=a.task_offset)
+    frozen_bytes=a.frozen_split.read_bytes() if a.frozen_split else None
+    if frozen_bytes is not None:
+        validate_frozen_split(tasks,json.loads(frozen_bytes),a.split,
+            offset=a.task_offset,count=a.task_count,seed=a.seed,samples=a.samples,
+            max_new_tokens=a.max_new_tokens)
     import torch
     from transformers import AutoModelForCausalLM,AutoTokenizer,set_seed
     torch.set_num_threads(a.threads);set_seed(a.seed)
@@ -92,6 +126,7 @@ def main():
                           if a.task_offset==0 and a.task_count==8 else
                           f'hash ranks [{a.task_offset},{a.task_offset+a.task_count}) among eligible tasks; unique reference def, >=3 public tests, prompt<600 chars'),
         'selection_offset':a.task_offset,'selection_count':a.task_count,
+        'frozen_split':a.split,'frozen_split_sha256':hashlib.sha256(frozen_bytes).hexdigest() if frozen_bytes else None,
         'model':MODEL,'model_revision':MODEL_REVISION,
         'generation':{'seed':a.seed,'samples':a.samples,'max_new_tokens':a.max_new_tokens,
             'temperature':.8,'top_p':.95,'batch_size':a.batch_size,'threads':a.threads,'device':a.device},
