@@ -56,10 +56,13 @@ class FrozenSelectionTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_frozen_split([('a','solve',{**row,'prompt':'Changed'})],
                                   frozen,'development_unscored',**args)
+        with self.assertRaises(ValueError):
+            validate_frozen_split([task],{**frozen,'sections':{'development_unscored':
+                [{**record,'rank':9}]}},'development_unscored',**args)
 
     def test_scorer_rejects_source_or_occurrence_changes(self):
         task=('a','solve',{'test_list':[]})
-        rows=[{'candidate_id':f'a:{j}','task_id':'a','entry_point':'solve',
+        rows=[{'candidate_id':f'MBPPPlus/a:{j}','task_id':'a','entry_point':'solve',
                'source':f'def solve(x): return {j}',
                'source_sha256':hashlib.sha256(f'def solve(x): return {j}'.encode()).hexdigest()}
               for j in range(2)]
@@ -69,6 +72,9 @@ class FrozenSelectionTest(unittest.TestCase):
             validate_bank_records([{**rows[0],'source':'bad'},rows[1]],manifest,[task])
         with self.assertRaises(ValueError):
             validate_bank_records([rows[0],rows[0]],manifest,[task])
+        with self.assertRaises(ValueError):
+            validate_bank_records([rows[0],{**rows[1],'candidate_id':'MBPPPlus/a:5'}],
+                                  manifest,[task])
 
 
 if __name__=='__main__':unittest.main()
