@@ -49,6 +49,20 @@ condition. Different later source acquisition means the comparison is not an
 isolated timing effect. `fallback=interpolate` is post-v1/v2 exploratory and
 must be separately labeled if included.
 
+**Amendment recorded before MBPP+ candidate scoring.** The safe-region
+projection controller was designed after inspecting both expression banks,
+but the MBPP+ candidates remain unscored. Run `fallback=project` as an
+explicitly **secondary** outcome on all eight MBPP+ tasks with exactly the
+same 160 settings, two initial source audits, six-source maximum and 12
+rounds as the abstaining controller. Compare paired final gain, any failure,
+actual source labels, audited-policy mass and effective source support.
+Keep all tasks including all-zero reward tasks, and report projection onto
+audited sources even if final gain rises. This amendment must not be called
+an independent replication: the algorithm, benchmark selection and
+stopping rules were informed by the two expression banks, and the MBPP+
+reference and tests are publicly available. No thresholds are fitted from
+the forthcoming MBPP+ outcomes.
+
 ## Theory/empirical boundary
 
 The box-identification bound and its boundary derivative are exact for
