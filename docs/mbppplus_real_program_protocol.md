@@ -46,7 +46,8 @@ on official reference solutions and adversarial completions.
 
 The repository includes `docker/Dockerfile.mbppplus` (Python and NumPy) and
 `src.score_mbppplus_docker`. On an Apple Silicon Docker Desktop machine,
-build a local arm64 image and obtain its immutable local ID:
+install the dependencies from `requirements-mbppplus.txt`, build a local arm64
+image, and obtain its immutable local ID:
 
 ```sh
 docker build --platform linux/arm64 -f docker/Dockerfile.mbppplus -t rvl-mbppplus:pilot .
@@ -54,7 +55,10 @@ docker image inspect --format '{{.Id}}' rvl-mbppplus:pilot
 ```
 
 Pass that exact `sha256:...` ID to `--image`, alongside the frozen unscored
-bank. The scorer first tests all eight official reference implementations in
+bank, for example `python -m src.score_mbppplus_docker
+data/mbppplus_qwen15b_pilot_v1.jsonl --image sha256:YOUR_IMAGE_ID --output
+data/mbppplus_qwen15b_pilot_v1_scored.jsonl`. The scorer first tests all eight
+official reference implementations in
 fresh containers. If any reference fails, it aborts before assigning model
 scores. It then launches a fresh container per generated candidate with no
 network or host mounts, read-only root, unprivileged UID, limited processes,
