@@ -42,6 +42,10 @@ def validate_bank_records(rows,manifest,tasks):
     from collections import Counter
     if any(n!=samples for n in Counter(r['task_id'] for r in rows).values()):
         raise ValueError('incorrect number of samples per task')
+    expected_ids={f'MBPPPlus/{task_id}:{j}' for task_id in expected
+                  for j in range(samples)}
+    if {r['candidate_id'] for r in rows}!=expected_ids:
+        raise ValueError('candidate occurrence IDs differ from generated bank')
     for r in rows:
         if (r['entry_point']!=expected[r['task_id']] or
                 hashlib.sha256(r['source'].encode()).hexdigest()!=r['source_sha256']):
