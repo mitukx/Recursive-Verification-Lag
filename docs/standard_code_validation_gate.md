@@ -1,4 +1,11 @@
-# Standard Python code validation gate (design; no results yet)
+# Standard Python code validation gate (design and first scored pilot)
+
+The first pinned eight-task Qwen2.5-Coder-1.5B-Instruct MBPP+ bank was scored
+in isolated Docker and the pre-scoring-locked comparisons were run. Its
+timing and projection results are largely negative; see
+`notes/progress/33_mbppplus_first_scored_pilot.md`. The gate below remains
+the design requirement for a larger independent follow-up, rather than a
+claim that eight tasks establish benchmark-level transfer.
 
 The restricted-expression banks test a narrow, finite-domain programming task.
 They do not establish general program synthesis. This gate defines the next
