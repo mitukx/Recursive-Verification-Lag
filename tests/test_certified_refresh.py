@@ -28,5 +28,17 @@ class CertifiedRefreshTest(unittest.TestCase):
         self.assertTrue((h.certified_lower>=-1e-9).all())
         self.assertEqual(h.paid_source_labels.max(),2)
 
+    def test_interpolation_preserves_initial_safety(self):
+        df=pd.DataFrame({'task_id':['t']*4,'candidate_id':[str(i) for i in range(4)],
+            'base_logprob':[0.]*4,'trusted_score':[1.,1.,0.,0.],
+            'f::public_score':[0.,0.,1.,1.]})
+        for seed in range(5):
+            h=certified_run(df,['a','a','b','c'],
+                Config(eta=4.,rounds=5,representation='public',seed=seed),
+                initial_audits=1,budget=2,fallback='interpolate')
+            self.assertTrue((h.certified_lower>=-1e-9).all())
+            self.assertTrue((h.gain_evaluation_only>=-1e-9).all())
+            self.assertTrue(h.mixture_fraction.between(0,1).all())
+
 
 if __name__=='__main__':unittest.main()
