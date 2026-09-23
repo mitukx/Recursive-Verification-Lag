@@ -23,7 +23,9 @@ are invalid or its trusted reward is uninformative.
   256 generated tokens, temperature .8, top-p .95. Use development seed
   `20260928`, heldout seed `20260929`, four samples per batch. The prompt
   template is unchanged from the first bank. Emit the unscored JSONL and
-  bank hash before any Docker scoring. No model-parameter training is in
+  bank hash before any Docker scoring. Use the same declared device for
+  both splits; device-specific random-number implementations need not
+  produce bit-identical generations. No model-parameter training is in
   this experiment.
 - The official public assertions are the cheap verifier; the released
   additional tests are the evaluation-only trusted reward. They may occur
@@ -79,3 +81,27 @@ Neither 32 development nor 32 heldout tasks implies learned capability
 creation: this is a frozen-bank verifier-selection study. A parameter-update
 or truly fresh proposal-generation loop must be designed as a distinct
 experiment if these signals transfer.
+
+## Reproducible commands and strict order
+
+From the repository root, install `requirements-mbppplus.txt` and run the
+generator only after the frozen task manifest is present:
+
+```sh
+python -m src.generate_mbppplus_bank --task-offset 8 --task-count 32 --samples 16 --seed 20260928 --frozen-split configs/mbppplus_task_split_v2.json --split development_unscored --output data/mbppplus_qwen15b_development_v2.jsonl
+python -m src.generate_mbppplus_bank --task-offset 40 --task-count 32 --samples 16 --seed 20260929 --frozen-split configs/mbppplus_task_split_v2.json --split heldout_unscored --output data/mbppplus_qwen15b_heldout_v2.jsonl
+```
+
+The generator checks IDs, prompt/public/additional-test hashes, the model
+revision, output count and seed **before loading model weights**. On a
+Docker-enabled M1 Pro, build the image and record its SHA256 as in
+`docs/mbppplus_real_program_protocol.md`; score development only at first:
+
+```sh
+python -m src.score_mbppplus_docker data/mbppplus_qwen15b_development_v2.jsonl --image "$RVL_IMAGE_ID" --frozen-split configs/mbppplus_task_split_v2.json --split development_unscored --output data/mbppplus_qwen15b_development_v2_scored.jsonl
+```
+
+Freeze development-derived warning rules and code hashes before running
+the analogous heldout scorer with `--split heldout_unscored`. The scorer
+checks bank/source hashes, tasks, samples and frozen split before executing
+any candidate. Existing eight-task scored data remain a separate pilot.
