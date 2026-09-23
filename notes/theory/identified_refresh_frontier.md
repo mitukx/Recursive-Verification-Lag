@@ -74,3 +74,21 @@ optimal. Further, an adversary can reveal an endpoint reward at each newly
 audited source that leaves the lower bound unchanged for a fixed proposal;
 there is no universal finite audit budget guaranteeing certification of an
 arbitrary proposal in the absence of reward structure.
+
+**Boundary lemma for partial updates.** Hold the audit transcript fixed. Let
+\(h(\alpha)=L_A((1-\alpha)p+\alpha z,p_0)\) for a currently certified
+policy \(p\) and a proposed policy \(z\). The function is concave and
+piecewise linear, because it is the infimum over compatible reward vectors of
+an affine function of \(\alpha\). Hence \(\{\alpha\in[0,1]:h(\alpha)\ge0\}\)
+is an interval containing zero, and binary search finds its largest endpoint.
+If \(h(0)=0\) and the right derivative \(h'_+(0)<0\), concavity gives
+\(h(\alpha)\le\alpha h'_+(0)<0\) for every \(\alpha>0\): no positive
+line-search step is certifiable without changing the transcript, direction,
+or assumptions. If \(h'_+(0)>0\), sufficiently small positive steps are
+certifiable. For group weights \(w_g=\sum_{i\in g}(p_i-p_{0,i})\) and direction
+\(v_g=\sum_{i\in g}(z_i-p_i)\), the derivative is the audited sum
+\(\sum_{g\in A}v_gr_g\), plus \(v_ga_g\) for each unaudited \(w_g>0\),
+\(v_gb_g\) for \(w_g<0\), and \(\min\{v_ga_g,v_gb_g\}\) for \(w_g=0\).
+This is an elementary convex-analysis observation, not a novel minimax law.
+The strict negative-derivative obstruction concerns this fixed proposal line;
+it does not exclude a different safe proposal or a valid structural model.
