@@ -36,6 +36,8 @@ interpolation step along that particular direction can pass the certificate
 without new information or a changed proposal. The remaining 3 and 10 cases
 have a nonzero certifiable fraction. These are correlated states across
 trajectories, not independent empirical replications.
+The least-negative abstention slopes are −.000670 (v1) and −.0000605 (v2),
+well away from the 1e-10 numerical classification tolerance.
 
 ## Falsifiability and next decision
 
