@@ -70,6 +70,8 @@ def certified_run(df,sources,cfg,*,budget=6,initial_audits=2,fallback='abstain')
         cert_lo,cert_hi=identified_gain(p,initial,sources,revealed)
         if cert_lo< -1e-9 or outcome< -1e-9:
             raise AssertionError('safety certificate violated')
+        audited_mask=np.isin(sources,list(revealed))
+        group_masses=np.array([p[sources==g].sum() for g in np.unique(sources)])
         records.append({'round':t+1,'accepted':int(accepted),
             'mixture_fraction':mixture_fraction,'fallback':fallback,
             'projection_distance':projection_distance,
@@ -77,6 +79,9 @@ def certified_run(df,sources,cfg,*,budget=6,initial_audits=2,fallback='abstain')
             'candidate_lower':lo,'candidate_upper':hi,
             'rejected_right_slope':rejected_slope,
             'certified_lower':cert_lo,
+            'audited_policy_mass':float(p[audited_mask].sum()),
+            'initial_audited_mass':float(initial[audited_mask].sum()),
+            'effective_source_support':float(1./(group_masses@group_masses)),
             'gain_evaluation_only':outcome,
             'true_reward_evaluation_only':float(p@y)})
     return pd.DataFrame(records)
