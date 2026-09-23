@@ -12,11 +12,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from src.candidate_bank_experiment import (load_jsonl,task_policy,fit_verifier,propose,Config)
-from src.identified_gain import identified_gain
+from src.identified_gain import identified_gain,maximal_certified_mix,lower_bound_right_slope
 from src.source_audit import SourceAudit
 
 
-def certified_run(df,sources,cfg,*,budget=6,initial_audits=2):
+def certified_run(df,sources,cfg,*,budget=6,initial_audits=2,fallback='abstain'):
+    if fallback not in ('abstain','interpolate'):raise ValueError('unknown fallback')
     if not 1<=initial_audits<=budget<=len(set(sources)):
         raise ValueError('invalid distinct source budget')
     df=df.reset_index(drop=True);sources=np.asarray(sources)
@@ -31,15 +32,25 @@ def certified_run(df,sources,cfg,*,budget=6,initial_audits=2):
     records=[]
     for t in range(cfg.rounds):
         new_this_round=initial_audits if t==0 else 0
+        mixture_fraction=0.
+        rejected_slope=None
         while True:
             theta=fit_verifier(X[acquired],y[acquired],cfg.ridge)
             score=(X@theta)*cfg.score_scale
             candidate=propose(df,p,score,cfg)
             lo,hi=identified_gain(candidate,initial,sources,revealed)
             if lo>=-1e-12:
-                accepted=True;p=candidate;break
+                accepted=True;p=candidate;mixture_fraction=1.;break
             if len(acquired)==budget:
-                accepted=False;break
+                rejected_slope=lower_bound_right_slope(
+                    p,candidate,initial,sources,revealed)
+                if fallback=='interpolate':
+                    mixed,mixture_fraction=maximal_certified_mix(
+                        p,candidate,initial,sources,revealed)
+                    accepted=mixture_fraction>1e-9
+                    if accepted:p=mixed
+                else:accepted=False
+                break
             # Audit the unaudited source with largest possible contribution to
             # uncertainty, |sum_{i in group}(candidate-initial)_i|. Tie by
             # lexical source ID, independently of hidden reward.
@@ -53,15 +64,17 @@ def certified_run(df,sources,cfg,*,budget=6,initial_audits=2):
         if cert_lo< -1e-9 or outcome< -1e-9:
             raise AssertionError('safety certificate violated')
         records.append({'round':t+1,'accepted':int(accepted),
+            'mixture_fraction':mixture_fraction,'fallback':fallback,
             'new_source_labels':new_this_round,'paid_source_labels':len(acquired),
             'candidate_lower':lo,'candidate_upper':hi,
+            'rejected_right_slope':rejected_slope,
             'certified_lower':cert_lo,
             'gain_evaluation_only':outcome,
             'true_reward_evaluation_only':float(p@y)})
     return pd.DataFrame(records)
 
 
-def evaluate(bank_path,output):
+def evaluate(bank_path,output,fallback='abstain'):
     output.mkdir(parents=True,exist_ok=False)
     raw=[json.loads(s) for s in bank_path.read_text().splitlines()]
     sources={r['candidate_id']:r['source_sha256'] for r in raw}
@@ -80,7 +93,7 @@ def evaluate(bank_path,output):
                     cfg=Config(optimizer=optimizer,eta=strength if optimizer=='soft' else 1.,
                         best_of_n=int(strength) if optimizer=='bon' else 4,
                         representation=representation,seed=seed,rounds=12)
-                    h=certified_run(df,ids,cfg)
+                    h=certified_run(df,ids,cfg,fallback=fallback)
                     h['task_id']=task;h['optimizer']=optimizer;h['representation']=representation
                     h['seed']=seed;all_rows.append(h)
     rows=pd.concat(all_rows,ignore_index=True)
@@ -101,8 +114,9 @@ def evaluate(bank_path,output):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('bank',type=Path)
-    p.add_argument('--output',type=Path,required=True);a=p.parse_args()
-    evaluate(a.bank,a.output)
+    p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--fallback',choices=['abstain','interpolate'],default='abstain')
+    a=p.parse_args();evaluate(a.bank,a.output,a.fallback)
 
 
 if __name__=='__main__':main()
