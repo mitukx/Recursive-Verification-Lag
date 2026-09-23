@@ -10,6 +10,8 @@ class DockerScoringContractTest(unittest.TestCase):
             self.assertIn(option,cmd)
         self.assertNotIn('-v',cmd);self.assertNotIn('--volume',cmd)
         self.assertNotIn('--mount',cmd)
+        self.assertIn('linux/arm64',cmd)
+        self.assertEqual(docker_command('sha256:'+'b'*64,'test','pass')[0],'docker')
         with self.assertRaises(ValueError):docker_command('ganler/evalplus:latest','x','')
 
     def test_deterministic_fence_policy_and_syntax_only(self):
