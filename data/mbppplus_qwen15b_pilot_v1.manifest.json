@@ -1,0 +1,125 @@
+{
+  "status": "unscored_pretrained_python_program_bank",
+  "evidence": "real_pretrained_lm_generating_standard_MBPPplus_programs; no trusted execution yet",
+  "dataset": "evalplus/mbppplus",
+  "dataset_revision": "b2d74c91837c3f2a20c1299ae98133cbe7cfa077",
+  "dataset_file": "data/test-00000-of-00001-d5781c9c51e02795.parquet",
+  "dataset_file_sha256": "dc20030b3788fccf617444edcb34138ef13d7e4fafd17bfcb8c1279dbb12399b",
+  "selection_salt": "rvl-mbppplus-pilot-v1:",
+  "selection_rule": "first 8 SHA256(salt+task_id) among unique reference defs used in >=3 public tests; prompt<600 chars",
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "model_revision": "2e1fd397ee46e1388853d2af2c993145b0f1098a",
+  "generation": {
+    "seed": 20260927,
+    "samples": 8,
+    "max_new_tokens": 256,
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "batch_size": 4,
+    "threads": 4,
+    "device": "cpu"
+  },
+  "selected_tasks": [
+    {
+      "task_id": "787",
+      "entry_point": "text_match_three",
+      "public_tests": [
+        "assert not text_match_three(\"ac\")",
+        "assert not text_match_three(\"dc\")",
+        "assert text_match_three(\"abbbba\")",
+        "assert text_match_three(\"caacabbbba\")"
+      ],
+      "prompt": "Write a function that matches a string that has an a followed by three 'b'.",
+      "plus_test_sha256": "fee15f5bffad1cf37dabcf1f575665be513e7372815b74e450277da20b20a1ae"
+    },
+    {
+      "task_id": "754",
+      "entry_point": "extract_index_list",
+      "public_tests": [
+        "assert extract_index_list([1, 1, 3, 4, 5, 6, 7],[0, 1, 2, 3, 4, 5, 7],[0, 1, 2, 3, 4, 5, 7])==[1, 7]",
+        "assert extract_index_list([1, 1, 3, 4, 5, 6, 7],[0, 1, 2, 3, 4, 6, 5],[0, 1, 2, 3, 4, 6, 7])==[1, 6]",
+        "assert extract_index_list([1, 1, 3, 4, 6, 5, 6],[0, 1, 2, 3, 4, 5, 7],[0, 1, 2, 3, 4, 5, 7])==[1, 5]",
+        "assert extract_index_list([1, 2, 3, 4, 6, 6, 6],[0, 1, 2, 3, 4, 5, 7],[0, 1, 2, 3, 4, 5, 7])==[]"
+      ],
+      "prompt": "We say that an element is common for lists l1, l2, l3 if it appears in all three lists under the same index. Write a function to find common elements from three lists. The function should return a list.",
+      "plus_test_sha256": "b563cb2beddf0e646eb36515df966481fbe608579ceb6c78596e278ee3ea0e45"
+    },
+    {
+      "task_id": "279",
+      "entry_point": "is_num_decagonal",
+      "public_tests": [
+        "assert is_num_decagonal(3) == 27",
+        "assert is_num_decagonal(7) == 175",
+        "assert is_num_decagonal(10) == 370"
+      ],
+      "prompt": "Write a function to find the nth decagonal number.",
+      "plus_test_sha256": "09727a79f2e295796743c09102b8157106820fd4dd48f578d366bec3476fdd94"
+    },
+    {
+      "task_id": "606",
+      "entry_point": "radian_degree",
+      "public_tests": [
+        "assert radian_degree(90)==1.5707963267948966",
+        "assert radian_degree(60)==1.0471975511965976",
+        "assert radian_degree(120)==2.0943951023931953"
+      ],
+      "prompt": "Write a function to convert degrees to radians.",
+      "plus_test_sha256": "57f96b5d6b9ddf4e71a7841e6d017a637e745772aeeb955ac88abcf5978a6826"
+    },
+    {
+      "task_id": "451",
+      "entry_point": "remove_whitespaces",
+      "public_tests": [
+        "assert remove_whitespaces(' Google    Flutter ') == 'GoogleFlutter'",
+        "assert remove_whitespaces(' Google    Dart ') == 'GoogleDart'",
+        "assert remove_whitespaces(' iOS    Swift ') == 'iOSSwift'"
+      ],
+      "prompt": "Write a function to remove all whitespaces from the given string.",
+      "plus_test_sha256": "d122a52ae98815e090f7e0e631ca910f93fca3a976143f27ae4f4bb924263769"
+    },
+    {
+      "task_id": "573",
+      "entry_point": "unique_product",
+      "public_tests": [
+        "assert unique_product([10, 20, 30, 40, 20, 50, 60, 40]) ==  720000000",
+        "assert unique_product([1, 2, 3, 1,]) == 6",
+        "assert unique_product([7, 8, 9, 0, 1, 1]) == 0"
+      ],
+      "prompt": "Write a python function to calculate the product of the unique numbers in a given list.",
+      "plus_test_sha256": "dbe201b89b69648f951f7e69b656fbba21391c214ab5d4307a4398f4aa6e176c"
+    },
+    {
+      "task_id": "733",
+      "entry_point": "find_first_occurrence",
+      "public_tests": [
+        "assert find_first_occurrence([2, 5, 5, 5, 6, 6, 8, 9, 9, 9], 5) == 1",
+        "assert find_first_occurrence([2, 3, 5, 5, 6, 6, 8, 9, 9, 9], 5) == 2",
+        "assert find_first_occurrence([2, 4, 1, 5, 6, 6, 8, 9, 9, 9], 6) == 4"
+      ],
+      "prompt": "Write a function to find the index of the first occurrence of a given number in a sorted array.",
+      "plus_test_sha256": "0951555e8c02c290af921156ae269767d206b9910a8fd06b378e5bc3f8d4463f"
+    },
+    {
+      "task_id": "4",
+      "entry_point": "heap_queue_largest",
+      "public_tests": [
+        "assert heap_queue_largest( [25, 35, 22, 85, 14, 65, 75, 22, 58],3)==[85, 75, 65]",
+        "assert heap_queue_largest( [25, 35, 22, 85, 14, 65, 75, 22, 58],2)==[85, 75]",
+        "assert heap_queue_largest( [25, 35, 22, 85, 14, 65, 75, 22, 58],5)==[85, 75, 65, 58, 35]"
+      ],
+      "prompt": "Write a function to find the n largest integers from a given list of numbers, returned in descending order.",
+      "plus_test_sha256": "c1d2258e2ea1b46e9dec0cfd5fd9577e0b00634fd69c27976db3a89d741ddf88"
+    }
+  ],
+  "versions": {
+    "torch": "2.14.0+cpu",
+    "transformers": "4.48.3",
+    "pyarrow": "21.0.0"
+  },
+  "generator_sha256": "0a990212ea7673d905c0ccc10f3abf97453e6f59e1714e1027e7acfb4ebf4b9a",
+  "started_utc": "2026-09-23T09:18:07.076165+00:00",
+  "complete": true,
+  "rows": 64,
+  "elapsed_seconds": 743.485023021698,
+  "bank_sha256": "1e659345d057a3e311d8f62e8bb0f7c3b213dbfccb34c6025a7dc559022eb1d7"
+}

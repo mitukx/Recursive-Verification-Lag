@@ -1,0 +1,603 @@
+{
+  "purpose": "pre-candidate-outcome disjoint extension of scored pilot",
+  "dataset": "evalplus/mbppplus",
+  "dataset_revision": "b2d74c91837c3f2a20c1299ae98133cbe7cfa077",
+  "dataset_file": "data/test-00000-of-00001-d5781c9c51e02795.parquet",
+  "dataset_file_sha256": "dc20030b3788fccf617444edcb34138ef13d7e4fafd17bfcb8c1279dbb12399b",
+  "selection_salt": "rvl-mbppplus-pilot-v1:",
+  "ordering": "SHA256(salt+task_id), eligible reference function used in >=3 public tests, prompt<600 chars",
+  "generator_model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "generator_revision": "2e1fd397ee46e1388853d2af2c993145b0f1098a",
+  "candidate_generation": {
+    "samples_per_task": 16,
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "max_new_tokens": 256,
+    "development_seed": 20260928,
+    "heldout_seed": 20260929
+  },
+  "sections": {
+    "scored_pilot": [
+      {
+        "rank": 0,
+        "task_id": "787",
+        "entry_point": "text_match_three",
+        "prompt_sha256": "ec21de8d94ae665c89882fcbedd2cc09f6f351eeb69158b2f7a31214d7cd9fce",
+        "public_tests_sha256": "f96bbf4aeebf078ac1590f87aecb44da55f58784973ca081ba13edf709d23a0b",
+        "additional_tests_sha256": "fee15f5bffad1cf37dabcf1f575665be513e7372815b74e450277da20b20a1ae"
+      },
+      {
+        "rank": 1,
+        "task_id": "754",
+        "entry_point": "extract_index_list",
+        "prompt_sha256": "a49a22e81caae69cffbd62c9d3e391f39aef3319e7b6d0b6b1bb7e88a235d547",
+        "public_tests_sha256": "32f269bd5b8d576a9cf7b2e12f79f7f5bbcb1aa055feec55e336fa8c2033e35e",
+        "additional_tests_sha256": "b563cb2beddf0e646eb36515df966481fbe608579ceb6c78596e278ee3ea0e45"
+      },
+      {
+        "rank": 2,
+        "task_id": "279",
+        "entry_point": "is_num_decagonal",
+        "prompt_sha256": "cecd0b069c03fdb0180f02d3a2472a91d35ac513ad65599958f1aaab6b6c7681",
+        "public_tests_sha256": "1f9ca608c92c26671cd906dd3fcb812da89cea9bcbbe8c7ce1b1aace29e73d79",
+        "additional_tests_sha256": "09727a79f2e295796743c09102b8157106820fd4dd48f578d366bec3476fdd94"
+      },
+      {
+        "rank": 3,
+        "task_id": "606",
+        "entry_point": "radian_degree",
+        "prompt_sha256": "a54e93b5c33e65115f05133ce82be0f0e9369852f61bedfb44ec9b812aca3080",
+        "public_tests_sha256": "89cb0e3e2c7d8a83215b6da0e680734269143a2403b4491848e166446fd1409a",
+        "additional_tests_sha256": "57f96b5d6b9ddf4e71a7841e6d017a637e745772aeeb955ac88abcf5978a6826"
+      },
+      {
+        "rank": 4,
+        "task_id": "451",
+        "entry_point": "remove_whitespaces",
+        "prompt_sha256": "8a6aa1f1daed820b7f74bc4fce292305da4100af10c3e0efb6f605403bf5a556",
+        "public_tests_sha256": "30269350267de073e5aecea14c529840be46dab2c33b700136935d61381f38a1",
+        "additional_tests_sha256": "d122a52ae98815e090f7e0e631ca910f93fca3a976143f27ae4f4bb924263769"
+      },
+      {
+        "rank": 5,
+        "task_id": "573",
+        "entry_point": "unique_product",
+        "prompt_sha256": "227a9272915fb0ffc257d89cc6e87c1871a8c25801be7ecf008d9f42b6a5f7a5",
+        "public_tests_sha256": "a1623b39d39f1965728c11ac614dc7f2c7a3c92bd0f2f03efdee9e11f2b4ccd6",
+        "additional_tests_sha256": "dbe201b89b69648f951f7e69b656fbba21391c214ab5d4307a4398f4aa6e176c"
+      },
+      {
+        "rank": 6,
+        "task_id": "733",
+        "entry_point": "find_first_occurrence",
+        "prompt_sha256": "caa460cde0ac6e4f38dcb8c7c6549f6990cbce7eab6bd56e8bcacf86cf5f9477",
+        "public_tests_sha256": "c20ed437fe1c5b7f2a6d255b5640d2387292eb633cf587a4f4cd876e5a5422c0",
+        "additional_tests_sha256": "0951555e8c02c290af921156ae269767d206b9910a8fd06b378e5bc3f8d4463f"
+      },
+      {
+        "rank": 7,
+        "task_id": "4",
+        "entry_point": "heap_queue_largest",
+        "prompt_sha256": "3524b578b91bb2cf2d751abe313051ad9fb7be2e9b639660371cbed37ed8835c",
+        "public_tests_sha256": "b59464cc892a19795f6eab32c49db4359c23c92808e0ef52bda53e49b2ca6dc8",
+        "additional_tests_sha256": "c1d2258e2ea1b46e9dec0cfd5fd9577e0b00634fd69c27976db3a89d741ddf88"
+      }
+    ],
+    "development_unscored": [
+      {
+        "rank": 8,
+        "task_id": "778",
+        "entry_point": "pack_consecutive_duplicates",
+        "prompt_sha256": "60344a1dd742ef9071852ff288269b00e297297f581fb12881eaa9b3550ba711",
+        "public_tests_sha256": "702521db0474df82a234969a23921b87c600d9853490dcb08c3baf53fd252192",
+        "additional_tests_sha256": "92a76bd17abc7f91ba7ad63d40efa6a1cae36799248fd3f5da3ec1c16cf6704a"
+      },
+      {
+        "rank": 9,
+        "task_id": "771",
+        "entry_point": "check_expression",
+        "prompt_sha256": "1714b63b70c69062f693ffb554eaca38ab1158fd5c931ab00f19cadbb11c6d94",
+        "public_tests_sha256": "11eacc4f6fe0444a63fbaf7ef33b6a7df04fed55e5971e1b126f2b42368cd78c",
+        "additional_tests_sha256": "f312475ecded9d43a273ba096b5ac1700bbbde1cd41774da485e8f5917b11a72"
+      },
+      {
+        "rank": 10,
+        "task_id": "262",
+        "entry_point": "split_two_parts",
+        "prompt_sha256": "a8055c71d86399d5d1cccffa1981cf8d3706904a7321624eccab61f2c59cd257",
+        "public_tests_sha256": "de52f08287fdc408400919ff0c0e19bea138f31a8a92f3f7063a9d0b28ee55b5",
+        "additional_tests_sha256": "01e9aa2ed131d97f2f0db495120f3bf613a89011c656b42b33719451b33c0817"
+      },
+      {
+        "rank": 11,
+        "task_id": "770",
+        "entry_point": "odd_num_sum",
+        "prompt_sha256": "1eafc6bd23d3429eaafb811c4576fedd31ecb090e104893c58186f2ee9d09568",
+        "public_tests_sha256": "95bdb02d05bdc1720a21b1470690ed32d3d75888357eef4c01e4c056e6d3e1f8",
+        "additional_tests_sha256": "b28c1b0d5efa8d2bed075240550547bdd8dd00fde123ef77e8a46c25ee903f30"
+      },
+      {
+        "rank": 12,
+        "task_id": "560",
+        "entry_point": "union_elements",
+        "prompt_sha256": "bcdfa80bc2811bf51be0bcb0ac5e9aca4ec01a861cb18f991856661d77c38bca",
+        "public_tests_sha256": "c67a17810bbcb101f05b8e9fc65e3a06aa9e9c7e116edc1df5a8735edefafe1a",
+        "additional_tests_sha256": "960fd1533abbe1474d8f6ddfd08b747f6f2b93298ec48f0faf922b6b24c537aa"
+      },
+      {
+        "rank": 13,
+        "task_id": "474",
+        "entry_point": "replace_char",
+        "prompt_sha256": "a5f312b0468cdae3434c3df0cd1604bfea9d605b58582f8ab8647648cf667e4f",
+        "public_tests_sha256": "9413a3592370ed19c2f070c9f2737980f0884a886fb7f723152904f31f7f4241",
+        "additional_tests_sha256": "6959a025e4f731e2a09f0f48fc763eeba9ba87a16cd913c893afba82f2af4f26"
+      },
+      {
+        "rank": 14,
+        "task_id": "309",
+        "entry_point": "maximum",
+        "prompt_sha256": "29496b94a95603af12daad2a0ea1268e89e673e1c0b4dd6adf8b4e84a1e2b1ee",
+        "public_tests_sha256": "b0c90b4296a17b9fa03f9ff21338c24efb7e2fdea58714b8f843e88da4d8b304",
+        "additional_tests_sha256": "a9e93427af71917a592dfb142be414f8f4f563be0011f0e26f02a2ea07b14d63"
+      },
+      {
+        "rank": 15,
+        "task_id": "142",
+        "entry_point": "count_samepair",
+        "prompt_sha256": "a502c468a53082b5fcab9d0e5df3e26291b33fc073f6bdb8c31873f0148f42b4",
+        "public_tests_sha256": "45720ed3c70b68943b76fe476af980d7a40a9b47a5010e96362f641abfe37862",
+        "additional_tests_sha256": "3f8ea08bb7a00b150bfb41ea87ee18b4c0d49a9585bdbb16a1982c77a92f64f7"
+      },
+      {
+        "rank": 16,
+        "task_id": "259",
+        "entry_point": "maximize_elements",
+        "prompt_sha256": "ddef78a56f6431b5f7ee7058d0c9fdd010f11790d72e5878eab1bc062fb4824e",
+        "public_tests_sha256": "5e7f5971907bf1fa5512a4ea27da9fe3639ca5bd4169789b615413ebdc5e23da",
+        "additional_tests_sha256": "9fc8ec6ae26a708758697423ffee010cab3ac4e842a475528e7db30739ac05ea"
+      },
+      {
+        "rank": 17,
+        "task_id": "264",
+        "entry_point": "dog_age",
+        "prompt_sha256": "8341bac7e157c0c7d6193c082b8c189b2b76c420fb1de70ae45b3270bd1964fc",
+        "public_tests_sha256": "aea9e4e02dde3286b7b3993ffc6bc25d4f7b551675d1244f22c7b8473778c551",
+        "additional_tests_sha256": "129ac1bfaf82b1fbdbde402338705914a01296f9e938397035fcf4477b6f81c9"
+      },
+      {
+        "rank": 18,
+        "task_id": "619",
+        "entry_point": "move_num",
+        "prompt_sha256": "53d029c1bb02c6238505bac81d55d9476c5bf4cdc94362aaa6a25b12e9470300",
+        "public_tests_sha256": "91e9e2b52b4f8457dd6202e4c0fc2ea853b13c11dd5ca91e97dc6a11a46cb9a8",
+        "additional_tests_sha256": "7d8c7a894e118354c5c8b6ef3a1ff6642da1911ebe83d628e4a6778043ff01a8"
+      },
+      {
+        "rank": 19,
+        "task_id": "19",
+        "entry_point": "test_duplicate",
+        "prompt_sha256": "f3eb8d101b43c320d9aa427ce27cdf5ffe8f60bfcfe3df78ae2b668f78d7a42b",
+        "public_tests_sha256": "13baa0d6c95fadecb41ca8950d513aee8c445a0bf6a8f42793293ff956c2dd80",
+        "additional_tests_sha256": "694e36a6f5f48120b5662ec4e6eb0f453627eaf372f2bf26104f94d9d6a474e7"
+      },
+      {
+        "rank": 20,
+        "task_id": "139",
+        "entry_point": "circle_circumference",
+        "prompt_sha256": "4b4a130c58dcfcf0eef0b974dbaecea8e85aeee00876a86e458029c96d59644d",
+        "public_tests_sha256": "c9777bfd1d4a31030d5f9831e952ca2e7d1009b057ea57e06f56b2985c2b69c8",
+        "additional_tests_sha256": "ac428878616072b4dbdbde29e5bc3d6b50349bdbe4b51f7dee9fe57c439da2af"
+      },
+      {
+        "rank": 21,
+        "task_id": "453",
+        "entry_point": "sumofFactors",
+        "prompt_sha256": "6c03851fb07aa36c384148b7593b52731e44709f2df98129cadee84029f9c81c",
+        "public_tests_sha256": "05b1769ebc47a67171482afb3155b3eb9d5fa77934a47c7cb332898c01c7794e",
+        "additional_tests_sha256": "6d744b83dae91f7d26685ebda0749e309909e1100afaab05384394d93734256b"
+      },
+      {
+        "rank": 22,
+        "task_id": "805",
+        "entry_point": "max_sum_list",
+        "prompt_sha256": "4ee95e6fbc01ca71a80f6ceb76bd04b5a3ad77553d011197aca2b749949c5e9b",
+        "public_tests_sha256": "75325a797e456484427173cbb2fa88ba5d34d3ffef9309f9ecb264bd45af855e",
+        "additional_tests_sha256": "cf6ab5d8b9439584d592d7de5d45e79aaceb617f6cf59b8102bdb5fe0662fbcc"
+      },
+      {
+        "rank": 23,
+        "task_id": "460",
+        "entry_point": "Extract",
+        "prompt_sha256": "20c6806594157d2103cac061f6e5859dd38510f2215fad435cf70f04dfbe021f",
+        "public_tests_sha256": "4baa05b22f353d6ada28e50cb2989cc171a1d3f56c3c58f12fed246bc99ef34b",
+        "additional_tests_sha256": "fe4a6742696e9523644bd7a855784845d62d7e72f3876dcc6ba04fe6ad208cb1"
+      },
+      {
+        "rank": 24,
+        "task_id": "629",
+        "entry_point": "Split",
+        "prompt_sha256": "f9b11d70266466e06ef2dacb61eaf21302017740ab162092e412f1a6679a32d3",
+        "public_tests_sha256": "354ead1c866f909779a6249474b73ff0e97b08c7c489b076567f44553fdddd99",
+        "additional_tests_sha256": "dd786846d165e92566eb6e7be99b0dfbe5922ee8c9be1ab4f76efe494dacb5b4"
+      },
+      {
+        "rank": 25,
+        "task_id": "127",
+        "entry_point": "multiply_int",
+        "prompt_sha256": "4fb85a9a8f9cf7f1f72fd57491ca347cb8da270411ee2753c5b9cbe000e31666",
+        "public_tests_sha256": "b66d0f78e4cb94cb9cf8b8b44da51e66647adfe793ab4f8cb7916ee802cffe1b",
+        "additional_tests_sha256": "a391bc987e878935c5ffe8d9bb3eb07adf6b45fb8584379e4051a9516bdb18a0"
+      },
+      {
+        "rank": 26,
+        "task_id": "631",
+        "entry_point": "replace_spaces",
+        "prompt_sha256": "7c90a032d2f0cf364621212636ba265c76cc68134b6048641426c5d80a5b808a",
+        "public_tests_sha256": "1dee1d8cd916d17073caccdaccebb6ac3be2f4b0973ad9b66695ff1d694b0ee3",
+        "additional_tests_sha256": "43f8ae125e0486cc227b261e2742ae082b2a75e12946f43a930448cd323351e8"
+      },
+      {
+        "rank": 27,
+        "task_id": "628",
+        "entry_point": "replace_spaces",
+        "prompt_sha256": "8627116730b5cc71dc8c6a690187fe90eb7f6bb2c766a9d2419a44e3375c0bdf",
+        "public_tests_sha256": "2d4bf261f002d6590383a67f75f90b0d66fc48fc9b7292814b22d9519c922f0c",
+        "additional_tests_sha256": "aaffa0c35f9db6dde3a572070e6d624df47b303215ccabb445448ac60f27250a"
+      },
+      {
+        "rank": 28,
+        "task_id": "90",
+        "entry_point": "len_log",
+        "prompt_sha256": "620451b4795da9af13ca344bc7d3a7eabf74fa701ccec074f4ec22fbfc9d5cf7",
+        "public_tests_sha256": "8eb36e5bffd552008bf2d3baa2fa3728347010121f5b2e266f9007f8875912f7",
+        "additional_tests_sha256": "f63682e2caa3bb747b84f7ab37de281695f6dde8d959b815065f31aa4a068a2c"
+      },
+      {
+        "rank": 29,
+        "task_id": "644",
+        "entry_point": "reverse_Array_Upto_K",
+        "prompt_sha256": "72488b460e825c797de5f485b11cb549d769f52eb7e43a2e213409cc52b492f0",
+        "public_tests_sha256": "64edc73011802c65261ccd030e305236df0655db963b0c67154d180f56f74e5a",
+        "additional_tests_sha256": "235138e3d34c5a3bd7fad35b9474b3cb220716efea2e7061f0ce2aa3056d0235"
+      },
+      {
+        "rank": 30,
+        "task_id": "753",
+        "entry_point": "min_k",
+        "prompt_sha256": "520d44ab97bcd16b381e0b44051745cfd6104e58aa69b550e52f25d5b78f7de0",
+        "public_tests_sha256": "1aac5a13b425be2431f731602a7859e1c988133b92df2cb7917a8c128a4dbbe6",
+        "additional_tests_sha256": "385ab277c6de053d69efd9b1582d19694018787d8f2c5fb9b0d82408123f2a61"
+      },
+      {
+        "rank": 31,
+        "task_id": "635",
+        "entry_point": "heap_sort",
+        "prompt_sha256": "0d08b8f62d7abd3150578ad8914b8fd7c43b97c24e0456b435a244318c324abb",
+        "public_tests_sha256": "0dda04cf50aaecc44db5515ff54b0538bd92df8d60f9738a79de3c6d1a9c8b12",
+        "additional_tests_sha256": "ed9367c4c09836899c2c8c0a72c6ea80af93f51720ab5c5cee7582531ac8a17b"
+      },
+      {
+        "rank": 32,
+        "task_id": "476",
+        "entry_point": "big_sum",
+        "prompt_sha256": "7d3429e2386705b9d6f922756f8a7002fb3d15a9d20d51377bb8865a5f5297f3",
+        "public_tests_sha256": "6c808d64299db66cd4b100c260b4e78a02f852d1efb22b769202f1fa02f4f00d",
+        "additional_tests_sha256": "1f9e527ae39682489fb892ff8cfc199d35187be22a328446f76499b4038b368c"
+      },
+      {
+        "rank": 33,
+        "task_id": "306",
+        "entry_point": "max_sum_increasing_subseq",
+        "prompt_sha256": "18cc7fcd1f702a34ab722d817f564a621e69e625082cf5b8f151ec2469fe44f4",
+        "public_tests_sha256": "b7922607669205655cc87a2145f8636e8731fd413024c159d60b68c76995c3b8",
+        "additional_tests_sha256": "c3a87929898c330326282dac274a5f46b78720f7fce923f16332798f0662c654"
+      },
+      {
+        "rank": 34,
+        "task_id": "170",
+        "entry_point": "sum_range_list",
+        "prompt_sha256": "c2246eab269e85c09bd63ac9efc7f6374359e06cbe77b5515c1892a71e2d2890",
+        "public_tests_sha256": "9dd947cf83049f7b3acfdd6bbb6620e9a0c6dd3fc3667483911331e50ac6d42c",
+        "additional_tests_sha256": "7a8d99eef24f8854b773117ce25ff14756d4e98d3c995b9b6b57a8e23da15f4d"
+      },
+      {
+        "rank": 35,
+        "task_id": "410",
+        "entry_point": "min_val",
+        "prompt_sha256": "841b4bd295fc975b4e40b3266fa20ff2909befb9095068a6600f58d9d62328af",
+        "public_tests_sha256": "1836bc581da435285836002ebaf30b2035ae6156d3413f2e746a42b0d5d4400e",
+        "additional_tests_sha256": "da1512906bcc430d4e736860537eb2a7964ba5df705ae508f8f57b6732ff66c9"
+      },
+      {
+        "rank": 36,
+        "task_id": "91",
+        "entry_point": "find_substring",
+        "prompt_sha256": "d4a7c34e76c681d7b57ce305e32fa985eb4cfa6f0d4d7a117f79fc3314416a41",
+        "public_tests_sha256": "ad036b9ea5db99bdcf7b16e254397b2e0a183a07c044f671effd5a0fd342346d",
+        "additional_tests_sha256": "fb1c2a0bafa3aaa98b621b1f277e37991f2b322452321b2d62621d0cb46e49df"
+      },
+      {
+        "rank": 37,
+        "task_id": "567",
+        "entry_point": "issort_list",
+        "prompt_sha256": "22bfa24046ddad14ad87a8912690725918d88c92826f27a99372e022949893bb",
+        "public_tests_sha256": "4cd4e21e670c2e8b641ac4130fb898fe9ec4b36ebd709cb9eeb3f3515895a020",
+        "additional_tests_sha256": "fb096ed270fc265461156f0ae523122e9b8e6d14d56cadfcaad0029007037127"
+      },
+      {
+        "rank": 38,
+        "task_id": "234",
+        "entry_point": "volume_cube",
+        "prompt_sha256": "edca79e07abc5e200a947362fa3546281f0114bf01822b586d7504bcff1d4e25",
+        "public_tests_sha256": "47e53f4b1759308434e09cb11fb61d6e277d097556d703638f7b0f485454170e",
+        "additional_tests_sha256": "798708457eb107250697380aba484b1bc247d67f52f695d1bceb2182cc7b0bee"
+      },
+      {
+        "rank": 39,
+        "task_id": "439",
+        "entry_point": "multiple_to_single",
+        "prompt_sha256": "8c839a7cca9df9bba1f441138ac85e0e707f5d54c95ad986f1b299ed6911ffc5",
+        "public_tests_sha256": "d0f2b3c51eca01e2603d510d29056f103c680da194d88471f35fd27f6c1c917a",
+        "additional_tests_sha256": "775da06ebf3753b204415f6f0f27acadc2cd4d79b8dc0368f2660f0413b411d9"
+      }
+    ],
+    "heldout_unscored": [
+      {
+        "rank": 40,
+        "task_id": "281",
+        "entry_point": "all_unique",
+        "prompt_sha256": "d01bab71cf2003251a0b1d47a5b44748f44a6e455a02a4729d92c9df2008582e",
+        "public_tests_sha256": "b3ccbfbf6a2c03988418c9693cc5d2238c5b90619839cddadb273d3045bc1dd5",
+        "additional_tests_sha256": "d99aeb654fa8c6318fd9d3e59915f95e16d4d14571ba026d7d509cec51a94371"
+      },
+      {
+        "rank": 41,
+        "task_id": "392",
+        "entry_point": "get_max_sum",
+        "prompt_sha256": "7b9c0ab853ea0e01e7d59f890079d3f6daea21df3a2f49624b6738911173f9c0",
+        "public_tests_sha256": "eaca499fc4eecaf81c877ccd4cd058b74bfeaee684125928025a88f58fccd9bd",
+        "additional_tests_sha256": "421e32955111004de6bdf65d25d6dc1f67687f79dcf17b340b36308126719b5c"
+      },
+      {
+        "rank": 42,
+        "task_id": "557",
+        "entry_point": "toggle_string",
+        "prompt_sha256": "4a2b02ac9c08b0d06af1f3a126c43f7b0ddbb3098580e497000b4955f2e9a643",
+        "public_tests_sha256": "bfebb0a855f095e8d50256f5f4c21c94fa38ff021cf1196b7f0d5d43555d21ac",
+        "additional_tests_sha256": "65060bf2459a9a48775c92725b1b751aed3a4d63d362594b736d7c070d88cc5f"
+      },
+      {
+        "rank": 43,
+        "task_id": "161",
+        "entry_point": "remove_elements",
+        "prompt_sha256": "c840cbb4900c6dba89b73e1bdac30cf0f924e5c58bf341007043b7ec5cdab994",
+        "public_tests_sha256": "cbd0e96f286b3cb7d922d7981d6a283050ca528be3f4e97b7cb8fd757379a83c",
+        "additional_tests_sha256": "75bca7ceace228af44541f425f747573c4127991a0e646bd4f01fbd523c9c368"
+      },
+      {
+        "rank": 44,
+        "task_id": "565",
+        "entry_point": "split",
+        "prompt_sha256": "1c32db73859e052c2039e21acd524bd30e130137c76162e6dcd67af2452c7fb9",
+        "public_tests_sha256": "6a84b73fada89cc2a1f280a75ba33232102e4f6bbcc3c434f3f17c8cc2d649ac",
+        "additional_tests_sha256": "15ee5b087a6ecc968a23cfe87b717963f71d73a4d2de525a7516978d633a3f68"
+      },
+      {
+        "rank": 45,
+        "task_id": "806",
+        "entry_point": "max_run_uppercase",
+        "prompt_sha256": "ad0ff39ad0ac54f6a6e4bab872669028d7a3bb479bdaa433970d8267d0160de8",
+        "public_tests_sha256": "c4664a912f253eb06daf8f1280974554f1db4f2d4ea58aad769b7d5fa548a902",
+        "additional_tests_sha256": "1c2c78091bca2b0fae001ebf226cef8bab762f0ddc1550ead87ab68c5e092c5b"
+      },
+      {
+        "rank": 46,
+        "task_id": "600",
+        "entry_point": "is_Even",
+        "prompt_sha256": "4be66e4fab76329922feba958f998950968e828a5f3e5141c7b3fb6281d00740",
+        "public_tests_sha256": "48e6a66c2d26c50f83c49cbe210e787576ace23b1b5bb56ac2606134590c57cd",
+        "additional_tests_sha256": "19e7c2f84976717e22938de14762af923b5d39d4b2de8f3c24c7109a07640b02"
+      },
+      {
+        "rank": 47,
+        "task_id": "277",
+        "entry_point": "dict_filter",
+        "prompt_sha256": "593a721cb8a39f5acdd8f0204fb65c897b3b34b6d007731a9ab608dd1a4f343e",
+        "public_tests_sha256": "b8929b72bccba9230940a93bc49a7dfd258c01177bc2cacb7c80eb65d3cdf04e",
+        "additional_tests_sha256": "2d9ad716ddde3ec59973fff824cc9e97e7dae3b4fd9c1a49ddef2a9723920062"
+      },
+      {
+        "rank": 48,
+        "task_id": "421",
+        "entry_point": "concatenate_tuple",
+        "prompt_sha256": "68c25358e6e0b2c13bc2fc560c6684845ae1e79b9fd6eec2a404cd8f6d888b9d",
+        "public_tests_sha256": "543e8055c323ab89ba7be9fed776b9fe5d355ffc44175cc69e4e2ff008c369bf",
+        "additional_tests_sha256": "57e7994f64b4eb942012c2f52308576836a6aba0326f6bff96e8d289f2c228b1"
+      },
+      {
+        "rank": 49,
+        "task_id": "118",
+        "entry_point": "string_to_list",
+        "prompt_sha256": "10ebfef9cbfe38baba69f27885d55286ceedfb5ab08fe4d335583a611bbbcd3b",
+        "public_tests_sha256": "50f8cc1b15d7c790efa11ed47866a3dfe451d509b411182ea36d88b3c758c4d5",
+        "additional_tests_sha256": "b01ad650e6912c6546c3c57327e907ef69500fe85cf1098d657656cfde88875e"
+      },
+      {
+        "rank": 50,
+        "task_id": "590",
+        "entry_point": "polar_rect",
+        "prompt_sha256": "34b9a58c57816e197b0254abffc230a7ad4d45bc4699830efe6c061e21fe2bf2",
+        "public_tests_sha256": "5e976b0d9b393f7bcb3ff394bc8f1e4728f59afb2c188c22ca4fff18bd1a60ec",
+        "additional_tests_sha256": "7bbfcff15456c2064df217144ced9bb3a0bcaa80ac091a0008c79d67d61bf0de"
+      },
+      {
+        "rank": 51,
+        "task_id": "558",
+        "entry_point": "digit_distance_nums",
+        "prompt_sha256": "e6ff0f9560c8d680c89e12234324cb61c8ca9daf1860696cd7c404256a226df7",
+        "public_tests_sha256": "5ddc59c6a8b96655a2a41f3fa69ab790eebf5da4fd718c0fd3bbb46a6fbf571d",
+        "additional_tests_sha256": "6185cee80199ff1a524628c1649c7c82310502a5ab40724fc5723b8908626bfd"
+      },
+      {
+        "rank": 52,
+        "task_id": "445",
+        "entry_point": "index_multiplication",
+        "prompt_sha256": "e4d02f8e6f138bc47b35aba6e2f148fcf0855cc4d229615882a1ac0a30e5ab34",
+        "public_tests_sha256": "eac2607848208bcb8903c9a3d9d1f62702dd60420e5211614ec3d49d40f5026a",
+        "additional_tests_sha256": "a3575d8a3bdfb92e8edde8e14588d65d4740ef1628e613d4289a55aba2c7b4ba"
+      },
+      {
+        "rank": 53,
+        "task_id": "804",
+        "entry_point": "is_product_even",
+        "prompt_sha256": "eb2fbb236d3d7d4a216e5260afa58920b3f00d54089b68206ee22ea6921894c6",
+        "public_tests_sha256": "b8cfae5a83bcdc8ef3dd520cb08108229cb0f03419e706749024772637668f5c",
+        "additional_tests_sha256": "88ab4a101552187e8e341525303562b35db876b1a52834c1961c64f22ac96a63"
+      },
+      {
+        "rank": 54,
+        "task_id": "581",
+        "entry_point": "surface_Area",
+        "prompt_sha256": "ec4193e39308cf536afc3a1115b64bf4121601fb01c03e32260839757fcb108b",
+        "public_tests_sha256": "7493bdb64c5c5b4a655bf66f958755fb7bb84ba4244106ece3a86299ea433f86",
+        "additional_tests_sha256": "8f77595c61254b658add28b8184f93650e75a32f7be067855e8cc097f2bae973"
+      },
+      {
+        "rank": 55,
+        "task_id": "798",
+        "entry_point": "_sum",
+        "prompt_sha256": "6715cc2f7c862270d12fe5923ed7cd63dc1635007b75c05924b03b2c967afa05",
+        "public_tests_sha256": "f21209a146ab2ff75e2e1af394ca35422cd5466810fb2e2ec83b845a1acb7dee",
+        "additional_tests_sha256": "94d288e64161d246f3e2379b204a872b019df292902bb731675e6d719f1d1062"
+      },
+      {
+        "rank": 56,
+        "task_id": "592",
+        "entry_point": "sum_Of_product",
+        "prompt_sha256": "20857d6993373cbc18854ca84bbe76de400d66c81edc4a087236df7be9ffa294",
+        "public_tests_sha256": "0fb9db054171bf1986e3b13d42662bffa227963042d815664d39c937cf4e5b8a",
+        "additional_tests_sha256": "d4db45d242d2f76d95699e2be66db1f2b5065b2bfb5ca401970822c503a1ed03"
+      },
+      {
+        "rank": 57,
+        "task_id": "171",
+        "entry_point": "perimeter_pentagon",
+        "prompt_sha256": "952565ffd60fde52980b6c414430d7ea9944fa660fb46fb12ec320f1717bfb9c",
+        "public_tests_sha256": "2e3037ce0a84f3c4f083e3606bff267e91d1162343044c175d372a377a16b4da",
+        "additional_tests_sha256": "d12b7ac35a5387c102bc4051a0dec1b77bd1c0c89bdcff0c67f0485acba3da56"
+      },
+      {
+        "rank": 58,
+        "task_id": "808",
+        "entry_point": "check_K",
+        "prompt_sha256": "e29ed444dabd0154e1b5f98686c4ded1df556fe0b0a887b97db8ce1bea0e53c4",
+        "public_tests_sha256": "eec7f6dd49ec9d11999dff84c1a2dbc8446099271d73be9162cadb367a48d75e",
+        "additional_tests_sha256": "58641b28580316ac92fd6385ac68fcfc2836128a4aff531130dd3d193d9988c2"
+      },
+      {
+        "rank": 59,
+        "task_id": "113",
+        "entry_point": "check_integer",
+        "prompt_sha256": "e8c25336eb0acfce07d21bf7358f54232f81251f864e329814c8f8f9ba89b44a",
+        "public_tests_sha256": "03fc92367b6bc2144cabd4e28027e0dd43b16c20e2ced3e2a0022a9d617d00b7",
+        "additional_tests_sha256": "ff51c23ecd217a95617e101126772c3edadad0d229a9760964d5c4abf91a6575"
+      },
+      {
+        "rank": 60,
+        "task_id": "9",
+        "entry_point": "find_Rotations",
+        "prompt_sha256": "165c1c2682f9477591ea357ec52f8fe91c3c5e05ac35f261a381fa5a2ab7cdce",
+        "public_tests_sha256": "338c52e7aeea7e4115bd68ed6799d4f4e84ae80d21e5b8b58e0dfaf945eaea8a",
+        "additional_tests_sha256": "9ff5732a1452e1bf80f7f7c40a631f22c3a77d299a8c86b4a82d8a79c58b8cd8"
+      },
+      {
+        "rank": 61,
+        "task_id": "612",
+        "entry_point": "merge",
+        "prompt_sha256": "0ebddd508152d6141da01162faf628820d1841e5c0ad3e6f742cac4438291c69",
+        "public_tests_sha256": "9b97737f02a0ea276e6d090106fc0c786de0a0253ef473684a54fa3246b210d0",
+        "additional_tests_sha256": "4ef2603867024877e35ed9386db489c23606697c2d918506fa9d07adb6d69f75"
+      },
+      {
+        "rank": 62,
+        "task_id": "739",
+        "entry_point": "find_Index",
+        "prompt_sha256": "d75ac9a87d6b149622796b56f58dbf2372881e4b68e4b62af4baf439eaec638a",
+        "public_tests_sha256": "bb2844652a47ab47a7f5eacca1cffec41eb99c83910070eb11f1312b88902457",
+        "additional_tests_sha256": "e12ed8e0bb1e6de0cb8b115054c4aba7ef708d20814bc891ff1d711a8c7e5f06"
+      },
+      {
+        "rank": 63,
+        "task_id": "70",
+        "entry_point": "get_equal",
+        "prompt_sha256": "5f7bb4a3661329a4ef2f68098665c77afbfb6461b852e5fc8abcaf3ce093c683",
+        "public_tests_sha256": "801a6d63dbc5d45381ae9a448d26024ba254d1bd84ae51a41bee47413fc6ffdb",
+        "additional_tests_sha256": "f8529d22b770aeec0a2e6984ec83a9ed99ed17e4eb3fa11b3fbc367563a678a7"
+      },
+      {
+        "rank": 64,
+        "task_id": "769",
+        "entry_point": "Diff",
+        "prompt_sha256": "5655fe19c585f99fcb2664d66bf2afd60dbc368f719e48c24c57a258b15c5d0d",
+        "public_tests_sha256": "e19a6bab00368edfdb18d9c368e217a4419f00e633a6f7a1266a9e19af60c95a",
+        "additional_tests_sha256": "3e12195b3ee180182571480909bad00ca3886eabdb78a84cd3da8932b9614a1c"
+      },
+      {
+        "rank": 65,
+        "task_id": "580",
+        "entry_point": "extract_even",
+        "prompt_sha256": "d7ff2793fd57796c1ace38de9de844c7600014686e245f6e955f1f6ea25fea9c",
+        "public_tests_sha256": "4e9fbe5e7640d6529792f8c95eff7bad643d9318fbcb2edb69a4dbb4b0843ac0",
+        "additional_tests_sha256": "ad4a8e439a4b71f955513d60b0a46f91b8a2a96e32ebaa5dee0ac2efecb9af6e"
+      },
+      {
+        "rank": 66,
+        "task_id": "310",
+        "entry_point": "string_to_tuple",
+        "prompt_sha256": "e1d3c9a205275ebfe44dc3c17aafd0eb84e55338b4e80c1b405495561a217136",
+        "public_tests_sha256": "c356b4f11d45ef061b83c1c613ae0367c2181719fd25229d13b37a972b95e6df",
+        "additional_tests_sha256": "949b91f5d340bcfca11227b66fc7d8cda85856593aeac304407dfb6c1c5bae82"
+      },
+      {
+        "rank": 67,
+        "task_id": "730",
+        "entry_point": "consecutive_duplicates",
+        "prompt_sha256": "d6822eda19e67590b5061961284b6450bf3c900896cf518c294d6f7d7a9854fb",
+        "public_tests_sha256": "66ed6e41c5c4ed187ed5741fbaf6f2d5cbb7063b995007073c520f5d1c5516de",
+        "additional_tests_sha256": "a76b77bc867c973891f39bd8297cc4b1238e12930ac4ccdc1f36591d9da3376f"
+      },
+      {
+        "rank": 68,
+        "task_id": "472",
+        "entry_point": "check_Consecutive",
+        "prompt_sha256": "6bffced588ecad63e0d7bd59e768e2702db06400ca619ab23eb3cffc30df9bf0",
+        "public_tests_sha256": "e42773104caa72be36ff85b13095209c9fc893d97606f304fba9722acfb7df38",
+        "additional_tests_sha256": "451816200debee3b56940497f8d3eec327a3084e254ec15a967bfbc7ab9fca19"
+      },
+      {
+        "rank": 69,
+        "task_id": "626",
+        "entry_point": "triangle_area",
+        "prompt_sha256": "b620399dbcd3058276e46321c69d6d562919dd1ab6af8826c9273d8c6ee8e2b1",
+        "public_tests_sha256": "968831df54323713d5066e3ac281a1e215a2b32ae43ab0ba25a853c973e2d7f8",
+        "additional_tests_sha256": "d2fb45939d887a07a718d1a15d1fc0f162105cfec1c5d1520dc1db5895c8a67a"
+      },
+      {
+        "rank": 70,
+        "task_id": "630",
+        "entry_point": "get_coordinates",
+        "prompt_sha256": "a792803c35893f9113ab135c10e020330c7a504af53e65e33c5b39591c287c96",
+        "public_tests_sha256": "8b0247792f4cab0c600c951247c37938524c151f8f8b78a9481b98b8626eaf2e",
+        "additional_tests_sha256": "f085c2e4a85a73f589aaba1d8ff35487f3d975d96b159dacae4517ccb47c8f29"
+      },
+      {
+        "rank": 71,
+        "task_id": "285",
+        "entry_point": "text_match_two_three",
+        "prompt_sha256": "2da834057c58f2364f8997110ae2b6e3aca9a92edc562a84062536d6fba71cdf",
+        "public_tests_sha256": "e70898fd0f7df24684a7f1243d49f03a51ec43d618bc6a0b3bc7ba8f70aef511",
+        "additional_tests_sha256": "b3732617b4ed053cbd3bfa0d99338c1864598eedfba80af90cae4f7f3ca2dd23"
+      }
+    ]
+  }
+}

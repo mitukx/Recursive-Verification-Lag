@@ -1,0 +1,17 @@
+task_id,representation,sources,zero_distance_pairs,contradictory_pairs,worst_collision_residual_gap,minimum_lipschitz_constant
+bucket,public,15,91,0,0.0,0.4482758620689655
+bucket,all,15,0,0,0.0,0.1086789788261592
+digits,public,13,39,2,0.03448275862068964,inf
+digits,all,13,1,0,0.0,0.2758475676823605
+divisor_code,public,16,42,24,0.3103448275862069,inf
+divisor_code,all,16,0,0,0.0,15.889655172413793
+fold,public,12,31,15,0.7586206896551724,inf
+fold,all,12,1,1,0.7586206896551724,inf
+nearest,public,15,46,32,0.4482758620689655,inf
+nearest,all,15,1,0,0.0,97.10344827586206
+round4,public,16,23,15,0.4827586206896552,inf
+round4,all,16,0,0,0.0,42.372413793103455
+saturating_square,public,15,46,0,0.0,0.3793103448275862
+saturating_square,all,15,4,0,0.0,0.16963216073586768
+signed_remainder,public,16,37,32,0.41379310344827586,inf
+signed_remainder,all,16,1,0,0.0,317.7931034482759

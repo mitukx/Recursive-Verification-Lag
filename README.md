@@ -4,11 +4,20 @@
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.
 
+**Evidence checkpoint (2026-09-23):** The first isolated, scored
+pretrained-code-model MBPP+ pilot has a largely **negative** timing result:
+early versus uniform verification differs by just one baseline failure among
+480 matched settings, and safe projection never activates. See the
+[scored pilot](notes/progress/33_mbppplus_first_scored_pilot.md) and the
+[claim/decision record](docs/oral_research_decision.md) before extrapolating
+from the controlled phase diagrams below. Eight benchmark tasks and a frozen
+candidate bank cannot establish learned self-improvement or an Oral result.
+
 The central question is:
 
 > How much genuinely fresh trusted verification is needed to sustain recursive policy improvement when the policy adaptively optimizes an imperfect verifier?
 
-The current answer is more nuanced than “verify every round.” The evidence in this repository supports the view that fresh verification is needed when optimization creates **statistically new or poorly covered policy comparisons faster than the verifier can generalize or refresh**.
+The working hypothesis is more nuanced than “verify every round”: fresh verification is needed when optimization creates **statistically new or poorly covered policy comparisons faster than the verifier can generalize or refresh**. The scored standard-program pilot has not confirmed a general failure boundary.
 
 ## Main findings
 
@@ -183,3 +192,8 @@ and exploratory held-group analysis. This is a finite-bank selection experiment;
 it does not update the code LM weights. See [the runbook](docs/pretrained_pilot_runbook.md),
 [conditional observable bounds](docs/observable_refresh_frontier.md), and
 [the progress report](notes/progress/23_pretrained_pilot.md) for evidence and limits.
+
+
+The prospective two-bank transfer study preserves both the favorable 32-draw result
+and a reversed six-source safety comparison. All 512 transfer candidates are
+imperfect. See [transfer evidence and limitations](notes/progress/26_prospective_transfer.md).

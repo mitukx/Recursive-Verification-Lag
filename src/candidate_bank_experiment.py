@@ -126,7 +126,7 @@ def movement(p,q,X,score):
             'proxy_margin':float((q-p)@score),'total_variation':float(abs(q-p).sum()/2)}
 
 
-def run(df,cfg,*,return_trace=False):
+def run(df,cfg,*,return_trace=False, audit_schedule=None, exact_audit_events=None, audit_sampler=None):
     """Refit from accumulated paid audits; no outcome reads in refresh decisions.
 
     Equal *maximum* label budget, actual paid draws and distinct labels reported.
@@ -140,6 +140,18 @@ def run(df,cfg,*,return_trace=False):
         raise ValueError('invalid nonpositive experiment parameter')
     if cfg.representation not in ('public','all'): raise ValueError('unknown representation')
     if cfg.best_of_n<1 or cfg.threshold<0: raise ValueError('invalid N/threshold')
+    if audit_schedule is not None:
+        audit_schedule=tuple(audit_schedule)
+        if (cfg.controller!='fixed' or not audit_schedule or audit_schedule[0]!=1
+            or tuple(sorted(set(audit_schedule)))!=audit_schedule
+            or any(int(t)!=t or not 1<=t<=cfg.rounds for t in audit_schedule)):
+            raise ValueError('invalid explicit audit schedule')
+    if exact_audit_events is not None:
+        if (int(exact_audit_events)!=exact_audit_events or not 1<=exact_audit_events<=cfg.rounds
+            or cfg.total_audit_budget!=exact_audit_events*cfg.audit_per_refresh
+            or (audit_schedule is not None and len(audit_schedule)!=exact_audit_events)
+            or (cfg.controller=='fixed' and audit_schedule is None)):
+            raise ValueError('invalid exact-cost audit design')
     df=df.reset_index(drop=True)
     cols=sorted(c for c in df if c.startswith('f::') and (cfg.representation=='all' or c=='f::public_score'))
     if not cols: raise ValueError('no verifier features')
@@ -153,15 +165,21 @@ def run(df,cfg,*,return_trace=False):
         nonlocal theta,anchor,age,refreshes
         n=min(cfg.audit_per_refresh,cfg.total_audit_budget-len(audit))
         if n<=0: return False
-        idx=rng.choice(len(df),size=n,replace=True,p=p)
+        idx=(rng.choice(len(df),size=n,replace=True,p=p) if audit_sampler is None
+             else np.asarray(audit_sampler(p.copy(),n,tuple(audit)),dtype=int))
+        if len(idx)!=n or np.any(idx<0) or np.any(idx>=len(df)):
+            raise ValueError('invalid audit sampler output')
         audit.extend(idx.tolist())
         theta=fit_verifier(X[audit],y[audit],cfg.ridge)
         anchor=p.copy(); age=0; refreshes+=1
         return True
     for t in range(cfg.rounds):
         refreshed=False; reason='none'; trigger=False
-        if theta is None or (cfg.controller=='fixed' and age>=cfg.refresh_interval):
-            refreshed=refit(); reason='initial' if t==0 else 'cadence'
+        forced=(exact_audit_events is not None and cfg.controller!='fixed'
+                and exact_audit_events-refreshes>=cfg.rounds-t)
+        scheduled=(t+1 in audit_schedule) if audit_schedule is not None else (cfg.controller=='fixed' and age>=cfg.refresh_interval)
+        if theta is None or scheduled or forced:
+            refreshed=refit(); reason='initial' if t==0 else ('deadline' if forced else 'cadence')
         score=(X@theta)*cfg.score_scale
         proposed=propose(df,p,score,cfg)
         pre=movement(anchor,proposed,X,score)
@@ -200,6 +218,8 @@ def run(df,cfg,*,return_trace=False):
              **cfg.__dict__}
         history.append(row)
         if return_trace: traces.append({'policy':p.copy(),'audit_indices':tuple(audit)})
+    if exact_audit_events is not None and len(audit)!=cfg.total_audit_budget:
+        raise AssertionError('exact audit cost not attained')
     out=pd.DataFrame(history)
     return (out,traces) if return_trace else out
 
@@ -214,3 +234,4 @@ def main():
     print(out.tail().to_string(index=False))
 
 if __name__=='__main__': main()
+

@@ -1,0 +1,60 @@
+name: score-pinned-mbppplus-pilot
+
+on:
+  push:
+    branches: [research/rvl-transfer-v1]
+    paths:
+      - '.github/workflows/score-mbppplus-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: score-pinned-mbppplus-pilot
+  cancel-in-progress: false
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      HF_HUB_DISABLE_XET: '1'
+      HF_HUB_DOWNLOAD_TIMEOUT: '90'
+      HF_HUB_ETAG_TIMEOUT: '30'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dataset and analysis dependencies, without model weights
+        run: pip install -r requirements.txt pyarrow==21.0.0 'huggingface-hub>=0.26,<1'
+      - name: Check the scoring contract before executing candidates
+        run: python -m unittest tests.test_mbppplus_scoring_contract -v
+      - name: Build isolated Python runtime and record immutable image ID
+        run: |
+          docker build --platform linux/amd64 -f docker/Dockerfile.mbppplus -t rvl-mbppplus:pilot .
+          docker image inspect --format '{{.Id}}' rvl-mbppplus:pilot > mbppplus-image-id.txt
+      - name: Verify all eight references, then score frozen candidate bank
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m src.score_mbppplus_docker \
+            data/mbppplus_qwen15b_pilot_v1.jsonl \
+            --image "$(cat mbppplus-image-id.txt)" \
+            --platform linux/amd64 \
+            --output data/mbppplus_qwen15b_pilot_v1_scored.jsonl \
+            2>&1 | tee mbppplus-scoring.log
+      - name: Preserve scores, manifest, image and failure logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mbppplus-pinned-score-${{ github.run_id }}
+          path: |
+            mbppplus-image-id.txt
+            mbppplus-scoring.log
+            data/mbppplus_qwen15b_pilot_v1_scored.jsonl
+            data/mbppplus_qwen15b_pilot_v1_scored.score_manifest.json
+            data/mbppplus_qwen15b_pilot_v1_scored.jsonl.incomplete
+          if-no-files-found: warn
+          retention-days: 90

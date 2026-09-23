@@ -1,0 +1,38 @@
+name: freeze-mbppplus-disjoint-tasks
+
+on:
+  push:
+    branches: [research/rvl-transfer-v1]
+    paths:
+      - '.github/workflows/freeze-mbppplus-task-split.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HF_HUB_DISABLE_XET: '1'
+      HF_HUB_DOWNLOAD_TIMEOUT: '90'
+      HF_HUB_ETAG_TIMEOUT: '30'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned dataset reader only
+        run: pip install pyarrow==21.0.0 'huggingface-hub>=0.26,<1'
+      - name: Validate disjoint task selection
+        run: python -m unittest tests.test_mbppplus_frozen_selection -v
+      - name: Freeze task IDs from pinned parquet without running candidates
+        run: python -m src.freeze_mbppplus_task_split --output configs/mbppplus_task_split_v2.json
+      - name: Preserve task ID manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: mbppplus-disjoint-task-split-${{ github.run_id }}
+          path: configs/mbppplus_task_split_v2.json
+          if-no-files-found: error
+          retention-days: 90
