@@ -38,11 +38,13 @@ EvalPlus `test` is evaluation-only reward. These tests are *publicly released*,
 so ``hidden'' means withheld from the optimization loop, not secret from model
 pretraining. Program code must be run only in a pinned, disposable container
 with no network, no host mounts, no privileges and strict resource limits. This
-executor has neither an operable Docker daemon nor user namespaces (bubblewrap
-fails with EPERM). Therefore no trusted labels or recursive-loop outcomes are
-claimed from an unscored bank. A separate Mac M1 Pro/32GB runner can use Docker
-Desktop to perform the next gate, after the evaluator is independently tested
-on official reference solutions and adversarial completions.
+scratch executor has neither an operable Docker daemon nor user namespaces
+(bubblewrap fails with EPERM). On 2026-09-23, a GitHub hosted Linux runner
+instead passed all eight reference solutions and scored the 64 candidates
+using the disposable Docker path below. The scored bank, artifact provenance,
+negative recursive-loop results and limitations are documented in
+`notes/progress/33_mbppplus_first_scored_pilot.md`. An M1 Pro/32GB machine
+with Docker Desktop can independently reproduce the gate as follows.
 
 The repository includes `docker/Dockerfile.mbppplus` (Python and NumPy) and
 `src.score_mbppplus_docker`. On an Apple Silicon Docker Desktop machine,
@@ -66,8 +68,8 @@ fractional cheap score; the additional released EvalPlus test program gives a
 binary trusted score. Container failures/timeouts count as zero and remain in
 the bank. The image ID, source hashes and timeouts are recorded. Test code
 provenance remains pinned to the downloaded official parquet SHA256; it is
-never treated as secret. This execution path has **not** been run or certified
-on this executor because Docker is unavailable.
+never treated as secret. The `linux/amd64` path was run on a GitHub hosted
+runner; this scratch executor still has no Docker access.
 
 ## Decision after generation
 
