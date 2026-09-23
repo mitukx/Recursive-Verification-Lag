@@ -32,6 +32,13 @@ mathematics conditional on its assumptions, while the experiment is subject
 to numerical precision. Projected policies can still lose reward relative to
 the **previous** accepted policy.
 
+At the final round, v1 mean mass on audited source classes is .485 under
+abstention versus .670 under projection (initial mass on the eventually
+audited classes .341); the analogous v2 values are .404 versus .500 (initial
+.321). Mean effective source supports \(1/\sum_g p_g^2\) fall from 10.46 to
+5.20 (v1) and 12.67 to 8.27 (v2). Thus some of the finite-bank gain comes
+with concentration on paid source identities, a serious transfer limitation.
+
 ## Interpretation, falsifiability and decision
 
 The interpolation obstruction was largely **directional** on these suites:
