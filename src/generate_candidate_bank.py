@@ -17,7 +17,7 @@ def main():
     p.add_argument('--revision', required=True, help='Immutable 40-character HF commit')
     p.add_argument('--samples', type=int, default=32)
     p.add_argument('--task-limit', type=int, default=12)
-    p.add_argument('--task-suite', choices=['development','transfer_v1'], default='development')
+    p.add_argument('--task-suite', choices=['development','transfer_v1','transfer_v2'], default='development')
     p.add_argument('--seed', type=int, default=20260922)
     p.add_argument('--temperature', type=float, default=0.8)
     p.add_argument('--top-p', type=float, default=0.95)
@@ -29,6 +29,8 @@ def main():
     a = p.parse_args()
     if a.task_suite=='transfer_v1':
         from src.transfer_code_tasks import tasks as selected_tasks
+    elif a.task_suite=='transfer_v2':
+        from src.transfer_code_tasks_v2 import tasks as selected_tasks
     else:
         selected_tasks=tasks
     suite=selected_tasks()
@@ -50,7 +52,7 @@ def main():
         'base_measure':'uniform_over_sample_occurrences; duplicates retained',
         'trusted_target':'uniform hidden domain, disjoint from public suite',
         'tasks':[t.__dict__ for t in suite[:a.task_limit]],
-        'selected_task_source_sha256':hashlib.sha256(Path(__file__).with_name('transfer_code_tasks.py' if a.task_suite=='transfer_v1' else 'finite_code_tasks.py').read_bytes()).hexdigest(),
+        'selected_task_source_sha256':hashlib.sha256(Path(__file__).with_name({'transfer_v1':'transfer_code_tasks.py','transfer_v2':'transfer_code_tasks_v2.py'}.get(a.task_suite,'finite_code_tasks.py')).read_bytes()).hexdigest(),
         'versions':{k:importlib.metadata.version(k) for k in ['torch','transformers','numpy']},
         'python':platform.python_version(),
         'started_utc':datetime.now(timezone.utc).isoformat(),
