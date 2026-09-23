@@ -1,7 +1,7 @@
 """Fail-closed MBPP+ scoring in disposable pinned Docker containers.
 
-Requires an explicit immutable image reference (name@sha256:digest) with
-Python and NumPy. No generated Python is executed by this host-side module.
+Requires an immutable local image ID (sha256:digest) or pinned registry image
+(name@sha256:digest) with Python and NumPy. No generated Python is executed here.
 """
 import argparse
 import ast
@@ -30,10 +30,13 @@ def syntax_valid(source):
     return True
 
 
-def docker_command(image,name,worker):
-    if not re.fullmatch(r'[a-zA-Z0-9./:_-]+@sha256:[a-f0-9]{64}',image):
-        raise ValueError('Docker image must be pinned by manifest SHA256 digest')
+def docker_command(image,name,worker,platform='linux/arm64'):
+    if not (re.fullmatch(r'sha256:[a-f0-9]{64}',image) or
+            re.fullmatch(r'[a-zA-Z0-9./:_-]+@sha256:[a-f0-9]{64}',image)):
+        raise ValueError('Docker image must be pinned by SHA256 ID or manifest digest')
+    if platform not in ('linux/arm64','linux/amd64'):raise ValueError('unsupported platform')
     return ['docker','run','--rm','--interactive','--name',name,
+        '--platform',platform,
         '--network','none','--read-only','--tmpfs','/tmp:rw,nosuid,nodev,size=16m',
         '--user','65534:65534','--pids-limit','32','--memory','512m','--cpus','1',
         '--cap-drop','ALL','--security-opt','no-new-privileges',
@@ -78,7 +81,8 @@ def run_capped(command,payload,container_name,timeout=20):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('bank',type=Path)
-    p.add_argument('--image',required=True,help='immutable name@sha256:<64 hex>')
+    p.add_argument('--image',required=True,help='immutable sha256:<64 hex> image ID or name@sha256:<64 hex>')
+    p.add_argument('--platform',choices=['linux/arm64','linux/amd64'],default='linux/arm64')
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--timeout',type=float,default=20.)
     a=p.parse_args()
@@ -96,7 +100,7 @@ def main():
     # The reference is never placed in generation prompts or in the optimizer.
     for tid,(_,task) in tasks.items():
         name='rvl_ref_'+uuid.uuid4().hex
-        cmd=docker_command(a.image,name,worker)
+        cmd=docker_command(a.image,name,worker,a.platform)
         result=run_capped(cmd,{'source':task['code'],'public_tests':task['test_list'],
             'plus_test':task['test']},name,a.timeout)
         if result.get('public_passes')!=[1]*len(task['test_list']) or result.get('trusted_pass')!=1:
@@ -109,7 +113,7 @@ def main():
             tid=record['task_id'];_,task=tasks[tid]
             source=sanitize(record['source'])
             name='rvl_candidate_'+uuid.uuid4().hex
-            command=docker_command(a.image,name,worker)
+            command=docker_command(a.image,name,worker,a.platform)
             try:
                 result=run_capped(command,{'source':source,'public_tests':task['test_list'],
                     'plus_test':task['test']},name,a.timeout)
@@ -130,7 +134,8 @@ def main():
     a.output.with_suffix('.score_manifest.json').write_text(json.dumps({
         'input_bank_sha256':manifest['bank_sha256'],
         'scored_bank_sha256':hashlib.sha256(a.output.read_bytes()).hexdigest(),
-        'docker_image_digest':a.image,'per_candidate_wall_seconds':a.timeout,
+        'docker_image_digest':a.image,'docker_platform':a.platform,
+        'per_candidate_wall_seconds':a.timeout,
         'reference_validation':'all 8 references passed original assertions and released plus tests',
         'scoring_worker_sha256':hashlib.sha256(worker.encode()).hexdigest(),
         'scorer_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()},indent=2)+'\n')
