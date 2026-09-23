@@ -44,6 +44,28 @@ claimed from an unscored bank. A separate Mac M1 Pro/32GB runner can use Docker
 Desktop to perform the next gate, after the evaluator is independently tested
 on official reference solutions and adversarial completions.
 
+The repository includes `docker/Dockerfile.mbppplus` (Python and NumPy) and
+`src.score_mbppplus_docker`. On an Apple Silicon Docker Desktop machine,
+build a local arm64 image and obtain its immutable local ID:
+
+```sh
+docker build --platform linux/arm64 -f docker/Dockerfile.mbppplus -t rvl-mbppplus:pilot .
+docker image inspect --format '{{.Id}}' rvl-mbppplus:pilot
+```
+
+Pass that exact `sha256:...` ID to `--image`, alongside the frozen unscored
+bank. The scorer first tests all eight official reference implementations in
+fresh containers. If any reference fails, it aborts before assigning model
+scores. It then launches a fresh container per generated candidate with no
+network or host mounts, read-only root, unprivileged UID, limited processes,
+CPU, memory, output, and wall time. The original public assertions yield a
+fractional cheap score; the additional released EvalPlus test program gives a
+binary trusted score. Container failures/timeouts count as zero and remain in
+the bank. The image ID, source hashes and timeouts are recorded. Test code
+provenance remains pinned to the downloaded official parquet SHA256; it is
+never treated as secret. This execution path has **not** been run or certified
+on this executor because Docker is unavailable.
+
 ## Decision after generation
 
 If outputs include plausible callable programs, implement and validate the
