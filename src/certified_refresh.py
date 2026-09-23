@@ -22,9 +22,6 @@ def certified_run(df,sources,cfg,*,budget=6,initial_audits=2):
     df=df.reset_index(drop=True);sources=np.asarray(sources)
     if len(sources)!=len(df):raise ValueError('misaligned source identities')
     y=df.trusted_score.to_numpy(float)
-    for key in np.unique(sources):
-        if np.ptp(y[sources==key])>1e-12:
-            raise ValueError('same source has different trusted rewards')
     names=sorted(c for c in df if c.startswith('f::') and (cfg.representation=='all' or c=='f::public_score'))
     X=np.column_stack([np.ones(len(df)),df[names].to_numpy(float)])
     p=task_policy(df,df.base_logprob.to_numpy(float));initial=p.copy()
@@ -71,6 +68,12 @@ def evaluate(bank_path,output):
     bank=load_jsonl(bank_path);all_rows=[]
     for task,df in bank.groupby('task_id',sort=True):
         ids=[sources[c] for c in df.candidate_id]
+        # Dataset integrity is checked offline, before entering the controller.
+        # This is not an observable decision feature or a free audit label.
+        true_y=df.trusted_score.to_numpy(float);id_array=np.asarray(ids)
+        for key in np.unique(id_array):
+            if np.ptp(true_y[id_array==key])>1e-12:
+                raise ValueError('same source has inconsistent trusted scores')
         for optimizer,strength in [('soft',1.),('bon',4.)]:
             for representation in ['public','all']:
                 for seed in range(5):
