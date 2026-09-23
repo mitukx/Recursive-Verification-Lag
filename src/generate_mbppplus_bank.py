@@ -74,8 +74,9 @@ def validate_frozen_split(tasks,frozen,split,*,offset,count,seed,samples,max_new
             settings['temperature']!=.8 or settings['top_p']!=.95):
         raise ValueError('generation settings differ from pre-outcome lock')
     if len(tasks)!=len(locked):raise ValueError('task count differs from frozen split')
-    for (task_id,entry,row),expected in zip(tasks,locked):
-        if (str(task_id)!=expected['task_id'] or entry!=expected['entry_point'] or
+    for j,((task_id,entry,row),expected) in enumerate(zip(tasks,locked)):
+        if (expected['rank']!=offset+j or str(task_id)!=expected['task_id'] or
+                entry!=expected['entry_point'] or
                 hashlib.sha256(row['prompt'].encode()).hexdigest()!=expected['prompt_sha256'] or
                 hashlib.sha256(json.dumps(row['test_list']).encode()).hexdigest()!=expected['public_tests_sha256'] or
                 hashlib.sha256(row['test'].encode()).hexdigest()!=expected['additional_tests_sha256']):
