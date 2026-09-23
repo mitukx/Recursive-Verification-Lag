@@ -1,0 +1,9 @@
+task_id,candidates,distinct_sources,distinct_sanitized,syntax_valid,has_entry_function,hit_token_cap,fenced
+279,8,8,8,6,6,0,8
+4,8,8,8,7,7,0,8
+451,8,6,6,8,8,0,8
+573,8,8,8,8,8,0,8
+606,8,7,7,7,7,0,7
+733,8,8,8,6,6,1,8
+754,8,6,6,7,7,1,8
+787,8,8,8,6,6,0,8
