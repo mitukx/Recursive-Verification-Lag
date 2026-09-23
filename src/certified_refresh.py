@@ -13,11 +13,12 @@ import numpy as np
 import pandas as pd
 from src.candidate_bank_experiment import (load_jsonl,task_policy,fit_verifier,propose,Config)
 from src.identified_gain import identified_gain,maximal_certified_mix,lower_bound_right_slope
+from src.robust_policy_projection import closest_certified_policy
 from src.source_audit import SourceAudit
 
 
 def certified_run(df,sources,cfg,*,budget=6,initial_audits=2,fallback='abstain'):
-    if fallback not in ('abstain','interpolate'):raise ValueError('unknown fallback')
+    if fallback not in ('abstain','interpolate','project'):raise ValueError('unknown fallback')
     if not 1<=initial_audits<=budget<=len(set(sources)):
         raise ValueError('invalid distinct source budget')
     df=df.reset_index(drop=True);sources=np.asarray(sources)
@@ -33,6 +34,7 @@ def certified_run(df,sources,cfg,*,budget=6,initial_audits=2,fallback='abstain')
     for t in range(cfg.rounds):
         new_this_round=initial_audits if t==0 else 0
         mixture_fraction=0.
+        projection_distance=None
         rejected_slope=None
         while True:
             theta=fit_verifier(X[acquired],y[acquired],cfg.ridge)
@@ -49,6 +51,11 @@ def certified_run(df,sources,cfg,*,budget=6,initial_audits=2,fallback='abstain')
                         p,candidate,initial,sources,revealed)
                     accepted=mixture_fraction>1e-9
                     if accepted:p=mixed
+                elif fallback=='project':
+                    projected,projection_distance=closest_certified_policy(
+                        candidate,initial,sources,revealed)
+                    accepted=bool(np.abs(projected-p).sum()>1e-9)
+                    if accepted:p=projected
                 else:accepted=False
                 break
             # Audit the unaudited source with largest possible contribution to
@@ -65,6 +72,7 @@ def certified_run(df,sources,cfg,*,budget=6,initial_audits=2,fallback='abstain')
             raise AssertionError('safety certificate violated')
         records.append({'round':t+1,'accepted':int(accepted),
             'mixture_fraction':mixture_fraction,'fallback':fallback,
+            'projection_distance':projection_distance,
             'new_source_labels':new_this_round,'paid_source_labels':len(acquired),
             'candidate_lower':lo,'candidate_upper':hi,
             'rejected_right_slope':rejected_slope,
@@ -115,8 +123,8 @@ def evaluate(bank_path,output,fallback='abstain'):
 def main():
     p=argparse.ArgumentParser();p.add_argument('bank',type=Path)
     p.add_argument('--output',type=Path,required=True)
-    p.add_argument('--fallback',choices=['abstain','interpolate'],default='abstain')
-    a=p.parse_args();evaluate(a.bank,a.output,a.fallback)
+    p.add_argument('--fallback',choices=['abstain','interpolate','project'],default='abstain')
+    a=p.parse_args();evaluate(a.bank,a.output,fallback=a.fallback)
 
 
 if __name__=='__main__':main()
