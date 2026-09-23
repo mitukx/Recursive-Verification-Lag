@@ -57,3 +57,20 @@ be narrowed with a justified coupled feasible set; arbitrary per-class
 intervals deliberately avoid such assumptions. The experiment below checks
 how often this robust certificate is informative. It cannot turn the algebra
 into a statistical warning guarantee.
+
+**Corollary (safety of an abstaining controller).** Start at \(p_0\). At
+each step, compute a candidate from any adaptive verifier, use only paid labels
+to form \(L_A(p,p_0)\), and accept only if the lower bound is nonnegative;
+otherwise acquire additional labels and recompute, or retain the previous
+accepted policy. By induction every accepted policy has reward at least that
+of \(p_0\) under every reward vector compatible with its transcript. The
+proof does not assume that the verifier is unbiased and applies to soft or
+Best-of-N proposals. It is a conditional finite-support safety statement, not
+a guarantee of improved capability: if all proposals are uncertifiable or
+harmful the controller can remain at \(p_0\) forever. The controller in
+`src/certified_refresh.py` implements this gate with a six-source budget and
+greedy \(|w_g|\) acquisition, without any claim that this acquisition rule is
+optimal. Further, an adversary can reveal an endpoint reward at each newly
+audited source that leaves the lower bound unchanged for a fixed proposal;
+there is no universal finite audit budget guaranteeing certification of an
+arbitrary proposal in the absence of reward structure.
