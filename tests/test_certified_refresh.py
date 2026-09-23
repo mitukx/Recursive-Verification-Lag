@@ -40,5 +40,16 @@ class CertifiedRefreshTest(unittest.TestCase):
             self.assertTrue((h.gain_evaluation_only>=-1e-9).all())
             self.assertTrue(h.mixture_fraction.between(0,1).all())
 
+    def test_projection_is_paid_label_safe_and_can_escape_fixed_direction(self):
+        df=pd.DataFrame({'task_id':['t']*3,'candidate_id':['0','1','2'],
+            'base_logprob':[0.]*3,'trusted_score':[1.,0.,0.],
+            'f::public_score':[1.,1.,0.]})
+        h=certified_run(df,['a','b','c'],Config(eta=3.,rounds=4,seed=0),
+                        initial_audits=2,budget=2,fallback='project')
+        self.assertTrue((h.certified_lower>=-1e-9).all())
+        self.assertTrue((h.gain_evaluation_only>=-1e-9).all())
+        self.assertTrue((h.paid_source_labels==2).all())
+        self.assertTrue((h.fallback=='project').all())
+
 
 if __name__=='__main__':unittest.main()
