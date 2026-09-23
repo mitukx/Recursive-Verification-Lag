@@ -13,7 +13,8 @@ import selectors
 import subprocess
 import time
 import uuid
-from src.generate_mbppplus_bank import load_selected,FILE_SHA256,REVISION
+from src.generate_mbppplus_bank import (load_selected,validate_frozen_split,
+                                        FILE_SHA256,REVISION)
 
 MAX_OUTPUT=65536
 
@@ -28,6 +29,23 @@ def syntax_valid(source):
     try:ast.parse(source)
     except (SyntaxError,ValueError,RecursionError):return False
     return True
+
+
+def validate_bank_records(rows,manifest,tasks):
+    """Require exactly the frozen candidate occurrences and source hashes."""
+    samples=manifest['generation']['samples']
+    if len(rows)!=len(tasks)*samples or len({r['candidate_id'] for r in rows})!=len(rows):
+        raise ValueError('missing or duplicate candidate occurrences')
+    expected={task_id:entry for task_id,entry,_ in tasks}
+    if {r['task_id'] for r in rows}!=set(expected):
+        raise ValueError('candidate task IDs differ from frozen selection')
+    from collections import Counter
+    if any(n!=samples for n in Counter(r['task_id'] for r in rows).values()):
+        raise ValueError('incorrect number of samples per task')
+    for r in rows:
+        if (r['entry_point']!=expected[r['task_id']] or
+                hashlib.sha256(r['source'].encode()).hexdigest()!=r['source_sha256']):
+            raise ValueError('entry point or source SHA differs from frozen bank')
 
 
 def docker_command(image,name,worker,platform='linux/arm64'):
@@ -85,6 +103,8 @@ def main():
     p.add_argument('--platform',choices=['linux/arm64','linux/amd64'],default='linux/arm64')
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--timeout',type=float,default=20.)
+    p.add_argument('--frozen-split',type=Path)
+    p.add_argument('--split',choices=['development_unscored','heldout_unscored'])
     a=p.parse_args()
     if a.output.exists():p.error('refuse to overwrite scored bank')
     if a.timeout<=0:p.error('timeout must be positive')
@@ -94,8 +114,23 @@ def main():
         raise ValueError('incomplete bank or dataset mismatch')
     if hashlib.sha256(a.bank.read_bytes()).hexdigest()!=manifest['bank_sha256']:
         raise ValueError('candidate bank integrity mismatch')
-    tasks={tid:(entry,row) for tid,entry,row in load_selected()}
+    if bool(a.frozen_split)!=bool(a.split):p.error('--split and --frozen-split must be supplied together')
+    task_rows=load_selected(count=manifest.get('selection_count',8),
+                            offset=manifest.get('selection_offset',0))
+    if manifest.get('frozen_split'):
+        if a.split!=manifest['frozen_split'] or a.frozen_split is None:
+            raise ValueError('frozen split argument is required by candidate bank')
+        frozen_bytes=a.frozen_split.read_bytes()
+        if hashlib.sha256(frozen_bytes).hexdigest()!=manifest['frozen_split_sha256']:
+            raise ValueError('frozen task manifest hash mismatch')
+        validate_frozen_split(task_rows,json.loads(frozen_bytes),a.split,
+            offset=manifest['selection_offset'],count=manifest['selection_count'],
+            seed=manifest['generation']['seed'],samples=manifest['generation']['samples'],
+            max_new_tokens=manifest['generation']['max_new_tokens'])
+    elif a.split is not None:raise ValueError('frozen split supplied for legacy bank')
+    tasks={tid:(entry,row) for tid,entry,row in task_rows}
     rows=[json.loads(s) for s in a.bank.read_text().splitlines()]
+    validate_bank_records(rows,manifest,task_rows)
     # Reference programs must pass every test before a model score is emitted.
     # The reference is never placed in generation prompts or in the optimizer.
     for tid,(_,task) in tasks.items():
@@ -136,9 +171,10 @@ def main():
         'scored_bank_sha256':hashlib.sha256(a.output.read_bytes()).hexdigest(),
         'docker_image_digest':a.image,'docker_platform':a.platform,
         'per_candidate_wall_seconds':a.timeout,
-        'reference_validation':'all 8 references passed original assertions and released plus tests',
+        'reference_validation':f'all {len(tasks)} references passed original assertions and released plus tests',
         'scoring_worker_sha256':hashlib.sha256(worker.encode()).hexdigest(),
-        'scorer_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()},indent=2)+'\n')
+        'scorer_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        'frozen_split_sha256':manifest.get('frozen_split_sha256')},indent=2)+'\n')
 
 
 if __name__=='__main__':main()
