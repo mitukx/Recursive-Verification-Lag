@@ -23,14 +23,12 @@ MODEL_REVISION='2e1fd397ee46e1388853d2af2c993145b0f1098a'
 SALT='rvl-mbppplus-pilot-v1:'
 
 
-def load_selected():
-    import pyarrow.parquet as pq
-    from huggingface_hub import hf_hub_download
-    path=Path(hf_hub_download(DATASET,filename=FILE,repo_type='dataset',revision=REVISION))
-    if hashlib.sha256(path.read_bytes()).hexdigest()!=FILE_SHA256:
-        raise ValueError('pinned MBPP+ data file hash mismatch')
+def select_eligible_rows(rows,count=8,offset=0):
+    """Prompt-only deterministic task order; no candidate scores consulted."""
+    if not isinstance(count,int) or not isinstance(offset,int) or count<1 or offset<0:
+        raise ValueError('count must be positive and offset nonnegative integers')
     eligible=[]
-    for row in pq.read_table(path).to_pylist():
+    for row in rows:
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore',SyntaxWarning)
@@ -42,8 +40,20 @@ def load_selected():
         if len(entries)==1 and len(row['test_list'])>=3 and len(row['prompt'])<600:
             eligible.append((str(row['task_id']),entries[0],row))
     eligible.sort(key=lambda v:hashlib.sha256((SALT+v[0]).encode()).hexdigest())
-    if len(eligible)<8: raise ValueError('less than eight eligible tasks')
-    return eligible[:8]
+    if len({i for i,_,_ in eligible})!=len(eligible):
+        raise ValueError('eligible task identifiers must be unique')
+    if len(eligible)<offset+count:
+        raise ValueError('insufficient eligible tasks for frozen offset/count')
+    return eligible[offset:offset+count]
+
+
+def load_selected(count=8,offset=0):
+    import pyarrow.parquet as pq
+    from huggingface_hub import hf_hub_download
+    path=Path(hf_hub_download(DATASET,filename=FILE,repo_type='dataset',revision=REVISION))
+    if hashlib.sha256(path.read_bytes()).hexdigest()!=FILE_SHA256:
+        raise ValueError('pinned MBPP+ data file hash mismatch')
+    return select_eligible_rows(pq.read_table(path).to_pylist(),count,offset)
 
 
 def main():
@@ -54,12 +64,14 @@ def main():
     p.add_argument('--max-new-tokens',type=int,default=256)
     p.add_argument('--batch-size',type=int,default=4)
     p.add_argument('--threads',type=int,default=4)
+    p.add_argument('--task-offset',type=int,default=0)
+    p.add_argument('--task-count',type=int,default=8)
     p.add_argument('--device',choices=['cpu','mps','cuda'],default='cpu')
     a=p.parse_args()
     if a.output.exists() or a.output.with_suffix('.manifest.json').exists():
         p.error('refuse to overwrite a frozen bank or manifest')
     if min(a.samples,a.max_new_tokens,a.batch_size,a.threads)<1:p.error('invalid settings')
-    tasks=load_selected()
+    tasks=load_selected(count=a.task_count,offset=a.task_offset)
     import torch
     from transformers import AutoModelForCausalLM,AutoTokenizer,set_seed
     torch.set_num_threads(a.threads);set_seed(a.seed)
@@ -76,7 +88,10 @@ def main():
         'evidence':'real_pretrained_lm_generating_standard_MBPPplus_programs; no trusted execution yet',
         'dataset':DATASET,'dataset_revision':REVISION,'dataset_file':FILE,
         'dataset_file_sha256':FILE_SHA256,'selection_salt':SALT,
-        'selection_rule':'first 8 SHA256(salt+task_id) among unique reference defs used in >=3 public tests; prompt<600 chars',
+        'selection_rule':('first 8 SHA256(salt+task_id) among unique reference defs used in >=3 public tests; prompt<600 chars'
+                          if a.task_offset==0 and a.task_count==8 else
+                          f'hash ranks [{a.task_offset},{a.task_offset+a.task_count}) among eligible tasks; unique reference def, >=3 public tests, prompt<600 chars'),
+        'selection_offset':a.task_offset,'selection_count':a.task_count,
         'model':MODEL,'model_revision':MODEL_REVISION,
         'generation':{'seed':a.seed,'samples':a.samples,'max_new_tokens':a.max_new_tokens,
             'temperature':.8,'top_p':.95,'batch_size':a.batch_size,'threads':a.threads,'device':a.device},
