@@ -1,5 +1,6 @@
 import unittest
-from src.score_mbppplus_docker import docker_command,sanitize,syntax_valid
+from unittest import mock
+from src.score_mbppplus_docker import docker_command,sanitize,syntax_valid,run_capped
 
 
 class DockerScoringContractTest(unittest.TestCase):
@@ -21,6 +22,12 @@ class DockerScoringContractTest(unittest.TestCase):
         self.assertFalse(syntax_valid('def f(:'))
         self.assertEqual(sanitize('Explanation:\ndef f(x): return x'),
                          'Explanation:\ndef f(x): return x')
+
+    def test_absent_docker_fails_before_candidate_execution(self):
+        with mock.patch('src.score_mbppplus_docker.subprocess.Popen',
+                        side_effect=FileNotFoundError):
+            with self.assertRaisesRegex(RuntimeError,'Docker is unavailable'):
+                run_capped(['docker','run'],{'source':'def f(): pass'},'test')
 
 
 if __name__=='__main__':unittest.main()
