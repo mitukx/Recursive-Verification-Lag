@@ -94,6 +94,8 @@ and the existing pre-outcome task manifest. It uploads the unscored bank before
 scoring, then validates every reference and evaluates each program in its own
 restricted Docker container. It never generates or scores the heldout split.
 This is a pilot-informed development expansion, not confirmatory transfer.
+The execution environment pins the official CPU-only PyTorch 2.6.0 wheel
+before generation; all runtime versions are recorded in the generator manifest.
 
 The pipeline runs the original all-task 32-paid-draw arm and identical ordered
 six-source arm. A task with fewer than six distinct texts is reported as

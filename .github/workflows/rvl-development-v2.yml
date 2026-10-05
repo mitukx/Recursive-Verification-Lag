@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: rvl-development-v2
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   development:
@@ -28,7 +28,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install model, pinned dataset reader and analysis dependencies
-        run: pip install -r requirements-mbppplus.txt
+        run: |
+          pip install --no-cache-dir torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install --no-cache-dir -r requirements-mbppplus.txt
       - name: Verify source, split and scoring contracts
         run: python -m unittest discover -s tests -v
       - name: Generate the locked development split only, no execution
