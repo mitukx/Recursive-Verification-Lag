@@ -1,5 +1,12 @@
 # Recursive Verification Lag
 
+**Latest continuation:** [decision-cost audit and development experiment](docs/frontier_research_upgrade.md).
+An eight-task retrospective comparison finds no resolution or gain advantage
+of exact current-decision planning over simple impact-order audits, with
+limited savings from early abstention; a separate CPU
+workflow executes the prelocked 32-task development extension. See its actual
+Actions status before treating that extension as completed evidence.
+
 **When must verification catch up with a self-improving policy?**
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.

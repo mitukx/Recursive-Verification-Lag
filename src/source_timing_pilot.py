@@ -12,22 +12,32 @@ DESIGNS={'early':('fixed',.5,(1,2,3)), 'uniform':('fixed',.5,(1,5,9)),
          'geometry_10':('geometry',10.,None)}
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('bank',type=Path);ap.add_argument('--output',type=Path,required=True);a=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument('bank',type=Path);ap.add_argument('--output',type=Path,required=True)
+    ap.add_argument('--evidence-status',default='exploratory existing development bank; design fixed before this run after previous results')
+    a=ap.parse_args()
     a.output.mkdir(parents=True,exist_ok=False)
     raw=[json.loads(x) for x in a.bank.read_text().splitlines()];by_id={r['candidate_id']:r for r in raw}
     bank=load_jsonl(a.bank)
     manifest={'designs':DESIGNS,'acquisition':['stream','policy'],'events':3,'labels_per_event':2,
       'rounds':12,'seeds':list(range(5)),'policy_acquisition_exploration':.05,
       'bank_sha256':hashlib.sha256(a.bank.read_bytes()).hexdigest(),
-      'status':'exploratory existing development bank; design fixed before this run after previous results',
+      'status':a.evidence_status,
       'source_sha256':{p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in
         ['src/source_timing_pilot.py','src/source_audit.py','src/candidate_bank_experiment.py']}}
     (a.output/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
-    records=[]
+    records=[];source_eligibility=[]
     with (a.output/'runs.jsonl').open('w') as f:
         for task,df in bank.groupby('task_id',sort=True):
             sources=[by_id[c]['source_sha256'] for c in df.candidate_id]
-            assert len(set(sources))>=6
+            source_count=len(set(sources))
+            source_eligibility.append({'task_id':task,'unique_sources':source_count,
+                'source_timing_identified':int(source_count>=6)})
+            if source_count<6:
+                # Locked intervention requires exactly six distinct labels.
+                # Retain this task in the separate all-task paid-draw arm;
+                # never replace it or silently lower the source budget.
+                print('source timing unidentified:',task,'sources:',source_count,flush=True)
+                continue
             # Offline data-integrity check, never passed to the acquisition rule.
             chk=df.copy();chk['source']=sources
             assert chk.groupby('source').trusted_score.nunique().max()==1
@@ -57,6 +67,13 @@ def main():
                                         'audit_indices':list(labels),'audit_rounds':h.loc[h.refresh==1,'round'].tolist(),'rewards':h.true_reward.tolist()}
                                     f.write(json.dumps(rec)+'\n');f.flush();records.append(rec)
             print('completed',task,flush=True)
+    pd.DataFrame(source_eligibility).to_csv(a.output/'source_eligibility.csv',index=False)
+    manifest['source_eligibility']=source_eligibility
+    if not records:
+        (a.output/'summary.csv').write_text('status\nno_task_with_six_distinct_sources\n')
+        manifest.update(completed_runs=0,status='source-timing contrast unidentified on every task')
+        (a.output/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+        return
     rows=pd.DataFrame(records);summaries=[];keys=['task_id','optimizer','strength','representation','seed']
     for mode,g in rows.groupby('acquisition'):
         baseline=g[g.design=='uniform']
