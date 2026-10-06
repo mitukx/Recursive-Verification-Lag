@@ -6,7 +6,6 @@ must not be reported as a GPU serving speedup.
 from __future__ import annotations
 
 import argparse
-import heapq
 import json
 import math
 import random
@@ -53,8 +52,8 @@ class WorkAware:
     def acquire(self, req):
         sid, _ = self.lb.acquire_server(
             req.request_id,
-            prompt_ids=[0] * req.prompt_tokens,
-            sampling_params={"max_tokens": req.decode_tokens},
+            prompt_tokens=req.prompt_tokens,
+            decode_budget=req.decode_tokens,
         )
         return sid
 
@@ -91,10 +90,7 @@ def make_trace(n, seed):
 
 
 def simulate(policy, trace, servers, token_service_s):
-    now = 0.0
     completions = []
-    available = [(0.0, sid) for sid in servers]
-    heapq.heapify(available)
     assigned_work = {sid: 0 for sid in servers}
 
     # All requests are available together, matching a rollout burst. The router
