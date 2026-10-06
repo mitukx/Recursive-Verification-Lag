@@ -146,7 +146,8 @@
     "positive-vs-negative pairwise ranking accuracy",
     "fresh-vs-stale pairwise score-order reversal rate",
     "sampled current-vs-pre-shift policy KL on current effect candidates",
-    "sampled current-vs-pre-shift k3 and max absolute log-ratio"
+    "sampled current-vs-pre-shift k3 and max absolute log-ratio",
+    "secondary: within-prompt/between-prompt covariance decomposition and Cov(y, group-normalized GRPO advantage)"
   ],
   "drift_calibration": {
     "learning_rate_grid": [
@@ -178,8 +179,26 @@
     "fresh vs stale verifier holdout Brier/ECE/ranking accuracy on current-policy candidates",
     "oracle/fresh/stale/shuffled terminal greedy GSM8K exact match",
     "pairwise sign consistency between differences in Cov(y,v) and differences in trusted preference shift",
-    "effect-update gradient norm, behavior KL estimate, k3 and max log-ratio"
+    "effect-update gradient norm, behavior KL estimate, k3 and max log-ratio",
+    "compare locked pooled Cov(y,v) with within-prompt Cov(y,v) and Cov(y,GRPO advantage) without changing the primary estimand"
   ],
   "no_success_only_substitution": "Do not change model, rows, precision, seeds, head architecture/training, shift update, LR grid, arms, eligibility or endpoint after inspecting GPU outcomes. Retain negative/null/underpowered/failure evidence.",
-  "scope": "single-GPU 0.5B learned-neural-verifier pilot using a frozen-at-version Qwen representation plus trained MLP reward head; not an end-to-end reward-model fine-tune and not frontier-scale evidence"
+  "scope": "single-GPU 0.5B learned-neural-verifier pilot using a frozen-at-version Qwen representation plus trained MLP reward head; not an end-to-end reward-model fine-tune and not frontier-scale evidence",
+  "optimizer_aligned_geometry_diagnostic": {
+    "status": "secondary diagnostic locked before any Issue #43 GPU trigger/outcome; primary pooled-Cov(y,v) analysis remains unchanged",
+    "rationale": "HFCausalLMGRPOTrainer centers and standardizes reward within each prompt before the surrogate update, so between-prompt verifier calibration can affect pooled Cov(y,v) while being invisible to the GRPO advantage",
+    "advantage_definition": "per prompt: a=clip((v-mean(v))/sqrt(mean((v-mean(v))^2)+advantage_eps), -clip_advantage, +clip_advantage), using the instantiated pinned trainer config",
+    "metrics": [
+      "occurrence-weighted within-prompt Cov(y,v)",
+      "between-prompt Cov(E[y|prompt], E[v|prompt])",
+      "law-of-total-covariance reconstruction error",
+      "mean prompt Cov(y,v)",
+      "mean prompt Cov(y,e)",
+      "mean prompt Cov(y,GRPO advantage)",
+      "occurrence-weighted Cov(y,GRPO advantage)",
+      "per-prompt trusted/score means, score variance and covariance diagnostics"
+    ],
+    "selection_use": "none; not used for LR selection, eligibility, arm selection, or the locked primary directional prediction",
+    "interpretation": "diagnostic for whether pooled verifier geometry agrees with the reward geometry actually exposed to group-normalized GRPO"
+  }
 }
