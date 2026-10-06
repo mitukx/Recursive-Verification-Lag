@@ -1,0 +1,69 @@
+name: rvl-propensity-alignment-audit
+
+on:
+  push:
+    branches: [research/rvl-transfer-evidence-v3]
+    paths:
+      - configs/propensity_alignment_audit_v1.json
+      - src/propensity_alignment_audit.py
+      - tests/test_propensity_alignment_audit.py
+      - .github/workflows/rvl-propensity-alignment-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rvl-propensity-alignment-audit-v1
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/rvl-transfer-evidence-v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Validate propensity audit contracts
+        run: python -m unittest tests.test_propensity_alignment_audit -v
+      - name: Execute locked propensity audit study
+        run: |
+          rm -rf results/propensity_alignment_audit_v1
+          python -m src.propensity_alignment_audit             --protocol configs/propensity_alignment_audit_v1.json             --output results/propensity_alignment_audit_v1
+      - name: Enforce locked primary decision
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('results/propensity_alignment_audit_v1/manifest.json').read_text())
+          print(json.dumps(m, indent=2))
+          if not m['primary_prediction_passed']:
+              raise SystemExit('locked propensity-audit prediction failed')
+          PY
+      - name: Upload complete evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvl-propensity-alignment-audit-v1-${{ github.run_id }}
+          path: |
+            configs/propensity_alignment_audit_v1.json
+            results/propensity_alignment_audit_v1/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Commit deterministic evidence
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/propensity_alignment_audit_v1
+          git diff --cached --quiet && exit 0
+          git commit -m "Archive propensity-weighted alignment audit evidence [skip ci]"
+          git fetch origin research/rvl-transfer-evidence-v3
+          git rebase origin/research/rvl-transfer-evidence-v3
+          git push origin HEAD:research/rvl-transfer-evidence-v3
