@@ -9,17 +9,7 @@ on:
       - 'src/benchmark_rollout_engine.py'
       - 'src/benchmark_scheduler.py'
       - 'src/benchmark_vllm_cluster.py'
-      - 'tests/test_rlvr_systems.py'
-      - 'tests/test_rlvr_reliability.py'
-      - 'tests/test_rlvr_objectives.py'
-      - 'tests/test_remote_workers.py'
-      - 'tests/test_scheduler.py'
-      - 'tests/test_scheduler_health.py'
-      - 'tests/test_telemetry.py'
-      - 'tests/test_weight_sync.py'
-      - 'tests/test_profiling.py'
-      - 'tests/test_worker_health.py'
-      - 'tests/test_precision_numerics.py'
+      - 'tests/**'
       - 'requirements-systems.txt'
       - 'docs/xai_rl_systems.md'
       - 'docs/xai_evidence_matrix.md'
@@ -55,7 +45,14 @@ jobs:
         run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/run_hf_grpo_smoke.py src/benchmark_vllm_cluster.py
       - name: End-to-end CPU smoke test
         run: python -m src.run_rlvr_systems_demo --rounds 3 --samples 8
-      - name: Async rollout benchmark smoke test
-        run: python -m src.benchmark_rollout_engine --requests 4 --samples 2 --latency-ms 2 --concurrency 4
-      - name: Scheduler benchmark smoke test
-        run: python -m src.benchmark_scheduler --workers 2 --requests 8 --latency-ms 2 --queue-limit 4
+      - name: Generate async rollout benchmark report
+        run: python -m src.benchmark_rollout_engine --requests 8 --samples 2 --latency-ms 2 --concurrency 4 --output artifacts/async-rollout.json
+      - name: Generate scheduler benchmark report
+        run: python -m src.benchmark_scheduler --workers 2 --requests 16 --latency-ms 2 --queue-limit 4 --output artifacts/scheduler.json
+      - name: Upload benchmark evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rlvr-systems-benchmarks-${{ github.run_id }}
+          path: artifacts/*.json
+          if-no-files-found: error
+          retention-days: 90
