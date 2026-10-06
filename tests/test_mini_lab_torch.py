@@ -175,6 +175,62 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 store.close()
 
+    async def test_verification_aware_replay_requires_fresh_verifier_admission(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = TokenReplay(Path(tmp)/"replay.sqlite",capacity=2)
+            try:
+                generations = [s.generation for s in self.samples(self.model())]
+                self.assertTrue(store.put_pending("pending",0,generations,now=10))
+                self.assertIsNone(store.next(0,1,0,0))
+                token,rid,version,recovered = store.claim_verification(0,1,0,0,now=11)
+                self.assertEqual((rid,version),("pending",0))
+                self.assertEqual(recovered,generations)
+                verified = [VerifiedGeneration(g,float(i%2),.01,0) for i,g in enumerate(recovered)]
+                store.complete_verification(rid,token,verified,now=12)
+                ready = store.next(0,1,0,0)
+                self.assertIsNotNone(ready)
+                self.assertEqual(ready[2],verified)
+                self.assertEqual(store.requeue_stale_verifications(1,0),1)
+                self.assertIsNone(store.next(0,1,1,0))
+                token,rid,version,recovered = store.claim_verification(0,1,1,0,now=13)
+                refreshed = [VerifiedGeneration(g,float(i%2),.01,1) for i,g in enumerate(recovered)]
+                store.complete_verification(rid,token,refreshed,now=14)
+                self.assertEqual(store.next(0,1,1,0)[2],refreshed)
+            finally:
+                store.close()
+
+    async def test_verification_failure_quarantines_without_training(self):
+        model = self.model()
+        owner = self
+        class Backend:
+            model_name = "offline-verification-failure"
+            resolved_device = "cpu"
+            _torch = torch
+            def __init__(self):
+                self.model = copy.deepcopy(model)
+            def ensure_loaded(self):
+                pass
+            async def generate(self,pid,prompt,*,n,temperature,seed):
+                return [s.generation for s in owner.samples(self.model())]
+        class FailingVerifier:
+            version = 0
+            async def verify(self,generation):
+                raise RuntimeError("injected verifier outage")
+        with tempfile.TemporaryDirectory() as tmp:
+            lab = AsyncHFLab(
+                tmp,Backend(),FailingVerifier(),learning_rate=1e-3,
+                max_verification_attempts=2,
+            )
+            try:
+                report = await asyncio.wait_for(lab.run({"a":"prompt"},samples=4),30)
+                self.assertEqual(report["version"],0)
+                self.assertEqual(report["parameter_l1_change"],0)
+                self.assertEqual(report["quarantined_verification_groups"],1)
+                self.assertEqual(report["verification_backlog"],0)
+                self.assertEqual(report["replay_counts"].get("consumed",0),0)
+            finally:
+                lab.close()
+
     async def test_async_isolated_models_real_update_and_resume(self):
         model = self.model()
         owner = self
