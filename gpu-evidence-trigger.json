@@ -1,12 +1,12 @@
 {
   "experiment": "qwen-alignment-bridge-v1",
   "research_branch": "research/rvl-transfer-evidence-v3",
-  "research_head": "a7fc4e0a300c30fb5292c757e4441579ab16334d",
+  "research_head": "d02826584b8df391dfad059b92756b5acdc38e63",
   "protocol": "configs/qwen_alignment_bridge_v1.json",
   "runner": "scripts/run_qwen_alignment_bridge.py",
   "issue": 38,
-  "purpose": "execute locked matched-drift Qwen GRPO verifier-error alignment bridge using the protocol-defined response sequence-logprob endpoint with retained token-level raw evidence; retain negative/underpowered outcomes",
-  "execution_source_sha": "a7fc4e0a300c30fb5292c757e4441579ab16334d",
-  "trigger_revision": 5,
+  "purpose": "execute locked matched-drift Qwen GRPO verifier-error alignment bridge from corrected sequence-logprob source, then independently validate retained raw evidence; retain negative/underpowered/failure outcomes",
+  "execution_source_sha": "d02826584b8df391dfad059b92756b5acdc38e63",
+  "trigger_revision": 6,
   "concurrency_policy": "cancel older duplicate bridge runs; keep latest immutable-source execution"
 }
