@@ -42,6 +42,46 @@ class VerifierTrustThresholds:
 
 
 @dataclass(frozen=True)
+class MathematicalRSIConfig:
+    enabled: bool = False
+    require_coded_verification: bool = True
+    max_corrupt_fraction: float = 0.20
+    local_slack: float = 0.01
+    min_throughput_ratio: float = 0.80
+    require_probe_coverage: bool = True
+    max_probe_complexity: int = 2
+    require_information_budget: bool = True
+    trusted_target_error: float = 0.10
+    trusted_budget_multiplier: float = 1.0
+    min_trusted_samples: int = 8
+    max_trusted_samples: int = 512
+    reconstruction_assumptions_met: bool = False
+    require_reconstruction_supercritical: bool = False
+    reconstruction_branching_factor: int = 1
+    reconstruction_threshold: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.max_corrupt_fraction < 1.0:
+            raise ValueError("max_corrupt_fraction must lie in [0,1)")
+        if self.local_slack < 0.0:
+            raise ValueError("local_slack must be nonnegative")
+        if not 0.0 < self.min_throughput_ratio <= 1.0:
+            raise ValueError("min_throughput_ratio must lie in (0,1]")
+        if self.max_probe_complexity <= 0:
+            raise ValueError("max_probe_complexity must be positive")
+        if not 0.0 < self.trusted_target_error < 1.0:
+            raise ValueError("trusted_target_error must lie in (0,1)")
+        if self.trusted_budget_multiplier <= 0.0:
+            raise ValueError("trusted_budget_multiplier must be positive")
+        if self.min_trusted_samples < 0 or self.max_trusted_samples < self.min_trusted_samples:
+            raise ValueError("invalid trusted sample bounds")
+        if self.reconstruction_branching_factor <= 0:
+            raise ValueError("reconstruction_branching_factor must be positive")
+        if self.reconstruction_threshold < 0.0:
+            raise ValueError("reconstruction_threshold must be nonnegative")
+
+
+@dataclass(frozen=True)
 class MutationPolicy:
     allowed_harness_keys: tuple[str, ...] = (
         "reasoning_budget", "retry_limit", "context_window", "memory_slots",
@@ -65,6 +105,7 @@ class RSIConfig:
     output_dir: str = "artifacts/rsi-baseline"
     promotion: PromotionThresholds = field(default_factory=PromotionThresholds)
     verifier_trust: VerifierTrustThresholds = field(default_factory=VerifierTrustThresholds)
+    mathematical_rsi: MathematicalRSIConfig = field(default_factory=MathematicalRSIConfig)
     mutation: MutationPolicy = field(default_factory=MutationPolicy)
     resources: ResourceLimits = field(default_factory=ResourceLimits)
 
@@ -96,6 +137,7 @@ def load_config(path: str | Path) -> RSIConfig:
         output_dir=str(raw.get("output_dir", "artifacts/rsi-baseline")),
         promotion=PromotionThresholds(**raw.get("promotion", {})),
         verifier_trust=VerifierTrustThresholds(**raw.get("verifier_trust", {})),
+        mathematical_rsi=MathematicalRSIConfig(**raw.get("mathematical_rsi", {})),
         mutation=MutationPolicy(**_tuple_fields(MutationPolicy, raw.get("mutation", {}))),
         resources=ResourceLimits(**raw.get("resources", {})),
     )
