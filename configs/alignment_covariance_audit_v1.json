@@ -1,0 +1,41 @@
+{
+  "status": "prospective geometry-aware audit experiment locked before execution; synthetic controller validation, not learned-LLM evidence",
+  "research_question": "Can a small trusted-label audit distinguish harmful from benign verifier optimization when policy-shift coordinates alone are identical or uninformative?",
+  "support_size": 32,
+  "task_seeds": {
+    "start": 10000,
+    "count": 1024
+  },
+  "baseline": "Dirichlet(alpha=2) per task",
+  "true_reward": "Bernoulli(0.5), deterministic resampling until both classes occur",
+  "verifier_geometry": {
+    "sigma": 2,
+    "arms": {
+      "harmful": -1,
+      "benign": 1
+    },
+    "construction": "same standardized trusted direction as equal_kl_alignment_stress; rho rotates fixed-norm verifier error"
+  },
+  "trusted_label_budgets": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "confidence_delta": 0.05,
+  "estimator": "sample i~p with replacement; proxy score v(i) is free and its exact baseline mean is known; estimate Cov_p(y,v) by mean y_i*(v_i-E_p[v])",
+  "confidence_interval": "two-sided Hoeffding using the exact support range of x=y*(v-E_p[v]); halfwidth=(x_max-x_min)*sqrt(log(2/delta)/(2n))",
+  "decisions": {
+    "block": "upper confidence bound < 0",
+    "allow": "lower confidence bound > 0",
+    "inconclusive": "otherwise"
+  },
+  "theorem_scope": "for exponential proxy optimization, local trusted-progress derivative equals Cov_p(y,v); when the interval contains the true covariance, block/allow cannot have the wrong sign",
+  "primary_budget": 128,
+  "primary_prediction": "harmful block rate >=0.8, benign allow rate >=0.8, and wrong-sign decisive rate <=0.08 in each arm at n=128",
+  "reporting": "all tasks and budgets retained; report exact covariance, CI, decision, block/allow/inconclusive rates and wrong-sign rates; no threshold selection after outcomes",
+  "comparison": "a gate using only baseline policy KL sees KL=0 for both arms and cannot distinguish them; the audit is explicitly geometry-aware",
+  "scope": "finite-support proof-of-concept for an audit controller; it uses trusted labels and exact proxy scores and does not claim an LLM verifier is calibrated this way"
+}
