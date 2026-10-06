@@ -94,7 +94,6 @@ async def run(lock, systems):
             print('START', seed, arm, flush=True)
             b = backend()
             trainer = HFCausalLMGRPOTrainer(b.model, config=HFTTrainerConfig(learning_rate=lock['learning_rate']))
-            b.model.config.use_cache = False
             rng = random.Random(seed); permutation = list(train); rng.shuffle(permutation)
             history = []; start = time.perf_counter(); torch.cuda.reset_peak_memory_stats()
             for step in range(lock['steps']):
@@ -106,14 +105,16 @@ async def run(lock, systems):
                 supplied = list(true_rewards)
                 if arm == 'within_prompt_shuffled_reward':
                     random.Random(seed+900000+step).shuffle(supplied)
-                verified = [VerifiedGeneration(generation=g, reward=y, verifier_version=0,
-                    details={'true_reward_evaluation_only': original, 'arm': arm})
+                verified = [VerifiedGeneration(generation=g, reward=y, verifier_latency_s=0., verifier_version=0,
+                    metadata={'true_reward_evaluation_only': original, 'arm': arm})
                     for g,y,original in zip(generations,supplied,true_rewards)]
                 log_rows(f'{seed}_{arm}_rollouts.jsonl', [asdict(v) for v in verified])
                 # Full FP32 probe of one layer documents actual parameter motion.
                 probe = next(b.model.parameters()).detach().flatten()[:4096].clone()
                 torch.cuda.synchronize(); tick = time.perf_counter()
+                b.model.config.use_cache = False
                 metrics = trainer.train_step(verified)
+                b.model.config.use_cache = True
                 torch.cuda.synchronize(); elapsed = time.perf_counter()-tick
                 delta = float((next(b.model.parameters()).detach().flatten()[:4096]-probe).abs().max())
                 row = {'step':step, 'seed':seed, 'arm':arm, 'true_reward_mean': float(np.mean(true_rewards)),
