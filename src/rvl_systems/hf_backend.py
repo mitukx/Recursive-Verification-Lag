@@ -5,20 +5,18 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from .precision import resolve_precision_name, torch_dtype_for_name
 from .types import Generation
 
 
 @dataclass
 class HFLocalBackend:
-    """Local Hugging Face causal-LM rollout backend with token log-prob capture.
-
-    Torch/Transformers are imported lazily so the base research environment and
-    CI remain lightweight. On Apple Silicon this selects MPS when available.
-    """
+    """Local Hugging Face causal-LM rollout backend with token log-prob capture."""
 
     model_name: str
     max_new_tokens: int = 64
     device: str | None = None
+    precision: str = "auto"
     trust_remote_code: bool = False
 
     def __post_init__(self) -> None:
@@ -26,6 +24,7 @@ class HFLocalBackend:
         self._tokenizer: Any | None = None
         self._model: Any | None = None
         self._device: str | None = self.device
+        self._resolved_precision: str | None = None
 
     def ensure_loaded(self) -> None:
         if self._model is not None:
@@ -47,6 +46,18 @@ class HFLocalBackend:
             else:
                 self._device = "cpu"
 
+        bf16_supported = bool(
+            self._device == "cuda"
+            and hasattr(torch.cuda, "is_bf16_supported")
+            and torch.cuda.is_bf16_supported()
+        )
+        self._resolved_precision = resolve_precision_name(
+            self._device,
+            self.precision,
+            bf16_supported=bf16_supported,
+        )
+        dtype = torch_dtype_for_name(torch, self._resolved_precision)
+
         tokenizer = AutoTokenizer.from_pretrained(
             self.model_name,
             trust_remote_code=self.trust_remote_code,
@@ -54,6 +65,7 @@ class HFLocalBackend:
         model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
             trust_remote_code=self.trust_remote_code,
+            torch_dtype=dtype,
         )
         if tokenizer.pad_token_id is None:
             if tokenizer.eos_token_id is None:
@@ -81,6 +93,12 @@ class HFLocalBackend:
         self.ensure_loaded()
         assert self._device is not None
         return self._device
+
+    @property
+    def resolved_precision(self) -> str:
+        self.ensure_loaded()
+        assert self._resolved_precision is not None
+        return self._resolved_precision
 
     async def generate(
         self,
@@ -179,6 +197,7 @@ class HFLocalBackend:
                         "backend": "hf-local",
                         "model": self.model_name,
                         "device": device,
+                        "precision": self.resolved_precision,
                         "prompt_token_ids": prompt_token_ids,
                         "response_token_ids": response_ids,
                         "response_token_logprobs": token_logprobs,

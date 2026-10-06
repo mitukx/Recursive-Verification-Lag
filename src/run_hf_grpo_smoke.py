@@ -21,6 +21,7 @@ async def main() -> None:
     parser.add_argument("--samples", type=int, default=2)
     parser.add_argument("--max-new-tokens", type=int, default=12)
     parser.add_argument("--learning-rate", type=float, default=1e-6)
+    parser.add_argument("--precision", choices=["auto", "fp32", "fp16", "bf16"], default="auto")
     args = parser.parse_args()
 
     prompts = {
@@ -29,7 +30,11 @@ async def main() -> None:
     }
     answers = {"two_plus_two": "4", "one_plus_two": "3"}
 
-    backend = HFLocalBackend(args.model, max_new_tokens=args.max_new_tokens)
+    backend = HFLocalBackend(
+        args.model,
+        max_new_tokens=args.max_new_tokens,
+        precision=args.precision,
+    )
     telemetry = Telemetry()
     rollouts = AsyncRolloutEngine(backend, max_concurrency=1, telemetry=telemetry)
     verifier = ExactMatchVerifier(answers, telemetry=telemetry)
@@ -61,6 +66,7 @@ async def main() -> None:
     print(json.dumps({
         "model": args.model,
         "device": backend.resolved_device,
+        "precision": backend.resolved_precision,
         "history": history,
         "telemetry": telemetry.snapshot(),
     }, indent=2))

@@ -1,0 +1,41 @@
+name: hf-real-model-smoke
+
+on:
+  pull_request:
+    paths:
+      - 'src/rvl_systems/hf_backend.py'
+      - 'src/rvl_systems/hf_trainer.py'
+      - 'src/rvl_systems/precision.py'
+      - 'src/run_hf_grpo_smoke.py'
+      - 'requirements-systems.txt'
+      - '.github/workflows/hf-real-model-smoke.yml'
+  push:
+    branches:
+      - 'systems/numerics-precision-v5'
+    paths:
+      - 'src/rvl_systems/hf_backend.py'
+      - 'src/rvl_systems/hf_trainer.py'
+      - 'src/rvl_systems/precision.py'
+      - 'src/run_hf_grpo_smoke.py'
+      - '.github/workflows/hf-real-model-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tiny-causal-lm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      TOKENIZERS_PARALLELISM: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install real-model dependencies
+        run: pip install -r requirements-systems.txt
+      - name: Run real Transformers rollout and GRPO update
+        run: |
+          python -m src.run_hf_grpo_smoke             --model sshleifer/tiny-gpt2             --steps 1             --samples 2             --max-new-tokens 4             --precision fp32
