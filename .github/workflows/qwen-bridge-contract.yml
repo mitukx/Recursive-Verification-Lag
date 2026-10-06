@@ -1,0 +1,33 @@
+name: qwen-bridge-contract
+
+on:
+  push:
+    branches:
+      - 'research/qwen-bridge-raw-evidence-v5'
+    paths:
+      - 'scripts/run_qwen_alignment_bridge.py'
+      - 'tests/test_qwen_alignment_bridge.py'
+      - '.github/workflows/qwen-bridge-contract.yml'
+  pull_request:
+    paths:
+      - 'scripts/run_qwen_alignment_bridge.py'
+      - 'tests/test_qwen_alignment_bridge.py'
+      - '.github/workflows/qwen-bridge-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU contract dependency
+        run: python -m pip install numpy
+      - name: Compile runner and tests
+        run: python -m py_compile scripts/run_qwen_alignment_bridge.py tests/test_qwen_alignment_bridge.py
+      - name: Run locked bridge CPU contracts
+        run: python -m unittest tests.test_qwen_alignment_bridge -v

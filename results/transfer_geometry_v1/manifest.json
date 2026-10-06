@@ -1,0 +1,18 @@
+{
+  "status": "post-hoc archived development diagnostic; not confirmatory heldout evidence",
+  "source_branch": "research/rvl-transfer-evidence-v3",
+  "tasks": 16,
+  "budgets": [
+    0.02,
+    0.1,
+    0.3,
+    0.6
+  ],
+  "strict_reversals_total_unique_pairs": 20,
+  "tasks_with_strict_reversal": 3,
+  "public_control_max_policy_total_variation": 0,
+  "new_policy_decisions": 0,
+  "new_physical_candidate_executions": 0,
+  "generator_parameter_updates": 0,
+  "interpretation": "Positive-affine-invariant score geometry predicts matched-KL policy displacement better than strict reversal count in this inspected development archive. Descriptive only."
+}

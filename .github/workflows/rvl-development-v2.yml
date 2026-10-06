@@ -1,0 +1,92 @@
+name: rvl-development-v2
+
+on:
+  push:
+    branches: [research/rvl-intervention-v2]
+    paths: ['.github/workflows/rvl-development-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rvl-development-v2
+  cancel-in-progress: true
+
+jobs:
+  development:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      HF_HUB_DISABLE_XET: '1'
+      HF_HUB_DOWNLOAD_TIMEOUT: '90'
+      HF_HUB_ETAG_TIMEOUT: '30'
+      TOKENIZERS_PARALLELISM: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install model, pinned dataset reader and analysis dependencies
+        run: |
+          pip install --no-cache-dir torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install --no-cache-dir -r requirements-mbppplus.txt
+      - name: Verify source, split and scoring contracts
+        run: python -m unittest discover -s tests -v
+      - name: Generate the locked development split only, no execution
+        run: |
+          python -m src.generate_mbppplus_bank \
+            --task-offset 8 --task-count 32 --samples 16 --seed 20260928 \
+            --threads 4 --device cpu --batch-size 4 \
+            --frozen-split configs/mbppplus_task_split_v2.json \
+            --split development_unscored \
+            --output data/mbppplus_qwen15b_development_v2.jsonl
+      - name: Preserve unscored bank before any candidate execution
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvl-development-v2-unscored-${{ github.run_id }}
+          path: |
+            data/mbppplus_qwen15b_development_v2.jsonl
+            data/mbppplus_qwen15b_development_v2.manifest.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Build isolated evaluator and record immutable image ID
+        run: |
+          docker build --platform linux/amd64 -f docker/Dockerfile.mbppplus -t rvl-mbppplus:development .
+          docker image inspect --format '{{.Id}}' rvl-mbppplus:development > mbppplus-image-id.txt
+      - name: Verify every reference, then score development bank in isolation
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m src.score_mbppplus_docker \
+            data/mbppplus_qwen15b_development_v2.jsonl \
+            --image "$(cat mbppplus-image-id.txt)" --platform linux/amd64 \
+            --frozen-split configs/mbppplus_task_split_v2.json \
+            --split development_unscored \
+            --output data/mbppplus_qwen15b_development_v2_scored.jsonl \
+            2>&1 | tee mbppplus-development-scoring.log
+      - name: Run all-task paid-draw and identified-source timing arms
+        run: |
+          python -m src.exact_cost_pilot data/mbppplus_qwen15b_development_v2_scored.jsonl \
+            --output results/mbppplus_development_v2_draws --record-coordinates \
+            --evidence-status 'locked development extension; pilot-informed design, not heldout confirmation'
+          python -m src.source_timing_pilot data/mbppplus_qwen15b_development_v2_scored.jsonl \
+            --output results/mbppplus_development_v2_sources \
+            --evidence-status 'locked development extension; pilot-informed design, not heldout confirmation'
+          python -m src.summarize_development_gate \
+            data/mbppplus_qwen15b_development_v2_scored.jsonl \
+            results/mbppplus_development_v2_draws results/mbppplus_development_v2_sources \
+            --output results/mbppplus_development_v2_gate
+      - name: Preserve outputs, manifests and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvl-development-v2-record-${{ github.run_id }}
+          path: |
+            data/mbppplus_qwen15b_development_v2*.jsonl*
+            data/mbppplus_qwen15b_development_v2*.json
+            results/mbppplus_development_v2_*
+            mbppplus-image-id.txt
+            mbppplus-development-scoring.log
+          if-no-files-found: warn
+          retention-days: 90

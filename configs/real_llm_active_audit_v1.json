@@ -1,0 +1,76 @@
+{
+  "status": "prospective real-LLM active-audit replay locked before learned-verifier GPU outcomes",
+  "source_parent_sha": "eae5d3bebe95bd25718d584f2eb1bb792666c71f",
+  "input_experiment": "qwen_learned_verifier_bridge_v1",
+  "input_requirements": {
+    "manifest_status": "completed",
+    "required_seed_files": [
+      "effect_verifier_scores.jsonl",
+      "seed_summary.json"
+    ],
+    "candidate_distribution": "uniform over the fixed current-policy effect candidate occurrences; equal samples per prompt makes this prompt-balanced",
+    "arms": [
+      "oracle",
+      "fresh",
+      "stale",
+      "shuffled"
+    ],
+    "expected_input_protocol_sha256": "80fdf4973a849f208aae01fcae9a7cf28d2b0b57cbf5807cf4e2cd39bc4b215f",
+    "expected_input_research_source_sha": "8602c0a94d246a25efea7079c2e65cd514995d48",
+    "expected_seed_values": [
+      17,
+      29,
+      43
+    ],
+    "expected_candidate_count_per_seed": 64,
+    "promotion_receipt": {
+      "required": true,
+      "stage": "qwen_alignment_to_learned_verifier",
+      "rationale": "Issue #46 may consume only a completed semantically validated Issue #43 artifact that itself was promoted from a completed validated Issue #38 artifact"
+    }
+  },
+  "methods": {
+    "passive_fixed": "existing covariance_audit(mode=passive), fixed number of with-replacement trusted-label queries",
+    "propensity_ht": "existing proxy_leverage Bernoulli propensity allocation plus Horvitz-Thompson covariance estimator",
+    "active_minimax": "existing covariance_audit(mode=active), fixed-budget minimax proposal r_i proportional to p_i*abs(v_i-E_p[v])"
+  },
+  "trusted_label_budgets": [
+    8,
+    16,
+    32,
+    64
+  ],
+  "audit_replicates": 512,
+  "confidence_delta": 0.05,
+  "propensity_minimum": 0.02,
+  "seed_offset": 73000000,
+  "ground_truth": {
+    "harmful_update": "terminal trusted mean_preference_shift for that arm is < 0",
+    "beneficial_update": "terminal trusted mean_preference_shift for that arm is > 0",
+    "covariance_sign": "exact empirical pre-update Cov(y,v) on the same effect candidate bank"
+  },
+  "controller_mapping": {
+    "block": "upper confidence bound < 0",
+    "allow": "lower confidence bound > 0",
+    "refresh_verifier": "confidence interval contains 0"
+  },
+  "metrics": [
+    "harmful update detection rate",
+    "harmful update allow rate",
+    "beneficial update block rate",
+    "wrong-sign decisive rate relative to exact Cov(y,v)",
+    "inconclusive/refresh rate",
+    "correct decisive decisions per 100 trusted-label calls",
+    "harmful blocks per 100 trusted-label calls",
+    "mean realized trusted-label calls",
+    "mean unique candidate identities queried"
+  ],
+  "primary_budget": 32,
+  "primary_comparison": "at 32 trusted-label calls compare active_minimax, passive_fixed and propensity_ht without tuning; retain whichever method wins/loses on harmful detection, wrong-sign decisions and label efficiency",
+  "no_success_only_substitution": "Do not change budgets, replicates, confidence delta, propensity floor, controller mapping, harmful-update definition or included arms after inspecting learned-verifier GPU outcomes.",
+  "limitations": [
+    "fixed-budget passive/active estimators sample with replacement and count repeated trusted-label queries as cost",
+    "propensity HT has a random realized label count around the expected budget",
+    "terminal update harm and exact covariance sign are distinct ground truths and are reported separately"
+  ]
+}

@@ -1,0 +1,7 @@
+treatment,reference,metric,task_mean_difference,descriptive_task_bootstrap_lo,descriptive_task_bootstrap_hi,tasks,paired_settings
+lookahead,escape,gain_evaluation_only,0.00010687282494349312,-0.008796627927896556,0.009023594687881735,8,160
+lookahead,escape,paid_additional_labels,0.125,-0.056249999999999994,0.33125,8,160
+direct,lookahead,gain_evaluation_only,0.04280013570336064,0.003473540772915771,0.095595757308396,8,160
+direct,lookahead,paid_additional_labels,-0.03125,-0.6812499999999999,0.60015625,8,160
+one_update,lookahead,gain_evaluation_only,0.0029103570221915903,-0.0006439289334249706,0.009374999999999741,8,160
+one_update,lookahead,paid_additional_labels,-0.0125,-0.03125,0.0125,8,160

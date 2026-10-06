@@ -1,0 +1,105 @@
+{
+  "development_run": 37389940505,
+  "transfer_run": 37393792712,
+  "entries": [
+    {
+      "original_path": "mbppplus_development_v2_draws/manifest.json",
+      "archive_path": "mbppplus_development_v2_draws/manifest.json",
+      "original_sha256": "671a2130e88738994cbab5437de429e5950d6a75b2a8ed18c79315801d255232",
+      "archive_sha256": "671a2130e88738994cbab5437de429e5950d6a75b2a8ed18c79315801d255232",
+      "original_bytes": 1281
+    },
+    {
+      "original_path": "mbppplus_development_v2_draws/runs.jsonl",
+      "archive_path": "mbppplus_development_v2_draws/runs.jsonl.gz",
+      "original_sha256": "0dc1fa6ba13a8e0279c7ca98f2418991018196284952b0ce0e653ce7136220ed",
+      "archive_sha256": "2f3d25a39c9e65ad941a6d6f3397fc64dd07831d7792e5cb0697d14a57d1a827",
+      "original_bytes": 28149709
+    },
+    {
+      "original_path": "mbppplus_development_v2_draws/summary.csv",
+      "archive_path": "mbppplus_development_v2_draws/summary.csv",
+      "original_sha256": "5d3c8979fef41a1b1ef08c299b4c6ad9e3997b8503832bde36da3f57a8b52551",
+      "archive_sha256": "5d3c8979fef41a1b1ef08c299b4c6ad9e3997b8503832bde36da3f57a8b52551",
+      "original_bytes": 5429
+    },
+    {
+      "original_path": "mbppplus_development_v2_gate/decision.json",
+      "archive_path": "mbppplus_development_v2_gate/decision.json",
+      "original_sha256": "7465250cb583b1f6f08cd965b1e0f8f87ff6bf426a6b56a74e861cb12e0ce2f2",
+      "archive_sha256": "7465250cb583b1f6f08cd965b1e0f8f87ff6bf426a6b56a74e861cb12e0ce2f2",
+      "original_bytes": 712
+    },
+    {
+      "original_path": "mbppplus_development_v2_gate/identical_source_stream_onset_rows.jsonl",
+      "archive_path": "mbppplus_development_v2_gate/identical_source_stream_onset_rows.jsonl.gz",
+      "original_sha256": "f12152fd8fca92c7148b3bfb9500dbe4e00d0ee4e6d1d97411b3fc8b58fa27de",
+      "archive_sha256": "e51ca4a043b9e9229fbd8222731af18e98deda4ac83fdae0db93ae0ce56f6819",
+      "original_bytes": 2281192
+    },
+    {
+      "original_path": "mbppplus_development_v2_gate/paid_draws_onset_rows.jsonl",
+      "archive_path": "mbppplus_development_v2_gate/paid_draws_onset_rows.jsonl.gz",
+      "original_sha256": "c25a5034f65950b1a68dbe98a10678d7291a8a4d2ca1978f6656481122465a61",
+      "archive_sha256": "1d389b2c972827da2977070a7747a788c66ea59bf9ba8f2fe3d8bc72c5f7c243",
+      "original_bytes": 6799392
+    },
+    {
+      "original_path": "mbppplus_development_v2_gate/task_support.csv",
+      "archive_path": "mbppplus_development_v2_gate/task_support.csv",
+      "original_sha256": "956e1b0a51214c9dd0e94e93801f693b5e02e11f8209b6f9bdb28b1faa3758e3",
+      "archive_sha256": "956e1b0a51214c9dd0e94e93801f693b5e02e11f8209b6f9bdb28b1faa3758e3",
+      "original_bytes": 798
+    },
+    {
+      "original_path": "mbppplus_development_v2_gate/timing_by_task.csv",
+      "archive_path": "mbppplus_development_v2_gate/timing_by_task.csv",
+      "original_sha256": "0823dec5b363174cc31189ce6d45a391c24060010d68a52d10c50429c2f6f75a",
+      "archive_sha256": "0823dec5b363174cc31189ce6d45a391c24060010d68a52d10c50429c2f6f75a",
+      "original_bytes": 11669
+    },
+    {
+      "original_path": "mbppplus_development_v2_gate/timing_contrasts.csv",
+      "archive_path": "mbppplus_development_v2_gate/timing_contrasts.csv",
+      "original_sha256": "d217161f0ecd6895fa58d66b1052a42b9479b7c88ddf6d2c1fffc2234e03e385",
+      "archive_sha256": "d217161f0ecd6895fa58d66b1052a42b9479b7c88ddf6d2c1fffc2234e03e385",
+      "original_bytes": 1322
+    },
+    {
+      "original_path": "mbppplus_development_v2_sources/acquisition_effect.csv",
+      "archive_path": "mbppplus_development_v2_sources/acquisition_effect.csv",
+      "original_sha256": "1faed474745ddb2f81e840863677fe91004b725085d9c0aec2ab391163ba934f",
+      "archive_sha256": "1faed474745ddb2f81e840863677fe91004b725085d9c0aec2ab391163ba934f",
+      "original_bytes": 741
+    },
+    {
+      "original_path": "mbppplus_development_v2_sources/manifest.json",
+      "archive_path": "mbppplus_development_v2_sources/manifest.json",
+      "original_sha256": "3749548cd14f535d5147c8b4d4e5dba1d3e2ee1b339a90e89df1b9d354e9d247",
+      "archive_sha256": "3749548cd14f535d5147c8b4d4e5dba1d3e2ee1b339a90e89df1b9d354e9d247",
+      "original_bytes": 4590
+    },
+    {
+      "original_path": "mbppplus_development_v2_sources/runs.jsonl",
+      "archive_path": "mbppplus_development_v2_sources/runs.jsonl.gz",
+      "original_sha256": "c2624f1121e47bed384c48435c677fc40c7724db4b9aa4e48d730cbd7f8a8e60",
+      "archive_sha256": "8e365e57ca4a2d9eb0b66adee0dce31408441fed535a04b768adbd7f6c805973",
+      "original_bytes": 8498085
+    },
+    {
+      "original_path": "mbppplus_development_v2_sources/source_eligibility.csv",
+      "archive_path": "mbppplus_development_v2_sources/source_eligibility.csv",
+      "original_sha256": "830045d6c193a119dd3464d0c77f3dba1849866b140ae92a7fbd07ad4c0b17d5",
+      "archive_sha256": "830045d6c193a119dd3464d0c77f3dba1849866b140ae92a7fbd07ad4c0b17d5",
+      "original_bytes": 320
+    },
+    {
+      "original_path": "mbppplus_development_v2_sources/summary.csv",
+      "archive_path": "mbppplus_development_v2_sources/summary.csv",
+      "original_sha256": "317826fbe2b15593db22103ae2c730a9b95fc59003a473397956b34099dedfe4",
+      "archive_sha256": "317826fbe2b15593db22103ae2c730a9b95fc59003a473397956b34099dedfe4",
+      "original_bytes": 3991
+    }
+  ],
+  "note": "gzip entries decompress to original artifact bytes; no generated code is executed by archiving"
+}

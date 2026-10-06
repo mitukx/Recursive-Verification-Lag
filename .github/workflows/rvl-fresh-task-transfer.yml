@@ -1,0 +1,82 @@
+name: rvl-fresh-task-transfer
+
+on:
+  push:
+    branches: [research/rvl-intervention-v2]
+    paths: [.github/workflows/rvl-fresh-task-transfer.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rvl-fresh-task-transfer-v1
+  cancel-in-progress: false
+
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install analysis dependencies
+        run: pip install -r requirements.txt
+      - name: Test transfer and planner contracts
+        run: python -m unittest tests.test_fresh_task_transfer tests.test_endogenous_audit -v
+      - name: Await the fixed development run and verify its source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, time, urllib.request
+          run_id = 37389940505
+          expected_sha = '1a45ba6a6967d00ba7869a956f59c9cc01ed4bb8'
+          url = f'https://api.github.com/repos/mitukx/Recursive-Verification-Lag/actions/runs/{run_id}'
+          deadline = time.monotonic()+170*60
+          while time.monotonic() < deadline:
+              request = urllib.request.Request(url, headers={'Authorization': 'Bearer '+os.environ['GH_TOKEN'],
+                  'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  run = json.load(response)
+              if run['head_sha'] != expected_sha or run['head_branch'] != 'research/rvl-intervention-v2':
+                  raise RuntimeError('development run source mismatch')
+              print(run_id, run['status'], run['conclusion'], flush=True)
+              if run['status'] == 'completed':
+                  pathlib.Path('development-run-provenance.json').write_text(json.dumps(run, indent=2)+'\n')
+                  if run['conclusion'] != 'success':
+                      raise RuntimeError('development run failed; no partial-bank inference')
+                  break
+              time.sleep(60)
+          else:
+              raise TimeoutError('development run did not finish within analysis wait budget')
+          PY
+      - name: Download only the completed development record
+        uses: actions/download-artifact@v4
+        with:
+          name: rvl-development-v2-record-37389940505
+          path: incoming
+          run-id: 37389940505
+          repository: mitukx/Recursive-Verification-Lag
+          github-token: ${{ github.token }}
+      - name: Execute the pre-outcome 16/16 fresh-task transfer lock
+        run: |
+          python -m src.fresh_task_transfer \
+            incoming/data/mbppplus_qwen15b_development_v2_scored.jsonl \
+            --protocol configs/fresh_task_verifier_transfer_v1.json \
+            --output results/fresh_task_verifier_transfer_v1
+      - name: Preserve the analysis or its failure record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvl-fresh-task-transfer-v1-${{ github.run_id }}
+          path: |
+            configs/fresh_task_verifier_transfer_v1.json
+            development-run-provenance.json
+            incoming/data/*.json
+            results/fresh_task_verifier_transfer_v1/
+          if-no-files-found: warn
+          retention-days: 90
