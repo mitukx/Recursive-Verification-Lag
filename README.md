@@ -35,11 +35,11 @@ experiments that still require external hardware.
 |---|---|
 | Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update runs in GitHub Actions |
 | Distributed training primitives | real `torchrun --nproc-per-node=2` test with broadcast, all-reduce, DDP backward, optimizer step, and cross-rank parameter equality |
-| Rollout serving | bounded async rollout, EWMA latency-aware routing, weighted workload admission, fair multi-workload scheduling, overload shedding, end-to-end deadlines, optional hedged requests |
+| Rollout serving | bounded async rollout, EWMA + prefill/decode/KV-aware routing, weighted workload admission, fair multi-workload scheduling, overload shedding, end-to-end deadlines, optional hedged requests |
 | Failure handling | cross-worker failover, circuit-breaker quarantine, single half-open recovery probes, loser cancellation, stale policy-version rejection |
 | Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
 | Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
-| Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, fp32/fp16/bf16 loading policy |
+| Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, FP16/BF16 parity gates, fp32/fp16/bf16 loading policy |
 | Observability | counters, tokens/s, p50/p95/max latency, Chrome traces, deterministic control-plane replay, machine-readable benchmark reports |
 | GPU serving integration | OpenAI-compatible vLLM/SGLang adapter, streaming TTFT/TBT benchmark, Prometheus metrics capture, GPU telemetry, and real process-failure harness |
 
