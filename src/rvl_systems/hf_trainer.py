@@ -7,6 +7,7 @@ from statistics import fmean
 from typing import Any
 
 from .grpo import compute_group_advantages
+from .triton_grpo import grpo_surrogate, validate_objective_backend
 from .types import VerifiedGeneration
 
 
@@ -18,6 +19,7 @@ class HFTTrainerConfig:
     advantage_eps: float = 1e-6
     clip_advantage: float = 5.0
     disable_dropout: bool = True
+    objective_backend: str = "torch"
 
 
 class HFCausalLMGRPOTrainer:
@@ -33,6 +35,7 @@ class HFCausalLMGRPOTrainer:
         self.torch = torch
         self.model = model
         self.config = config or HFTTrainerConfig()
+        validate_objective_backend(self.config.objective_backend)
         if self.config.disable_dropout:
             for module in self.model.modules():
                 if isinstance(module,torch.nn.Dropout):
@@ -86,18 +89,28 @@ class HFCausalLMGRPOTrainer:
         ).squeeze(1)
         if not torch.isfinite(current_logps).all():
             raise FloatingPointError("current token log-probabilities contain non-finite values")
-        old = torch.tensor(old_logps, dtype=current_logps.dtype, device=device)
-        log_ratio = torch.clamp(current_logps - old, min=-20.0, max=20.0)
-        ratio = torch.exp(log_ratio)
-        clipped = torch.clamp(
-            ratio,
-            1.0 - self.config.clip_eps,
-            1.0 + self.config.clip_eps,
+        old = torch.tensor(
+            old_logps,
+            dtype=current_logps.dtype,
+            device=device,
         )
-        adv = torch.tensor(float(advantage), dtype=current_logps.dtype, device=device)
-        surrogate = torch.minimum(ratio * adv, clipped * adv)
-        clip_fraction = ((ratio < 1.0 - self.config.clip_eps) | (ratio > 1.0 + self.config.clip_eps)).float().mean()
-        return surrogate.mean(), clip_fraction, log_ratio.abs().max(), ((ratio - 1) - log_ratio).mean()
+        advantages = torch.full_like(
+            current_logps,
+            float(advantage),
+        )
+        surrogate, clip_mask, abs_log_ratio, behavior_kl = grpo_surrogate(
+            current_logps,
+            old,
+            advantages,
+            clip_eps=self.config.clip_eps,
+            backend=self.config.objective_backend,
+        )
+        return (
+            surrogate.mean(),
+            clip_mask.float().mean(),
+            abs_log_ratio.max(),
+            behavior_kl.mean(),
+        )
 
     def train_step(self, samples: list[VerifiedGeneration], *, advantages: list[float] | None = None) -> dict[str, float]:
         if not samples:
