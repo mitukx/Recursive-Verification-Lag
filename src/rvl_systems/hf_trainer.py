@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from contextlib import nullcontext
 from dataclasses import dataclass
 from statistics import fmean
 from typing import Any
@@ -91,7 +92,7 @@ class HFCausalLMGRPOTrainer:
         clip_fraction = ((ratio < 1.0 - self.config.clip_eps) | (ratio > 1.0 + self.config.clip_eps)).float().mean()
         return surrogate.mean(), clip_fraction, log_ratio.abs().max()
 
-    def train_step(self, samples: list[VerifiedGeneration]) -> dict[str, float]:
+    def train_step(self, samples: list[VerifiedGeneration], *, advantages: list[float] | None = None) -> dict[str, float]:
         if not samples:
             return {"loss": 0.0, "mean_reward": 0.0, "samples": 0.0}
         records = compute_group_advantages(
@@ -102,32 +103,42 @@ class HFCausalLMGRPOTrainer:
         if len(records) != len(samples):
             raise RuntimeError("advantage/sample cardinality mismatch")
 
-        self.model.train()
+        # Disable stochastic dropout while retaining autograd for policy ratios.
+        self.model.eval()
         self.optimizer.zero_grad(set_to_none=True)
-        rows = [
-            self._sample_objective(sample, record.advantage)
-            for sample, record in zip(samples, records)
-        ]
-        objectives = [row[0] for row in rows]
-        clip_fractions = [row[1] for row in rows]
-        max_log_ratios = [row[2] for row in rows]
-        loss = -self.torch.stack(objectives).mean()
-        if not self.torch.isfinite(loss):
-            raise FloatingPointError("GRPO loss is non-finite")
-        loss.backward()
-        grad_norm = self.torch.nn.utils.clip_grad_norm_(
-            self.model.parameters(),
-            self.config.max_grad_norm,
-            error_if_nonfinite=True,
-        )
+        if advantages is None:
+            advantages = [record.advantage for record in records]
+        if len(advantages) != len(samples) or not all(math.isfinite(x) for x in advantages):
+            raise ValueError("invalid supplied advantages")
+        losses, clip_fractions, max_log_ratios = [], [], []
+        # Keep one response graph at a time, not a graph for the whole batch.
+        for index, (sample, advantage) in enumerate(zip(samples, advantages)):
+            sync = (index == len(samples)-1)
+            context = nullcontext() if sync or not hasattr(self.model, "no_sync") else self.model.no_sync()
+            with context:
+                objective, fraction, ratio = self._sample_objective(sample, advantage)
+                loss = -objective / len(samples)
+                if not self.torch.isfinite(loss):
+                    raise FloatingPointError("GRPO loss is non-finite")
+                loss.backward()
+            losses.append(float(loss.detach().cpu()))
+            clip_fractions.append(float(fraction.detach().cpu()))
+            max_log_ratios.append(float(ratio.detach().cpu()))
+        if hasattr(self.model, "clip_grad_norm_"):
+            grad_norm = self.model.clip_grad_norm_(self.config.max_grad_norm)
+        else:
+            grad_norm = self.torch.nn.utils.clip_grad_norm_(
+                self.model.parameters(), self.config.max_grad_norm, error_if_nonfinite=True)
+        if not self.torch.isfinite(self.torch.as_tensor(grad_norm)):
+            raise FloatingPointError("non-finite gradient norm")
         self.optimizer.step()
         return {
-            "loss": float(loss.detach().cpu()),
+            "loss": sum(losses),
             "mean_reward": fmean(sample.reward for sample in samples),
             "samples": float(len(samples)),
             "grad_norm": float(grad_norm.detach().cpu())
             if hasattr(grad_norm, "detach")
             else float(grad_norm),
-            "clip_fraction": float(self.torch.stack(clip_fractions).mean().detach().cpu()),
-            "max_abs_log_ratio": float(self.torch.stack(max_log_ratios).max().detach().cpu()),
+            "clip_fraction": fmean(clip_fractions),
+            "max_abs_log_ratio": max(max_log_ratios),
         }

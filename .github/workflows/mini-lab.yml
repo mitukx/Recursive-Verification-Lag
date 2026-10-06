@@ -5,6 +5,8 @@ on:
     paths:
       - 'src/rvl_systems/lab/**'
       - 'src/*mini_lab.py'
+      - 'src/run_async_lm_lab.py'
+      - 'src/rvl_systems/hf_trainer.py'
       - 'tests/test_mini_lab*.py'
       - '.github/workflows/mini-lab.yml'
   push:
@@ -12,6 +14,8 @@ on:
     paths:
       - 'src/rvl_systems/lab/**'
       - 'src/*mini_lab.py'
+      - 'src/run_async_lm_lab.py'
+      - 'src/rvl_systems/hf_trainer.py'
       - 'tests/test_mini_lab*.py'
       - '.github/workflows/mini-lab.yml'
 
@@ -44,3 +48,30 @@ jobs:
           path: artifacts/
           if-no-files-found: error
           retention-days: 90
+
+  causal-lm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      TOKENIZERS_PARALLELISM: 'false'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements-systems.txt
+      - name: Real tensor microbatch replay and async training acceptance
+        run: python -m unittest discover -s tests -p 'test_mini_lab_torch.py' -v
+      - name: Two-rank token-level clipped RL update
+        run: torchrun --standalone --nproc-per-node=2 -m src.run_distributed_mini_lab
+      - name: Pretrained causal LM independent actor learner smoke
+        run: python -m src.run_async_lm_lab --groups 3 --samples 4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mini-lab-real-lm-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
