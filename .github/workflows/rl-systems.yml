@@ -7,12 +7,21 @@ on:
       - 'src/run_rlvr_systems_demo.py'
       - 'src/run_hf_grpo_smoke.py'
       - 'src/benchmark_rollout_engine.py'
+      - 'src/benchmark_scheduler.py'
+      - 'src/benchmark_vllm_cluster.py'
       - 'tests/test_rlvr_systems.py'
       - 'tests/test_rlvr_reliability.py'
       - 'tests/test_rlvr_objectives.py'
       - 'tests/test_remote_workers.py'
+      - 'tests/test_scheduler.py'
+      - 'tests/test_scheduler_health.py'
+      - 'tests/test_telemetry.py'
+      - 'tests/test_weight_sync.py'
+      - 'tests/test_profiling.py'
+      - 'tests/test_worker_health.py'
       - 'requirements-systems.txt'
       - 'docs/xai_rl_systems.md'
+      - 'docs/xai_evidence_matrix.md'
       - '.github/workflows/rl-systems.yml'
   push:
     branches:
@@ -22,10 +31,18 @@ on:
       - 'src/run_rlvr_systems_demo.py'
       - 'src/run_hf_grpo_smoke.py'
       - 'src/benchmark_rollout_engine.py'
+      - 'src/benchmark_scheduler.py'
+      - 'src/benchmark_vllm_cluster.py'
       - 'tests/test_rlvr_systems.py'
       - 'tests/test_rlvr_reliability.py'
       - 'tests/test_rlvr_objectives.py'
       - 'tests/test_remote_workers.py'
+      - 'tests/test_scheduler.py'
+      - 'tests/test_scheduler_health.py'
+      - 'tests/test_telemetry.py'
+      - 'tests/test_weight_sync.py'
+      - 'tests/test_profiling.py'
+      - 'tests/test_worker_health.py'
       - '.github/workflows/rl-systems.yml'
 
 permissions:
@@ -41,10 +58,12 @@ jobs:
         with:
           python-version: '3.11'
       - name: Unit tests
-        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers -v
+        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_scheduler_health tests.test_telemetry tests.test_weight_sync tests.test_profiling tests.test_worker_health -v
       - name: Optional-backend syntax check
-        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/run_hf_grpo_smoke.py
+        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/run_hf_grpo_smoke.py src/benchmark_vllm_cluster.py
       - name: End-to-end CPU smoke test
         run: python -m src.run_rlvr_systems_demo --rounds 3 --samples 8
       - name: Async rollout benchmark smoke test
         run: python -m src.benchmark_rollout_engine --requests 4 --samples 2 --latency-ms 2 --concurrency 4
+      - name: Scheduler benchmark smoke test
+        run: python -m src.benchmark_scheduler --workers 2 --requests 8 --latency-ms 2 --queue-limit 4
