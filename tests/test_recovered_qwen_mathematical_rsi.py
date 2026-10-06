@@ -62,8 +62,10 @@ class RecoveredQwenMathematicalRSITest(unittest.TestCase):
 
     def test_nonproxy_allow_has_exact_finite_bank_certificate(self):
         with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp) / "result"
-            run(self.protocol, self.bank, out)
+            base = Path(tmp)
+            protocol = self.small_protocol(base)
+            out = base / "result"
+            run(protocol, self.bank, out)
             rows = [
                 json.loads(line)
                 for line in (out / "trials.jsonl").read_text().splitlines()
