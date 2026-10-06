@@ -42,6 +42,17 @@ class ProposalMutationTests(unittest.TestCase):
             gen.generate(proposal({"__code_patch__":{"src/rsi_controller/evaluation.py":"tamper"}}),DEFAULT_STATE)
         with self.assertRaises(MutationRejected):
             CandidateGenerator(MutationPolicy(),RSIMode.HARNESS).generate(proposal({"learning_rate":.1},Component.TRAINING),DEFAULT_STATE)
+        patching=CandidateGenerator(MutationPolicy(allow_code_patches=True),RSIMode.HARNESS)
+        for escaped in (
+            "src/rsi_controller/mutable_harness/../evaluation.py",
+            "../src/rsi_controller/mutable_harness/x.py",
+            "src\\rsi_controller\\mutable_harness\\x.py",
+        ):
+            with self.assertRaises(MutationRejected):
+                patching.generate(
+                    proposal({"__code_patch__":{escaped:"tamper"}}),
+                    DEFAULT_STATE,
+                )
 
 
 class EvaluationPromotionTests(unittest.TestCase):
@@ -52,9 +63,17 @@ class EvaluationPromotionTests(unittest.TestCase):
     def test_hidden_eval_separation(self):
         desc=self.stack.public_description()
         self.assertEqual(desc["sealed_contents"],"unavailable to improvement planner/candidates")
+        self.assertIn("terminal audit only",desc["sealed_access_policy"])
+        self.assertIsNone(self.base.sealed)
         before=dict(desc["suite_digests"])
         state=json.loads(json.dumps(DEFAULT_STATE)); state["H"]["reasoning_budget"]=3
-        self.stack.evaluate_state(state,seed=17,policy_version=1,verifier_version=0,policy_verifier_age=1)
+        adaptive=self.stack.evaluate_state(state,seed=17,policy_version=1,verifier_version=0,policy_verifier_age=1)
+        self.assertIsNone(adaptive.sealed)
+        terminal=self.stack.evaluate_state(
+            state,seed=17,policy_version=1,verifier_version=0,
+            policy_verifier_age=1,include_sealed=True,
+        )
+        self.assertIsNotNone(terminal.sealed)
         self.assertEqual(before,self.stack.public_description()["suite_digests"])
 
     def test_reward_hacking_rejected(self):
@@ -112,8 +131,22 @@ class EndToEndTests(unittest.TestCase):
                 self.assertGreaterEqual(summary["promoted"],1); self.assertGreaterEqual(summary["rejected"],1)
                 self.assertTrue((Path(tmp)/"research_memory.sqlite").exists())
                 self.assertEqual(len(list((Path(tmp)/"metrics").glob("*.svg"))),6)
+                self.assertIn("final_sealed_audit",summary)
+                self.assertIn("never used",summary["final_sealed_audit"]["access_policy"])
                 events=c.memory.recent_events(500)
                 self.assertTrue(any(e["kind"]=="rvl_assessment" for e in events))
+                decisions=[e["seq"] for e in events if e["kind"]=="promotion_decision"]
+                sealed=[e["seq"] for e in events if e["kind"]=="sealed_final_audit"]
+                self.assertEqual(len(sealed),1)
+                self.assertTrue(decisions and max(decisions)<sealed[0])
+                splits={
+                    row[0] for row in c.memory.db.execute(
+                        "SELECT DISTINCT split FROM evaluations"
+                    ).fetchall()
+                }
+                self.assertEqual(splits,{"evolution","development","promotion"})
+                with self.assertRaises(RuntimeError):
+                    c.run(4)
             finally: c.close()
 
 
