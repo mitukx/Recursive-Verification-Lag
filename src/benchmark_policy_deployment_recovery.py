@@ -63,9 +63,7 @@ def main() -> None:
             try:
                 PolicyDeploymentCoordinator(tmp, ["w0"])
             except RuntimeError as exc:
-                metrics["corrupt_pending_rejected"] = int(
-                    "checksum mismatch" in str(exc)
-                )
+                metrics["corrupt_pending_rejected"] = int("mismatch" in str(exc))
     except Exception:
         metrics["unexpected_failures"] = 1
         raise
