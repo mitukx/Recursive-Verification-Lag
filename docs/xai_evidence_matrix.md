@@ -25,7 +25,7 @@ require real GPU measurements.
 | Two-phase policy deployment | publish -> all-worker ack -> activate; real TCP-worker version transition test | implemented + integration CI |
 | Recovery | atomic reference checkpoint save/restore; remote retries | implemented + CI |
 | Observability | counters, p50/p95/max latency, tokens/s | implemented + CI |
-| Profiling | Chrome trace recorder and benchmark reports | implemented + CI |
+| Profiling | Chrome trace recorder and benchmark reports; named GRPO stage ranges plus real-GPU PyTorch profiler trace with top device/CPU ops, memory and tokens/s | implementation + syntax/contract CI; real GPU trace pending |
 | Deterministic failure replay | semantic scheduler event log, invariant validation, concurrency-stable SHA-256 trace digest | implemented + CI artifact |
 | Regression / deploy gates | machine-readable absolute and relative benchmark rules fail CI on regressions | implemented + CI |
 | Artifact lineage | benchmark/replay manifest with path, size, SHA-256 and immediate verification | implemented + CI artifact |
