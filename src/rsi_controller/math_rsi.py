@@ -100,12 +100,10 @@ _FIXED_PROBES: dict[tuple[str, str], tuple[str, ...]] = {
 
 
 def _component_section(candidate: Candidate) -> str:
-    return {
-        "harness": "H",
-        "training": "F",
-        "verifier": "V",
-        "policy": "theta",
-    }[candidate.target_component.value]
+    section = candidate.target_component.value
+    if section not in {"H", "F", "V", "theta"}:
+        raise ValueError(f"unknown candidate component: {section}")
+    return section
 
 
 def _relation(value: float, threshold: float, relation: str) -> bool:
@@ -299,7 +297,7 @@ class MathematicalRSIGate:
             1,
             probes.complexity
             + len(probes.uncovered_mutations)
-            + (1 if candidate.target_component.value == "verifier" else 0),
+            + (1 if candidate.target_component.value == "V" else 0),
         )
         eps = self.cfg.trusted_target_error
         scaling = d * math.log(1.0 / eps)
