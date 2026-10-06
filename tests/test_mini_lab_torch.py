@@ -199,6 +199,26 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 store.close()
 
+    async def test_verification_lease_recovered_immediately_on_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"replay.sqlite"
+            store = TokenReplay(path,capacity=2)
+            generations = [s.generation for s in self.samples(self.model())]
+            self.assertTrue(store.put_pending("pending",0,generations,now=10))
+            token,rid,version,recovered = store.claim_verification(
+                0,1,0,0,lease_s=3600,now=11
+            )
+            self.assertEqual(rid,"pending")
+            store.close()
+            store = TokenReplay(path,capacity=2)
+            try:
+                self.assertEqual(store.recover_verification_leases(),1)
+                claimed = store.claim_verification(0,1,0,0,now=12)
+                self.assertIsNotNone(claimed)
+                self.assertNotEqual(claimed[0],token)
+            finally:
+                store.close()
+
     async def test_verification_failure_quarantines_without_training(self):
         model = self.model()
         owner = self
