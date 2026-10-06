@@ -5,6 +5,19 @@ from dataclasses import dataclass, field
 from statistics import fmean
 
 
+def _percentile(values: list[float], q: float) -> float:
+    if not values:
+        raise ValueError("values must be non-empty")
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    pos = (len(ordered) - 1) * q
+    lo = int(pos)
+    hi = min(lo + 1, len(ordered) - 1)
+    frac = pos - lo
+    return ordered[lo] * (1.0 - frac) + ordered[hi] * frac
+
+
 @dataclass
 class Telemetry:
     counters: dict[str, float] = field(default_factory=lambda: defaultdict(float))
@@ -24,6 +37,8 @@ class Telemetry:
             if values:
                 out[f"{name}.mean"] = fmean(values)
                 out[f"{name}.max"] = max(values)
+                out[f"{name}.p50"] = _percentile(values, 0.50)
+                out[f"{name}.p95"] = _percentile(values, 0.95)
         tokens = out.get("rollout.tokens", 0.0)
         latency = sum(self.observations.get("rollout.request_latency_s", []))
         if latency > 0:
