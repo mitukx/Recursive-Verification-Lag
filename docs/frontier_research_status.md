@@ -7,7 +7,7 @@ The [current xAI Post-Training and RL role](https://job-boards.greenhouse.io/xai
 emphasizes reward modeling, preference optimization, reasoning and real-world
 capabilities. This repository is relevant to that scope. An original, falsifiable
 claim and independent measurements are still needed to make it a research
-centerpiece. The [systems evidence matrix](xai_evidence_matrix.md) on the main
+centerpiece. The [systems evidence matrix](https://github.com/mitukx/Recursive-Verification-Lag/blob/main/docs/xai_evidence_matrix.md) on the main
 branch separately tracks implementation and real GPU measurement gaps.
 
 ## What the latest work established

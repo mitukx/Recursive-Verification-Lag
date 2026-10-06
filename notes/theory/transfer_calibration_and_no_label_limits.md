@@ -66,6 +66,14 @@ sum_g min(d_g,0)=-TV(P_source,Q_source). An update that only redistributes
 within an exact-source group can be neutral. Neither raw occurrence bound nor
 source-group bound should be presented as empirical generalization accuracy.
 
+Cheap verification can itself provide valid constraints. For example, if trusted
+success logically requires passing every public test, a public-test failure is
+a known zero even without a paid additional-test query. In that constrained
+world the minimization uses only remaining unknown groups; shifting mass from
+known zeros to unknown candidates can certify nonnegative gain. It cannot
+certify strictly positive gain if every unknown candidate may still fail.
+The unrestricted -TV result must not be read as denying those free constraints.
+
 Paid evaluation labels, valid structural assumptions linking rewards to
 features, or an independent exchangeable-task evaluation design can change the
 information available. Empirical average transfer and per-task distribution-free
