@@ -95,17 +95,25 @@ future branching experiment explicitly declares those assumptions and enables
 
 ## Promotion semantics
 
-The new mathematical certificate is additive. It cannot weaken the pre-existing
-promotion checks:
+The default controller keeps the mathematical certificate purely additive.
+The locked `oai_math_leap_v1` experiment goes one step further: it delegates
+four designated noncritical checks (verification gap, failure-rate delta,
+latency, and verifier agreement) to the coded-verification layer. This allows a
+bounded fraction of those local obligations to fail, while the following remain
+hard invariants: independent trusted non-regression, anti-reward-hacking, no
+low-trust RVL state, configured capability gain, probe coverage, trusted
+information budget, and the statistical uncertainty gate.
 
 ```
-independent promotion evaluation
-AND anti-reward-hacking
-AND RVL trust
-AND uncertainty/regression gates
-AND mathematical RSI certificate
+hard invariants
+AND coded local obligations with <= delta corruption
+AND bounded fixed-probe coverage
+AND trusted-information budget
 -> promote
 ```
+
+Thus the OAI experiment changes promotion semantics in a narrow, explicit,
+reversible way rather than silently weakening all gates.
 
 Every assessment is appended to research memory as
 `mathematical_rsi_assessment`. A verifier refresh recomputes the certificate
