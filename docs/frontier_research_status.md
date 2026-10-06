@@ -72,10 +72,11 @@ algebra as a major new theorem.
 | Trusted labels can detect harmful local alignment | Pre-registered iid-policy covariance audit with confidence bound and no KL input | Established synthetically; 1,024 tasks, 97.75% harmful/benign decisive rate by 32 labels, zero observed wrong-sign decisions |
 | Refresh improves new-task verification | Independent task/sample split, strong public baseline, matched optimization strength, paid-label curve | Original development primary negative; scalar secondary explained |
 | Geometry transfers to a neural-policy update | Real sampled rollouts, proxy intervention, matched realized drift, untouched terminal evaluation, multiple seeds | Locked Qwen bridge and immutable GPU workflow exist; result pending |
-| Geometry transfers to a learned verifier rather than artificial proxy intervention | Learned reward/verifier model, prospective alignment measurement/intervention, sealed evaluation | Not established; next external-validity layer after Qwen bridge |
+| Geometry transfers to a learned verifier rather than artificial proxy intervention | Learned reward/verifier model, prospective alignment measurement/intervention, sealed evaluation | Protocol/runner/CI implemented prospectively for Qwen hidden-state neural heads (oracle/fresh/stale/shuffled); GPU result not executed and no scientific claim yet |
 | An observable controller predicts stale-verifier harm | Development-only fitting, pre-update features, five-task heldout identification gate, report false interventions and missed harm | Five development onset tasks; heldout unopened |
 | Learned capability improves | Actual parameter updates, independent terminal evaluation, no-update and shuffled-label controls, multiple seeds, raw predictions | T4 pilot locked; GPU result pending |
 | Practical verification efficiency | All physical scoring, distinct labels, wall time, compute and rejected proposals reported together | Development costs archived; full tradeoff not established |
+| Real candidate-bank trusted-label efficiency | Same retained LLM candidates, passive vs propensity/HT vs minimax audit, fixed budgets, terminal harm reported separately from covariance-sign correctness | Protocol/adapter/tests implemented prospectively; real replay blocked on learned-verifier GPU artifact |
 | Scalable RL systems work | Real GPU serving, training, synchronization, profiler and multi-GPU throughput | Main has harnesses; real hardware measurements remain the gate |
 
 The transactional systems runner repeatedly evaluates its promotion set to
@@ -99,12 +100,16 @@ that maps to current frontier-RL work. It should still not be described as
 highest-value missing pieces are:
 
 1. execute the locked Qwen matched-drift bridge and retain the result even if
-   negative or underpowered; then repeat with a genuinely learned verifier if
-   the neural-policy effect survives;
-2. execute and retain the real-GPU RL systems evidence (serving, RL update,
-   synchronization, profiling and multi-GPU scaling) already scaffolded on main;
-3. add a separate randomized iid audit stream or propensity-aware estimator
-   before enabling the statistical covariance gate inside the adaptive runtime.
+   negative or underpowered. Its evidence validator now independently recomputes
+   token-level drift, evaluation margins, manifest hashes and source lineage;
+2. after Issue #38 resolves, execute the already locked learned-neural-verifier
+   bridge (oracle/fresh/stale/shuffled, common current-policy snapshot and
+   matched realized k3), retaining null/negative/underpowered outcomes unchanged;
+3. feed that immutable learned-verifier artifact into the already implemented
+   passive vs propensity/HT vs fixed-budget minimax offline audit replay before
+   wiring any allow/block/refresh action into the online runtime;
+4. execute and retain the real-GPU RL systems evidence (serving, RL update,
+   synchronization, profiling and multi-GPU scaling) already scaffolded on main.
 
-Those two results would be substantially more valuable for hiring evidence than
+Those measured results would be substantially more valuable for hiring evidence than
 adding additional orchestration abstractions or README claims.
