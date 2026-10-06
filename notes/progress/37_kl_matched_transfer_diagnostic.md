@@ -24,10 +24,20 @@ claim. The common target is capped at half the smallest attainable limiting KL
 among five arms per task. Two constant-public-score tasks retain a zero common
 radius; they are included, not discarded. Actual KL is saved for every policy.
 
-Both representations have **zero** pairwise order/tie changes on all 1,920
-within-task sample-occurrence pairs. Best-of-N is therefore unchanged across
-refresh, as observed in the original run. Non-affine spacing can still differ;
-the all-feature result is not explained solely by scalar calibration.
+The public-only representation has zero pairwise order/tie changes on all 1,920
+within-task sample-occurrence pairs. The all-feature representation does not:
+tasks 306, 410, and 631 contain 11, 8, and 1 strict reversals respectively,
+for 20 reversals total. This corrects an earlier overstatement in this note.
+
+The stronger finding is that reversals are not the main driver of the matched-KL
+policy differences. A post-hoc archive audit finds frozen/refreshed all-feature
+policies differ on 14/16 tasks at every requested budget; 12 of those 14 tasks
+have zero strict reversals. Positive-affine-invariant canonical score geometry
+therefore changes within an otherwise preserved ranking. Across nonzero-KL task
+rows, Spearman correlation between canonical score displacement and policy total
+variation is about 0.77, while reversal count versus policy total variation is
+about 0.30. These are descriptive development-set diagnostics, not a new primary
+test or a safety certificate.
 
 A single fixed within-training-task shuffled-label control is archived. It
 preserves label counts and task-level prevalence. Its own attainable KL radius
@@ -50,7 +60,8 @@ transfer and per-task safety certification must remain separate claims.
 ```sh
 python -m src.transfer_calibration data/mbppplus_qwen15b_development_v2_scored.jsonl --output results/transfer_calibration_reproduction
 python -m src.plot_transfer_calibration
-python -m unittest tests.test_transfer_calibration -v
+python -m src.analyze_transfer_geometry --output results/transfer_geometry_reproduction
+python -m unittest tests.test_transfer_calibration tests.test_transfer_geometry -v
 ```
 
 The complete output directory is `results/transfer_calibration_v1/`: 384 task/arm/
@@ -60,12 +71,12 @@ persisted before new evaluation-outcome reads. There are zero new physical
 candidate executions, zero evaluation-task decision-time queries and zero
 generator parameter updates.
 
-Six focused tests pass: random nonuniform-support affine invariance and KL
-constraints; tied maxima/constants/invalid inputs; negative-slope and tie
-counterexamples; label-blocked construction and zero-radius retention; exhaustive
-binary-world safety bounds; full archive-based integration and provenance abort.
-The full research suite passes 78 tests and the existing phase-frontier analysis
-passes. New GPU evidence and independent heldout confirmation remain open.
+The new geometry audit verifies the archived hashes before reading decisions,
+constructs no new policies, performs no new candidate execution, and records no
+evaluation-time query. It adds regression tests for positive-affine invariance,
+policy displacement metrics, the 3 tasks / 20 strict reversals correction, the
+14/16 matched-KL policy changes, and the 12/16 no-reversal-but-policy-change
+result. New GPU evidence and independent heldout confirmation remain open.
 
 ## Research decision
 
