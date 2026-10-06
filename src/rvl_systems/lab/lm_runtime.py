@@ -186,10 +186,18 @@ class AsyncHFLab:
             try:
                 async with self.verifier_lock:
                     verifier_version_before = self.verifier.version
-                    samples = list(await asyncio.gather(
-                        *(self.verifier.verify(g) for g in generations)
+                    results = list(await asyncio.gather(
+                        *(self.verifier.verify(g) for g in generations),
+                        return_exceptions=True,
                     ))
-                    samples = [self._inherit_generation_metadata(s) for s in samples]
+                    failures = [x for x in results if isinstance(x,Exception)]
+                    if failures:
+                        raise RuntimeError(
+                            f"verification group failed in {len(failures)} sample(s)"
+                        ) from failures[0]
+                    samples = [
+                        self._inherit_generation_metadata(s) for s in results
+                    ]
                     versions = {s.verifier_version for s in samples}
                     if versions != {verifier_version_before}:
                         raise RuntimeError(
@@ -210,7 +218,7 @@ class AsyncHFLab:
                 })
                 self.ready.set()
                 self.verification_progress.set()
-            except BaseException:
+            except Exception:
                 status = self.replay.fail_verification(
                     rid,token,max_attempts=self.max_verification_attempts
                 )
@@ -411,6 +419,14 @@ class AsyncHFLab:
             "history":self.metrics,
             "verification_history":self.verification_metrics,
             "verification_debt_history":self.verification_debt_history,
+            "verification_debt_config":vars(self.verification_debt_controller.config),
+            "max_verification_debt":max(
+                [row["score"] for row in self.verification_debt_history] or [0.0]
+            ),
+            "verification_debt_throttle_events":sum(
+                row["action"]!="admit_generation"
+                for row in self.verification_debt_history
+            ),
             "trusted_audits":len(self.labels),
             "verifier_version":self.verifier.version,
             "rvl_enabled":self.rvl_enabled,
