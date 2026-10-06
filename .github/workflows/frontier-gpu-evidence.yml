@@ -56,7 +56,11 @@ jobs:
 
       - name: Generate real-model token-exact RLVR replay
         run: |
-          python -m src.generate_rlvr_replay             --model "$MODEL"             --tasks 4             --samples 4             --max-new-tokens 96             --output "$ROOT/replay.jsonl"
+          python -m src.generate_rlvr_replay             --model "$MODEL"             --tasks 4             --samples 4             --max-new-tokens 96             --precision fp32             --output "$ROOT/replay.jsonl"
+
+      - name: Real-GPU FP32 BF16 FP16 GRPO parity
+        run: |
+          python -m src.benchmark_grpo_precision_gpu             --model "$MODEL"             --replay "$ROOT/replay.jsonl"             --samples 8             --output "$ROOT/low-precision-grpo.json"
 
       - name: Transactional held-out Qwen RLVR
         run: |
@@ -76,11 +80,11 @@ jobs:
 
       - name: Build fail-closed GPU evidence summary
         run: |
-          python -m src.summarize_gpu_evidence             --qwen "$ROOT/qwen/run/benchmark.json"             --fsdp "$ROOT/fsdp/scaling-summary.json"             --fsdp-resume "$ROOT/fsdp/resumed-two-gpu/distributed-report.json"             --vllm "$ROOT/vllm/benchmark/summary.json"             --failover "$ROOT/failover/failover.json"             --output "$ROOT/gpu-evidence-summary.json"             --require-all
+          python -m src.summarize_gpu_evidence             --qwen "$ROOT/qwen/run/benchmark.json"             --fsdp "$ROOT/fsdp/scaling-summary.json"             --fsdp-resume "$ROOT/fsdp/resumed-two-gpu/distributed-report.json"             --vllm "$ROOT/vllm/benchmark/summary.json"             --failover "$ROOT/failover/failover.json"             --low-precision "$ROOT/low-precision-grpo.json"             --gpu-inventory "$ROOT/vllm/benchmark/gpu-inventory.json"             --output "$ROOT/gpu-evidence-summary.json"             --markdown "$ROOT/gpu-evidence-summary.md"             --require-all
 
       - name: Manifest top-level evidence lineage
         run: |
-          python -m src.manifest_artifacts             --output "$ROOT/manifest.json"             "$ROOT/nvidia-smi.txt"             "$ROOT/dependencies.txt"             "$ROOT/replay.jsonl"             "$ROOT/replay.jsonl.meta.json"             "$ROOT/qwen/manifest.json"             "$ROOT/fsdp/manifest.json"             "$ROOT/vllm/manifest.json"             "$ROOT/failover/manifest.json"             "$ROOT/gpu-evidence-summary.json"
+          python -m src.manifest_artifacts             --output "$ROOT/manifest.json"             "$ROOT/nvidia-smi.txt"             "$ROOT/dependencies.txt"             "$ROOT/replay.jsonl"             "$ROOT/replay.jsonl.meta.json"             "$ROOT/qwen/manifest.json"             "$ROOT/fsdp/manifest.json"             "$ROOT/vllm/manifest.json"             "$ROOT/failover/manifest.json"             "$ROOT/low-precision-grpo.json"             "$ROOT/gpu-evidence-summary.json"             "$ROOT/gpu-evidence-summary.md"
           python -m src.manifest_artifacts --verify "$ROOT/manifest.json"
 
       - name: Upload immutable raw evidence
