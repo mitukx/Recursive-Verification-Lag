@@ -18,7 +18,7 @@ require real GPU measurements.
 | RLVR / GRPO update | grouped advantages + clipped token-level causal-LM trainer + held-out Qwen/GSM8K before/after runner; optional per-step transactional held-out promotion with exact model/optimizer/RNG rollback | real Transformers update smoke CI; GPU quality measurement pending |
 | PyTorch distributed execution | 2-process torchrun, broadcast, all-reduce, DDP gradient sync + optimizer step | real CI |
 | RL numerics safety | fp32 log-softmax, finite checks, clipped ratios, grad non-finite guard, clip diagnostics, FP16/BF16 parity gates | implemented + CI; real GPU kernel parity pending |
-| Low-precision policy | auto/fp32/fp16/bf16 model-load policy with CUDA bf16 capability guard | implemented; GPU numerical comparison pending |
+| Low-precision policy | auto/fp32/fp16/bf16 model-load policy with CUDA bf16 capability guard; same-replay FP32/BF16/FP16 GRPO loss/grad/KL/throughput/memory benchmark | implementation + CPU syntax/contract CI; real GPU artifact pending |
 | Verifier integration | exact and functional verifier interfaces | implemented + CI |
 | Weight-version correctness | stale rollout rejection | implemented + CI |
 | Trainer-to-worker synchronization control plane | immutable manifests + checksums + worker acknowledgements | implemented + CI |
@@ -32,7 +32,8 @@ require real GPU measurements.
 | Cluster throughput benchmark | `benchmark_vllm_cluster.py` | runnable; GPU endpoints required |
 | FSDP / NCCL multi-GPU | FSDP/NCCL learner, BF16/FP16 selection, DCP save/resume, 1-to-2 GPU scaling summary and self-hosted acceptance workflow | implemented harness; real GPU artifact pending |
 | Custom CUDA/Triton kernels | fused tokenwise GRPO surrogate + custom autograd backward, PyTorch parity benchmark and GPU microbenchmark harness | implemented; real CUDA speedup evidence pending |
-| BF16/FP16 empirical stability study | harness supported | measurement gap |
+| BF16/FP16 empirical stability study | real-GPU one-step GRPO finite/parity benchmark integrated into full evidence workflow | long-run stability measurement still pending |
+| INT8 quantization numerics | per-row symmetric weight-only reference, explicit scale/clipping semantics, FP32 output parity and storage-ratio regression gates | implemented + CI; optimized INT8 kernel/engine speed measurement pending |
 | Full GPU evidence bundle | one workflow runs transactional Qwen RLVR, real-model 1→2 GPU FSDP + resume, vLLM concurrency sweep, injected worker failure, and fail-closed SHA-linked aggregation | implementation + CPU contract CI; real two-GPU artifact pending |
 
 ## Persistent asynchronous training and RVL integration
