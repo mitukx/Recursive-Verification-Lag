@@ -10,27 +10,23 @@ class WorkloadAwareRouterTests(unittest.TestCase):
     def test_routes_by_outstanding_work_not_request_count(self):
         lb = WorkloadAwareRequestLoadBalancer({"a": None, "b": None})
         a, _ = lb.acquire_server(
-            "long", prompt_ids=[0] * 1000,
-            sampling_params={"max_tokens": 1000},
+            "long", prompt_tokens=1000, decode_budget=1000,
         )
         b, _ = lb.acquire_server(
-            "short", prompt_ids=[0] * 10,
-            sampling_params={"max_tokens": 10},
+            "short", prompt_tokens=10, decode_budget=10,
         )
         self.assertNotEqual(a, b)
         # Both servers now have one request. Least-inflight would see a tie,
         # while work-aware routing should choose the short-loaded server.
         c, _ = lb.acquire_server(
-            "next", prompt_ids=[0] * 20,
-            sampling_params={"max_tokens": 20},
+            "next", prompt_tokens=20, decode_budget=20,
         )
         self.assertEqual(c, b)
 
     def test_release_restores_exact_accounting(self):
         lb = WorkloadAwareRequestLoadBalancer({"a": None, "b": None})
         sid, _ = lb.acquire_server(
-            "r", prompt_ids=[1] * 123,
-            sampling_params={"max_new_tokens": 77},
+            "r", prompt_tokens=123, decode_budget=77,
         )
         self.assertEqual(lb.get_status()["total_predicted_work"], 200)
         lb.release_server(sid, request_id="r")
@@ -39,15 +35,14 @@ class WorkloadAwareRouterTests(unittest.TestCase):
 
     def test_duplicate_inflight_request_id_fails_closed(self):
         lb = WorkloadAwareRequestLoadBalancer({"a": None})
-        lb.acquire_server("same", prompt_ids=[1], sampling_params={})
+        lb.acquire_server("same", prompt_tokens=1, decode_budget=1)
         with self.assertRaises(RuntimeError):
-            lb.acquire_server("same", prompt_ids=[1], sampling_params={})
+            lb.acquire_server("same", prompt_tokens=1, decode_budget=1)
 
     def test_removed_server_does_not_leave_accounting(self):
         lb = WorkloadAwareRequestLoadBalancer({"a": None, "b": None})
         sid, _ = lb.acquire_server(
-            "r", prompt_ids=[1] * 10,
-            sampling_params={"max_tokens": 10},
+            "r", prompt_tokens=10, decode_budget=10,
         )
         lb.remove_servers([sid])
         self.assertNotIn(sid, lb.get_status()["server_work"])
