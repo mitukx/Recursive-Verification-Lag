@@ -62,6 +62,7 @@ class ReconstructionAssessment:
 class MathematicalRSIAssessment:
     enabled: bool
     accepted: bool
+    owns_noncritical_promotion_checks: bool
     checks: dict[str, bool]
     reasons: tuple[str, ...]
     coded: CodedVerificationAssessment
@@ -364,6 +365,7 @@ class MathematicalRSIGate:
             return MathematicalRSIAssessment(
                 enabled=False,
                 accepted=True,
+                owns_noncritical_promotion_checks=False,
                 checks={},
                 reasons=("OAI-math-inspired RSI gate disabled",),
                 coded=coded,
@@ -410,6 +412,7 @@ class MathematicalRSIGate:
         return MathematicalRSIAssessment(
             enabled=True,
             accepted=all(checks.values()),
+            owns_noncritical_promotion_checks=self.cfg.coded_replaces_noncritical_checks,
             checks=checks,
             reasons=tuple(reasons),
             coded=coded,
