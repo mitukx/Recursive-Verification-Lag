@@ -1,9 +1,12 @@
+import gzip
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
 import numpy as np
+
+from scripts.validate_real_llm_active_audit_evidence import validate_evidence
 
 from scripts.run_real_llm_active_audit import (
     ARMS,
@@ -139,6 +142,49 @@ class RealLLMActiveAuditContractTest(unittest.TestCase):
             manifest = json.loads((output / "manifest.json").read_text())
             self.assertEqual(manifest["rows"], 4 * 3 * 4)
             self.assertEqual(manifest["input_research_source_sha"], "source-sha")
+            validation = validate_evidence(output, protocol, root)
+            self.assertTrue(validation["valid"])
+            self.assertEqual(validation["trials"], 4 * 3 * 4)
+            self.assertEqual(validation["cells"], 4)
+
+    def test_rehashed_trial_semantic_tamper_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = self.make_input(base)
+            protocol = self.make_protocol(base)
+            output = base / "out"
+            run(protocol, root, output)
+            path = output / "audit_trials.jsonl.gz"
+            rows = [
+                json.loads(line)
+                for line in gzip.decompress(path.read_bytes()).decode("utf-8").splitlines()
+                if line.strip()
+            ]
+            rows[0]["harmful_detected"] = 1 - int(rows[0]["harmful_detected"])
+            text = "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows)
+            path.write_bytes(gzip.compress(text.encode("utf-8"), compresslevel=9, mtime=0))
+            manifest = json.loads((output / "manifest.json").read_text())
+            manifest["files"]["audit_trials.jsonl.gz"] = sha256(path)
+            write_json(output / "manifest.json", manifest)
+            with self.assertRaises(AssertionError):
+                validate_evidence(output, protocol, root)
+
+    def test_rehashed_summary_metric_tamper_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = self.make_input(base)
+            protocol = self.make_protocol(base)
+            output = base / "out"
+            run(protocol, root, output)
+            summary_path = output / "summary.json"
+            summary = json.loads(summary_path.read_text())
+            summary["summary_rows"][0]["inconclusive_rate"] = 0.123456
+            write_json(summary_path, summary)
+            manifest = json.loads((output / "manifest.json").read_text())
+            manifest["files"]["summary.json"] = sha256(summary_path)
+            write_json(output / "manifest.json", manifest)
+            with self.assertRaises(AssertionError):
+                validate_evidence(output, protocol, root)
 
     def test_tampered_input_artifact_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
