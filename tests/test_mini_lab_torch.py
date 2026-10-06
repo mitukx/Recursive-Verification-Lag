@@ -120,6 +120,25 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 lab.close()
 
+    async def test_hf_trainer_transaction_restores_model_optimizer_and_rng(self):
+        model = self.model()
+        trainer = HFCausalLMGRPOTrainer(model,config=HFTTrainerConfig(learning_rate=1e-3))
+        samples = self.samples(model)
+        before = trainer.snapshot_training_state()
+        torch.manual_seed(1234)
+        trainer.train_step(samples)
+        self.assertTrue(any(
+            not torch.equal(value.cpu(), before["model"][key])
+            for key, value in model.state_dict().items()
+        ))
+        trainer.restore_training_state(before)
+        for key,value in model.state_dict().items():
+            self.assertTrue(torch.equal(value.cpu(),before["model"][key]))
+        restored = trainer.optimizer.state_dict()
+        self.assertEqual(restored["param_groups"],before["optimizer"]["param_groups"])
+        self.assertEqual(set(restored["state"]),set(before["optimizer"]["state"]))
+        self.assertTrue(torch.equal(torch.get_rng_state(),before["cpu_rng"]))
+
     async def test_microbatch_gradient_matches_full_graph_reference(self):
         model = self.model()
         samples = self.samples(model)

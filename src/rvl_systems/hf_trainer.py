@@ -112,6 +112,35 @@ class HFCausalLMGRPOTrainer:
             behavior_kl.mean(),
         )
 
+    def snapshot_training_state(self) -> dict[str, Any]:
+        """Deep CPU snapshot of model/optimizer/RNG for transactional updates."""
+        torch = self.torch
+        model = {
+            key: value.detach().cpu().clone()
+            for key, value in self.model.state_dict().items()
+        }
+        optimizer = self.optimizer.state_dict()
+        # copy.deepcopy preserves optimizer tensors and nested scalar state
+        import copy
+        optimizer = copy.deepcopy(optimizer)
+        state = {
+            "model": model,
+            "optimizer": optimizer,
+            "cpu_rng": torch.get_rng_state().cpu().clone(),
+        }
+        if torch.cuda.is_available():
+            state["cuda_rng"] = [x.cpu().clone() for x in torch.cuda.get_rng_state_all()]
+        return state
+
+    def restore_training_state(self, state: dict[str, Any]) -> None:
+        """Restore model/optimizer/RNG after a rejected candidate update."""
+        torch = self.torch
+        self.model.load_state_dict(state["model"])
+        self.optimizer.load_state_dict(state["optimizer"])
+        torch.set_rng_state(state["cpu_rng"].cpu())
+        if "cuda_rng" in state and torch.cuda.is_available():
+            torch.cuda.set_rng_state_all([x.cpu() for x in state["cuda_rng"]])
+
     def train_step(self, samples: list[VerifiedGeneration], *, advantages: list[float] | None = None) -> dict[str, float]:
         if not samples:
             return {"loss": 0.0, "mean_reward": 0.0, "samples": 0.0}
