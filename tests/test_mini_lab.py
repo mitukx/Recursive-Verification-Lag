@@ -242,6 +242,20 @@ class VerificationDebtTests(unittest.TestCase):
                 store.close()
 
 
+    def test_synthetic_phase_benchmark_bounds_slow_verifier_debt(self):
+        from src.benchmark_verification_debt import SimulationConfig, benchmark
+        report = benchmark(SimulationConfig(
+            groups=32,generation_s=.002,verification_s=.01,
+            learner_s=.002,capacity=16,tick_s=.001,timeout_s=10,
+        ))
+        self.assertTrue(report["checks"]["aware_backlog_bounded_vs_async"])
+        self.assertTrue(report["checks"]["sync_backlog_at_most_one"])
+        self.assertTrue(report["checks"]["all_groups_accounted"])
+        self.assertLess(
+            report["runs"]["verification_aware"]["peak_verification_backlog"],
+            report["runs"]["async_policy_only"]["peak_verification_backlog"],
+        )
+
 class AgentTests(unittest.IsolatedAsyncioTestCase):
     async def test_step_checkpoint_recovers_exact_action_stream(self):
         with tempfile.TemporaryDirectory() as tmp:
