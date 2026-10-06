@@ -58,6 +58,20 @@ Learner metrics now retain:
 - verification age at learner admission;
 - verification attempts and backlog.
 
+## Verification debt backpressure
+
+The runtime now treats unverified work as a bounded systems liability rather than only a queue length. `VerificationDebtController` scores observable replay state from pending/verifying work, stale ready rewards, policy lag, verifier lag, and age of the oldest unverified group. The scalar is used only for rollout backpressure and telemetry; it is not a safety or quality certificate.
+
+Three control regions are explicit:
+
+- `admit_generation`: verification debt is below the soft limit;
+- `throttle_generation`: rollout waits for verification/learner progress once debt is elevated;
+- `pause_generation`: the same fail-closed wait is enforced above the hard limit until debt drains.
+
+The controller configuration is part of the durable verification resume identity, so a restarted run cannot silently change debt weights or thresholds.
+
+`src/benchmark_verification_debt.py` provides a deterministic three-arm queue simulation: synchronous inline verification, naive async with policy-lag control only, and verification-aware async admission. It is intended to lock the expected control-plane behavior before real GPU measurements. Its output is explicitly synthetic evidence only.
+
 ## Current evidence
 
 CPU/tiny-model acceptance tests cover:
