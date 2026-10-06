@@ -1,0 +1,23 @@
+{
+  "status": "locked post-hoc linear-hitting follow-up on recovered Qwen bank",
+  "input": {
+    "bank": "data/recovered_qwen05b_bank.jsonl",
+    "bank_sha256": "012adf92b2032a56e5f74d4e08d89e639a921e26405238e18624276e7575a327",
+    "scope": "already-inspected development bank; post-hoc follow-up to fixed-task-probe inefficiency"
+  },
+  "etas": [0.25, 1.0, 4.0],
+  "rounds": 12,
+  "outcome_tolerance": 1e-10,
+  "representations": ["global_features", "taskwise_features"],
+  "residual_radius_grid": [0.0, 0.01, 0.05, 0.1, 0.25],
+  "target_error": 0.1,
+  "information_budget_multiplier": 1.0,
+  "interpretation": "Measure the cost/coverage tradeoff of one reusable rank-sized fixed probe set. Radius-grid rows are assumption-conditional; evaluator_sufficient radius is diagnostic only and is never a deployable online choice.",
+  "limitations": [
+    "post-hoc exploratory follow-up motivated by the observed conservatism of task-wide fixed coverage",
+    "the linear/tubular verifier-error class is a new bounded model, not implied by OpenAI Math family 116",
+    "evaluator_sufficient residual radius uses full hidden labels and is diagnostic only",
+    "candidate bank is development-only and frozen-bank reweighting is not neural RSI",
+    "feature representations are hand-specified observable basis classes and may be misspecified"
+  ]
+}
