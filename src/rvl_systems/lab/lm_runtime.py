@@ -141,7 +141,7 @@ class AsyncHFLab:
                 self.max_verifier_lag,lease_s=self.verification_lease_s,
             )
             if claim is None:
-                if self.actor_done:
+                if self.actor_done and self.replay.active_count() == 0:
                     self.verifier_done = True
                     self.ready.set()
                     return
@@ -215,7 +215,7 @@ class AsyncHFLab:
             )
             if group is None:
                 self.space.set()
-                if self.verifier_done:
+                if self.actor_done and self.replay.active_count() == 0:
                     break
                 self.ready.clear()
                 await self.ready.wait()
