@@ -175,6 +175,129 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 store.close()
 
+    async def test_verification_aware_replay_requires_fresh_verifier_admission(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = TokenReplay(Path(tmp)/"replay.sqlite",capacity=2)
+            try:
+                generations = [s.generation for s in self.samples(self.model())]
+                self.assertTrue(store.put_pending("pending",0,generations,now=10))
+                self.assertIsNone(store.next(0,1,0,0))
+                token,rid,version,recovered = store.claim_verification(0,1,0,0,now=11)
+                self.assertEqual((rid,version),("pending",0))
+                self.assertEqual(recovered,generations)
+                verified = [VerifiedGeneration(g,float(i%2),.01,0) for i,g in enumerate(recovered)]
+                store.complete_verification(rid,token,verified,now=12)
+                ready = store.next(0,1,0,0)
+                self.assertIsNotNone(ready)
+                self.assertEqual(ready[2],verified)
+                self.assertEqual(store.requeue_stale_verifications(1,0),1)
+                self.assertIsNone(store.next(0,1,1,0))
+                token,rid,version,recovered = store.claim_verification(0,1,1,0,now=13)
+                refreshed = [VerifiedGeneration(g,float(i%2),.01,1) for i,g in enumerate(recovered)]
+                store.complete_verification(rid,token,refreshed,now=14)
+                self.assertEqual(store.next(0,1,1,0)[2],refreshed)
+            finally:
+                store.close()
+
+    async def test_verification_lease_recovered_immediately_on_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"replay.sqlite"
+            store = TokenReplay(path,capacity=2)
+            generations = [s.generation for s in self.samples(self.model())]
+            self.assertTrue(store.put_pending("pending",0,generations,now=10))
+            token,rid,version,recovered = store.claim_verification(
+                0,1,0,0,lease_s=3600,now=11
+            )
+            self.assertEqual(rid,"pending")
+            store.close()
+            store = TokenReplay(path,capacity=2)
+            try:
+                self.assertEqual(store.recover_verification_leases(),1)
+                claimed = store.claim_verification(0,1,0,0,now=12)
+                self.assertIsNotNone(claimed)
+                self.assertNotEqual(claimed[0],token)
+            finally:
+                store.close()
+
+    async def test_verification_failure_quarantines_without_training(self):
+        model = self.model()
+        owner = self
+        class Backend:
+            model_name = "offline-verification-failure"
+            resolved_device = "cpu"
+            _torch = torch
+            def __init__(self):
+                self.model = copy.deepcopy(model)
+            def ensure_loaded(self):
+                pass
+            async def generate(self,pid,prompt,*,n,temperature,seed):
+                return [s.generation for s in owner.samples(self.model)]
+        class FailingVerifier:
+            version = 0
+            async def verify(self,generation):
+                raise RuntimeError("injected verifier outage")
+        with tempfile.TemporaryDirectory() as tmp:
+            lab = AsyncHFLab(
+                tmp,Backend(),FailingVerifier(),learning_rate=1e-3,
+                max_verification_attempts=2,
+            )
+            try:
+                report = await asyncio.wait_for(lab.run({"a":"prompt"},samples=4),30)
+                self.assertEqual(report["version"],0)
+                self.assertEqual(report["parameter_l1_change"],0)
+                self.assertEqual(report["quarantined_verification_groups"],1)
+                self.assertEqual(report["verification_backlog"],0)
+                self.assertEqual(report["replay_counts"].get("consumed",0),0)
+            finally:
+                lab.close()
+
+    async def test_verifier_fleet_scores_groups_concurrently(self):
+        model = self.model()
+        owner = self
+        class Backend:
+            model_name = "offline-verifier-fleet"
+            resolved_device = "cpu"
+            _torch = torch
+            def __init__(self):
+                self.model = copy.deepcopy(model)
+            def ensure_loaded(self):
+                pass
+            async def generate(self,pid,prompt,*,n,temperature,seed):
+                await asyncio.sleep(.001)
+                return [s.generation for s in owner.samples(self.model)]
+        class SlowVerifier:
+            def __init__(self):
+                self.version = 0
+                self.active = 0
+                self.peak = 0
+            async def verify(self,generation):
+                self.active += 1
+                self.peak = max(self.peak,self.active)
+                try:
+                    await asyncio.sleep(.02)
+                    return VerifiedGeneration(generation,1.0,.02,self.version)
+                finally:
+                    self.active -= 1
+        with tempfile.TemporaryDirectory() as tmp:
+            verifier = SlowVerifier()
+            lab = AsyncHFLab(
+                tmp,Backend(),verifier,learning_rate=1e-3,
+                verification_workers=2,capacity=8,
+            )
+            try:
+                report = await asyncio.wait_for(
+                    lab.run({f"p{i}":"prompt" for i in range(4)},samples=4),30
+                )
+                self.assertGreaterEqual(verifier.peak,2)
+                self.assertEqual(report["replay_counts"].get("consumed",0),4)
+                self.assertEqual(report["verification_backlog"],0)
+                self.assertTrue(all(
+                    row["worker_id"] in (0,1)
+                    for row in report["verification_history"]
+                ))
+            finally:
+                lab.close()
+
     async def test_async_isolated_models_real_update_and_resume(self):
         model = self.model()
         owner = self

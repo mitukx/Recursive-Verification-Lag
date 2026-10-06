@@ -14,6 +14,8 @@ from src.rvl_systems.lab.promotion import PromotionDecision
 from src.rvl_systems.lab.runtime import LabConfig, MiniLab, percentile
 from src.rvl_systems.lab.store import LeaseLost, ReplayStore
 from src.rvl_systems.lab.verification import VerifierEnsemble
+from src.rvl_systems.lab.verification_debt import (
+    VerificationDebtConfig, VerificationDebtController, VerificationDebtSignals)
 
 
 def trajectory(i="one", version=0, program=(0,2), action=2):
@@ -202,6 +204,85 @@ class VerificationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ControlConfig(mode="unknown")
 
+
+class VerificationDebtTests(unittest.TestCase):
+    def test_debt_levels_are_monotonic_and_bounded(self):
+        controller = VerificationDebtController(
+            VerificationDebtConfig(soft_limit=2.0,hard_limit=4.0)
+        )
+        low = controller.assess(VerificationDebtSignals(pending=1))
+        elevated = controller.assess(VerificationDebtSignals(pending=2))
+        high = controller.assess(VerificationDebtSignals(pending=4))
+        self.assertEqual(low.action,"admit_generation")
+        self.assertEqual(elevated.action,"throttle_generation")
+        self.assertEqual(high.action,"pause_generation")
+        self.assertLess(low.score,elevated.score)
+        self.assertLess(elevated.score,high.score)
+
+    def test_replay_debt_tracks_queue_age_and_stale_reward(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            from src.rvl_systems.lab.token_replay import TokenReplay
+            from src.rvl_systems.types import Generation, VerifiedGeneration
+            store = TokenReplay(Path(tmp)/"replay.sqlite",capacity=4)
+            try:
+                g = Generation("p","prompt","response",0.0,1,0.0,{})
+                store.put_pending("pending",0,[g],now=10)
+                signals = store.verification_debt_signals(2,1,now=20)
+                self.assertEqual(signals.pending,1)
+                self.assertEqual(signals.max_policy_lag,2)
+                self.assertEqual(signals.oldest_unverified_age_s,10)
+                token,rid,_,rows = store.claim_verification(2,4,1,1,now=20)
+                store.complete_verification(
+                    rid,token,[VerifiedGeneration(rows[0],1.0,0.0,0)],now=21
+                )
+                signals = store.verification_debt_signals(2,1,now=22)
+                self.assertEqual(signals.stale_rewards,1)
+                self.assertEqual(signals.max_verifier_lag,1)
+            finally:
+                store.close()
+
+
+    def test_verified_rewrite_rejects_mixed_versions_and_behavior_mutation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            from src.rvl_systems.lab.token_replay import TokenReplay
+            from src.rvl_systems.types import Generation, VerifiedGeneration
+            store = TokenReplay(Path(tmp)/"replay.sqlite",capacity=4)
+            try:
+                g1 = Generation("p","prompt","a",0.0,1,0.0,{})
+                g2 = Generation("p","prompt","b",0.0,1,0.0,{})
+                store.put_pending("g",0,[g1,g2],now=1)
+                token,rid,_,rows = store.claim_verification(0,1,0,0,now=2)
+                samples = [
+                    VerifiedGeneration(rows[0],1.0,0.0,0),
+                    VerifiedGeneration(rows[1],0.0,0.0,0),
+                ]
+                store.complete_verification(rid,token,samples,now=3)
+                with self.assertRaises(ValueError):
+                    store.rewrite_verified("g",[
+                        replace(samples[0],verifier_version=0),
+                        replace(samples[1],verifier_version=1),
+                    ],now=4)
+                mutated = replace(g1,response="tampered")
+                with self.assertRaises(ValueError):
+                    store.rewrite_verified("g",[
+                        replace(samples[0],generation=mutated),samples[1]
+                    ],now=4)
+            finally:
+                store.close()
+
+    def test_synthetic_phase_benchmark_bounds_slow_verifier_debt(self):
+        from src.benchmark_verification_debt import SimulationConfig, benchmark
+        report = benchmark(SimulationConfig(
+            groups=32,generation_s=.002,verification_s=.01,
+            learner_s=.002,capacity=16,tick_s=.001,timeout_s=10,
+        ))
+        self.assertTrue(report["checks"]["aware_backlog_bounded_vs_async"])
+        self.assertTrue(report["checks"]["sync_backlog_at_most_one"])
+        self.assertTrue(report["checks"]["all_groups_accounted"])
+        self.assertLess(
+            report["runs"]["verification_aware"]["peak_verification_backlog"],
+            report["runs"]["async_policy_only"]["peak_verification_backlog"],
+        )
 
 class AgentTests(unittest.IsolatedAsyncioTestCase):
     async def test_step_checkpoint_recovers_exact_action_stream(self):

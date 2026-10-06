@@ -1,0 +1,138 @@
+{
+  "status": "prospective GPU systems protocol locked before verification-aware async GPU outcomes",
+  "issue": 66,
+  "purpose": "measure when asynchronous rollout outruns verification and whether bounded verification-aware admission controls debt without silently corrupting learner provenance",
+  "claim_boundary": "systems phase diagram for this pinned model/task/hardware configuration; no universal throughput or safety claim",
+  "model": {
+    "name": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+    "revision": "2e1fd397ee46e1388853d2af2c993145b0f1098a"
+  },
+  "dataset": {
+    "name": "evalplus/mbppplus",
+    "revision": "b2d74c91837c3f2a20c1299ae98133cbe7cfa077",
+    "file_sha256": "dc20030b3788fccf617444edcb34138ef13d7e4fafd17bfcb8c1279dbb12399b",
+    "split_config": "configs/mbppplus_task_split_v2.json",
+    "split_manifest_sha256": "30977463323db7e5e22cec1a28e5b07dda3b1b75093a790d958dda1fb72490da",
+    "training_ranks": [8, 23],
+    "heldout_ranks": [40, 55]
+  },
+  "generation": {
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "max_new_tokens": 256,
+    "samples_per_prompt": 4,
+    "seeds": [17, 29, 43]
+  },
+  "arms": {
+    "sync_inline": {
+      "description": "generation waits for group verification before the next rollout group",
+      "policy_lag_gate": true,
+      "verifier_lag_gate": true,
+      "verification_debt_backpressure": "implicit_serial"
+    },
+    "async_policy_only": {
+      "description": "generation and verification are decoupled; only behavior-policy lag bounds learner admission",
+      "policy_lag_gate": true,
+      "verifier_lag_gate": false,
+      "verification_debt_backpressure": false
+    },
+    "verification_aware_async": {
+      "description": "decoupled generation/verifier/learner with independent policy/verifier freshness and verification-debt backpressure",
+      "policy_lag_gate": true,
+      "verifier_lag_gate": true,
+      "verification_debt_backpressure": true
+    }
+  },
+  "default_system": {
+    "rollout_concurrency": 8,
+    "verifier_concurrency": 4,
+    "injected_verifier_latency_ms": 0,
+    "replay_capacity_groups": 64,
+    "max_policy_lag": 8,
+    "max_verifier_lag": 0,
+    "verification_debt": {
+      "pending_weight": 1.0,
+      "verifying_weight": 0.75,
+      "stale_reward_weight": 1.5,
+      "policy_lag_weight": 0.2,
+      "verifier_lag_weight": 1.0,
+      "age_weight_per_s": 0.02,
+      "soft_limit": 2.5,
+      "hard_limit": 5.0
+    }
+  },
+  "phase_sweeps": [
+    {
+      "name": "baseline_three_arm",
+      "arms": ["sync_inline", "async_policy_only", "verification_aware_async"],
+      "override": {}
+    },
+    {
+      "name": "verifier_latency",
+      "arms": ["async_policy_only", "verification_aware_async"],
+      "injected_verifier_latency_ms": [10, 50, 200]
+    },
+    {
+      "name": "verifier_capacity",
+      "arms": ["async_policy_only", "verification_aware_async"],
+      "verifier_concurrency": [1, 2, 4, 8]
+    },
+    {
+      "name": "rollout_pressure",
+      "arms": ["async_policy_only", "verification_aware_async"],
+      "rollout_concurrency": [2, 8, 16]
+    },
+    {
+      "name": "freshness_bounds",
+      "arms": ["verification_aware_async"],
+      "max_policy_lag": [2, 8, 16],
+      "max_verifier_lag": [0, 1, 2],
+      "cartesian": false,
+      "pairing": [[2, 0], [8, 1], [16, 2]]
+    }
+  ],
+  "failure_injection": [
+    "terminate verifier worker with an in-flight verification lease and restart the driver",
+    "inject verifier exceptions until bounded quarantine activates",
+    "refresh the learned verifier while ready replay exists and require stale rewards to re-enter pending verification"
+  ],
+  "required_timeseries": [
+    "generated_groups_per_s",
+    "generated_tokens_per_s",
+    "verified_groups_per_s",
+    "verifier_calls_per_s",
+    "learner_updates_per_s",
+    "pending_groups",
+    "verifying_groups",
+    "ready_groups",
+    "verification_debt_score",
+    "queue_to_verified_latency_s",
+    "verification_age_at_admission_s",
+    "policy_lag",
+    "verifier_lag",
+    "learner_idle_fraction",
+    "gpu_utilization",
+    "gpu_memory_bytes"
+  ],
+  "required_terminal_metrics": [
+    "consumed_groups",
+    "stale_groups",
+    "reverified_groups",
+    "quarantined_groups",
+    "heldout_pass_at_1_or_exact_match",
+    "proxy_trusted_reward_gap_if_learned_verifier"
+  ],
+  "hard_invariants": [
+    "pending_verification and verifying groups are never learner-consumed",
+    "one replay group never mixes verifier versions",
+    "behavior tokens and behavior logprobs are unchanged by verification or reverification",
+    "policy lag and verifier lag learner admission bounds are mechanically enforced",
+    "restart recovery does not duplicate learner consumption",
+    "verifier exceptions are not converted into zero-reward training examples"
+  ],
+  "interpretation": {
+    "primary_systems_question": "Does verification-aware admission bound verification debt and reward staleness under slow verification while retaining useful learner throughput?",
+    "quality_rule": "No quality/stability superiority claim without heldout trusted evaluation.",
+    "negative_results": "Retain throughput regressions, null quality effects, underpowered runs, failures, and quarantined work."
+  }
+}

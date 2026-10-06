@@ -20,6 +20,7 @@ require real GPU measurements.
 | RL numerics safety | fp32 log-softmax, finite checks, clipped ratios, grad non-finite guard, clip diagnostics, FP16/BF16 parity gates | implemented + CI; real GPU kernel parity pending |
 | Low-precision policy | auto/fp32/fp16/bf16 model-load policy with CUDA bf16 capability guard; same-replay FP32/BF16/FP16 GRPO loss/grad/KL/throughput/memory benchmark | implementation + CPU syntax/contract CI; real GPU artifact pending |
 | Verifier integration | exact and functional verifier interfaces | implemented + CI |
+| Verification-aware async RL | durable actor -> verifier -> learner stages, independent policy/verifier freshness gates, verification leases/retries/quarantine, restart recovery, and verification-debt rollout backpressure | implemented + CPU/tiny-model contract CI + deterministic queue benchmark; real GPU phase diagram pending |
 | Weight-version correctness | stale rollout rejection | implemented + CI |
 | Trainer-to-worker synchronization control plane | immutable manifests + checksums + durable worker acknowledgements; restart-safe monotonic versions; real-model NCCL full-parameter broadcast benchmark with activation latency/effective bandwidth | implemented + CI contract; real GPU artifact pending |
 | Crash-consistent deployment failover | durable active/pending state, recovered partial ACKs, pending-artifact checksum validation, monotonic coordinator epochs that fence stale writers | implemented + machine-readable recovery/fencing CI artifact |
@@ -45,6 +46,8 @@ explicit acceptance boundaries.
 | Added capability | Implementation/evidence | Remaining boundary |
 |---|---|---|
 | Concurrent actor/learner training | CPU actors and independent real causal-LM model copies | multi-node online learner service |
+| Async verification pipeline | behavior replay enters pending verification before reward; learner sees only version-admissible ready groups; stale rewards re-enter verification after refit | real-GPU verifier-fleet throughput, lag distributions and quality tradeoff |
+| Verification debt control | replay-derived pending/verifying/stale/lag/age score drives bounded rollout admission; sync/naive-async/aware synthetic phase benchmark in CI | calibration on real workloads; thresholds are heuristic controls, not statistical certificates |
 | Durable experience | WAL replay, expiring fenced leases, immutable behavior tokens, lag filtering | distributed database/retention |
 | RVL interventions | trusted audit acquisition, residual fitting, reward re-evaluation, equal-cost cadence sweeps; fail-closed `Cov(y,v)` alignment gate with Hoeffding CI for explicitly i.i.d. single-policy audits | adaptive priority audit stream remains heuristic; propensity-aware extension or separate iid audit stream required for statistical use |
 | Policy/verifier co-evolution | bandit attacks, trusted labels, critic fitting, fresh failure-task replay | open-ended learned red teaming |
@@ -72,7 +75,8 @@ published with immutable configs and raw results:
 7. a real GPU worker-failure experiment demonstrating recovery (CPU deterministic chaos evidence is already CI-validated);
 8. policy-weight synchronization overhead;
 9. fp32 vs bf16/fp16 throughput and numerical-stability comparison;
-10. NCCL/FSDP multi-GPU validation.
+10. NCCL/FSDP multi-GPU validation;
+11. verification-aware async phase diagram from locked `configs/verification_aware_async_gpu_v1.json`: sync vs policy-only async vs policy+verifier freshness under verifier latency/capacity stress, including held-out trusted quality.
 
 The codebase should make these experiments easy; the measurements are the
 actual hiring evidence.

@@ -1,10 +1,9 @@
-"""Asynchronous model-driven coding episodes -> executable RL training."""
+"""Asynchronous model-driven coding episodes -> verification-aware RL training."""
 from __future__ import annotations
 
 import asyncio
 from dataclasses import replace
 
-from ..types import VerifiedGeneration
 from .lm_runtime import AsyncHFLab
 from .tool_agent import CodingToolAgent
 
@@ -19,7 +18,6 @@ def episode_advantages(samples):
     rewards = {episode:sum(values)/len(values) for episode,values in groups.items()}
     mean = sum(rewards.values())/len(rewards)
     std = math.sqrt(sum((y-mean)**2 for y in rewards.values())/len(rewards)+1e-6)
-    # train_step averages all turns; this factor gives each episode equal weight.
     return [((rewards[s.metadata["episode_id"]]-mean)/std) *
             len(samples)/(len(groups)*len(groups[s.metadata["episode_id"]])) for s in samples]
 
@@ -36,14 +34,12 @@ class CodingAsyncHFLab(AsyncHFLab):
     async def _actor(self,prompts,samples,seed):
         try:
             for i,(task_id,_) in enumerate(prompts.items()):
+                await self._await_generation_admission()
                 rid = f"group-{i:08d}"
                 if self.replay.db.execute("SELECT 1 FROM groups WHERE id=?",(rid,)).fetchone():
                     continue
-                # Interrupted compound episodes must reload their ORIGINAL
-                # pinned weights, not the latest learner checkpoint.
                 import hashlib
                 import json
-                from pathlib import Path
                 from .contracts import canonical
                 plan_path = self.root/"coding-episodes"/f"{rid}-plan.json"
                 if plan_path.exists():
@@ -72,24 +68,33 @@ class CodingAsyncHFLab(AsyncHFLab):
                     def __init__(self):
                         self.version = version
                     async def generate(self,request):
-                        rows = await owner.backend.generate(request.prompt_id,request.prompt,
-                            n=1,temperature=request.temperature,seed=request.seed)
+                        rows = await owner.backend.generate(
+                            request.prompt_id,request.prompt,
+                            n=1,temperature=request.temperature,seed=request.seed
+                        )
                         return [replace(g,metadata={**g.metadata,"policy_version":version}) for g in rows]
-                verified = []
+                generations = []
                 task = self.tasks[task_id]
                 for j in range(samples):
-                    episode = await self.agent.run(task,Lease(),f"{rid}-episode-{j}",
+                    episode = await self.agent.run(
+                        task,Lease(),f"{rid}-episode-{j}",
                         seed=seed+i*1009+j*7919,
-                        journal=self.root/"coding-episodes"/f"{rid}-{j}.json")
+                        journal=self.root/"coding-episodes"/f"{rid}-{j}.json",
+                    )
                     for g in episode.generations:
-                        g = replace(g,metadata={**g.metadata,"final_source":episode.source,
-                                    "coding_task_id":task_id,"episode_id":episode.episode_id,
-                                    "completed":episode.completed})
-                        sample = await self.verifier.verify(g)
-                        verified.append(replace(sample,metadata={**sample.metadata,"episode_id":episode.episode_id}))
-                if not verified:
+                        generations.append(replace(
+                            g,
+                            metadata={
+                                **g.metadata,
+                                "final_source":episode.source,
+                                "coding_task_id":task_id,
+                                "episode_id":episode.episode_id,
+                                "completed":episode.completed,
+                            },
+                        ))
+                if not generations:
                     raise RuntimeError("coding episode produced no model actions")
-                while not self.replay.put(rid,version,verified):
+                while not self.replay.put_pending(rid,version,generations):
                     self.space.clear()
                     self.ready.set()
                     await self.space.wait()

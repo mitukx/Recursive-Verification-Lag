@@ -34,6 +34,8 @@ jobs:
         run: python -m src.run_mini_lab --output artifacts/async-lab --episodes 64 --actors 4 --audit-budget 16 --tool-latency-ms 1
       - name: Paired seed adaptive versus fixed versus no refresh benchmark
         run: python -m src.benchmark_mini_lab --output artifacts/ablation --seeds 17,29,43 --episodes 256 --learning-rates 0.08,0.2 --cadences 2,8
+      - name: Verification debt control-plane benchmark
+        run: python -m src.benchmark_verification_debt --output artifacts/verification-debt-benchmark.json
       - name: Upload measured artifacts and replay
         if: always()
         uses: actions/upload-artifact@v4
