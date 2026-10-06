@@ -151,6 +151,39 @@ class EpisodeCreditTests(unittest.TestCase):
         self.assertLess(advantages[3],0)
 
 
+class TokenServingTests(unittest.TestCase):
+    def response(self):
+        return {"model":"immutable-v3","prompt_token_ids":[1,2],
+                "choices":[{"index":0,"text":"answer","token_ids":[3,4],
+                            "logprobs":{"token_logprobs":[-.2,-.3]}}]}
+
+    def test_remote_behavior_tokens_are_consumable_by_real_trainer(self):
+        from src.rvl_systems.lab.token_serving import TokenServingBackend
+        from src.rvl_systems.hf_trainer import HFCausalLMGRPOTrainer
+        from src.rvl_systems.types import VerifiedGeneration
+        backend = TokenServingBackend("http://localhost","immutable-v3")
+        g = backend.parse(self.response(),"p","prompt",1,.1)[0]
+        p,r,lp = HFCausalLMGRPOTrainer._metadata(VerifiedGeneration(g,1,0,0))
+        self.assertEqual((p,r,lp),([1,2],[3,4],[-.2,-.3]))
+
+    def test_identity_missing_prompt_ids_and_partial_logprobs_rejected(self):
+        from src.rvl_systems.lab.token_serving import TokenServingBackend
+        backend = TokenServingBackend("http://localhost","immutable-v3")
+        cases = []
+        raw = self.response()
+        raw["model"] = "wrong-version"
+        cases.append(raw)
+        raw = self.response()
+        del raw["prompt_token_ids"]
+        cases.append(raw)
+        raw = self.response()
+        raw["choices"][0]["logprobs"]["token_logprobs"] = [None,-.3]
+        cases.append(raw)
+        for body in cases:
+            with self.assertRaises(ValueError):
+                backend.parse(body,"p","prompt",1,.1)
+
+
 class GPUMeasurementTests(unittest.TestCase):
     def test_mfu_requires_explicit_flop_model_and_peak(self):
         from src.rvl_systems.lab.measurement import mfu_estimate,parse_gpu_csv

@@ -11,17 +11,7 @@ on:
       - 'src/rvl_systems/hf_backend.py'
       - 'tests/test_mini_lab*.py'
       - '.github/workflows/mini-lab.yml'
-  push:
-    branches: ['systems/mini-frontier-lab']
-    paths:
-      - 'src/rvl_systems/lab/**'
-      - 'src/*mini_lab.py'
-      - 'src/run_async_lm_lab.py'
-      - 'src/run_coding_agent_lab.py'
-      - 'src/rvl_systems/hf_trainer.py'
-      - 'src/rvl_systems/hf_backend.py'
-      - 'tests/test_mini_lab*.py'
-      - '.github/workflows/mini-lab.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read

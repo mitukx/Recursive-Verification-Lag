@@ -149,6 +149,12 @@ torchrun --standalone --nproc-per-node=2 -m src.run_distributed_mini_lab --mode 
 torchrun --nnodes=2 --nproc-per-node=4 --node-rank="$NODE_RANK" --rdzv-id=rvl-lab --rdzv-backend=c10d --rdzv-endpoint="$MASTER_ADDR:29500" -m src.run_distributed_mini_lab --mode fsdp --model /shared/model --replay /shared/token-experiences.jsonl --output /shared/checkpoints
 ~~~
 
+TokenServingBackend requests server-owned prompt/response token IDs and validates
+model identity and one logprob per response token. Missing IDs are rejected;
+retokenizing server text would silently change the behavior likelihood. It can
+be used as a worker backend in VersionedServingFleet. This adapter has schema
+contract tests; real GPU vLLM/SGLang compatibility still needs acceptance evidence.
+
 Each JSONL record is a VerifiedGeneration, including prompt_token_ids,
 response_token_ids and response_token_logprobs. This entry point is a
 **distributed replay learner**, not yet a fully integrated multi-node online
