@@ -16,7 +16,7 @@ experiments that still require external hardware.
 | Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update runs in GitHub Actions |
 | Distributed training primitives | real `torchrun --nproc-per-node=2` test with broadcast, all-reduce, DDP backward, optimizer step, and cross-rank parameter equality |
 | Rollout serving | bounded async rollout, least-loaded scheduling, per-worker in-flight limits, backpressure and timeouts |
-| Failure handling | retries, worker quarantine, fail-fast health logic, stale policy-version rejection |
+| Failure handling | cross-worker failover retries, worker quarantine/recovery, fail-fast health logic, stale policy-version rejection |
 | Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
 | Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
 | Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, fp32/fp16/bf16 loading policy |
@@ -33,6 +33,7 @@ A local control-plane smoke run requires no GPU:
 python -m unittest tests.test_rlvr_systems -v
 python -m src.run_rlvr_systems_demo --rounds 12 --samples 32
 python -m src.benchmark_rollout_engine --requests 16 --samples 8 --latency-ms 5 --concurrency 8
+python -m src.benchmark_scheduler_chaos --requests 32 --recovery-requests 12
 ```
 
 The repository does **not** yet claim production-scale GPU performance. Real
