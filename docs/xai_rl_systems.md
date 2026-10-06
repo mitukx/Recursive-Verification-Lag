@@ -9,27 +9,55 @@ observable, not to claim frontier-scale performance from a laptop.
 - bounded-concurrency asynchronous rollout scheduling;
 - a backend protocol plus a trainable CPU toy policy;
 - an OpenAI-compatible HTTP adapter for vLLM/SGLang servers;
-- deterministic reward verification;
-- grouped reward normalization and a GRPO-style policy-gradient update;
-- a policy-movement/staleness refresh controller aligned with RVL;
-- throughput/latency/reward telemetry;
-- an end-to-end Mac/CPU demo and unit tests.
+- a local Hugging Face causal-LM backend with token-level log-prob capture;
+- deterministic and functional reward verification;
+- grouped reward normalization and clipped GRPO objectives;
+- a one-device PyTorch causal-LM GRPO trainer;
+- policy-movement/staleness verifier refresh;
+- atomic checkpoint/restore for the reference trainable backend;
+- throughput/latency/reward telemetry and async-vs-serial benchmarks;
+- Mac/CPU demos, tests, and dedicated CI.
 
-The CPU backend is deliberately small enough for CI while exercising the exact
-control plane used by a remote inference backend. This separates systems logic
-from GPU availability.
+The lightweight backend exercises the same rollout/verifier/control-plane
+interfaces used by real-model backends. Torch and Transformers are optional so
+the research CI remains fast.
 
-## Run on a Mac
+## Fast CPU/Mac validation
 
 ```bash
-python -m unittest tests.test_rlvr_systems -v
+python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives -v
 python -m src.run_rlvr_systems_demo --rounds 12 --samples 32
+python -m src.benchmark_rollout_engine --requests 16 --samples 8 --latency-ms 5 --concurrency 8
 ```
+
+## Real local model on Apple Silicon, CUDA, or CPU
+
+Install the optional dependencies:
+
+```bash
+pip install -r requirements-systems.txt
+```
+
+Run a one-device real-model rollout/verification/update smoke test:
+
+```bash
+python -m src.run_hf_grpo_smoke \
+  --model Qwen/Qwen2.5-0.5B-Instruct \
+  --steps 1 \
+  --samples 2
+```
+
+`HFLocalBackend` captures generated token ids and normalized transition
+log-probabilities. `HFCausalLMGRPOTrainer` then recomputes differentiable
+token log-probabilities and applies a clipped token-level GRPO/PPO-style
+surrogate. This is intentionally a small single-device trainer; large-model
+training should replace the optimizer layer with FSDP/DeepSpeed while keeping
+the rollout/verifier interfaces.
 
 ## Point at a GPU serving stack
 
 `VLLMHTTPBackend` targets the standard `/v1/completions` endpoint exposed by
-vLLM and compatible servers. Start the GPU server separately, then construct:
+vLLM and compatible servers and records returned token log-probabilities:
 
 ```python
 from src.rvl_systems.backends import VLLMHTTPBackend
@@ -40,10 +68,9 @@ backend = VLLMHTTPBackend(
 )
 ```
 
-The next production step is a model-training adapter that consumes
-`TrainRecord` objects with PyTorch/DeepSpeed/FSDP, plus batched token-level
-logprobs from the serving backend. The core rollout/verifier/refresh/telemetry
-interfaces should remain unchanged.
+The next production step is separating rollout-serving weights from trainable
+policy weights, batched parameter synchronization, and failure recovery across
+remote workers.
 
 ## Engineering benchmark plan
 
@@ -51,10 +78,14 @@ Report concrete systems numbers instead of repository size:
 
 1. synchronous vs asynchronous rollout throughput;
 2. p50/p95 rollout and verifier latency;
-3. tokens/s and GPU utilization from a remote vLLM server;
+3. tokens/s and GPU utilization from a remote vLLM/SGLang server;
 4. checkpoint/resume correctness under worker interruption;
 5. verifier-lag phase sweeps with fixed compute budgets;
-6. comparison of fixed-cadence vs movement-triggered refresh.
+6. comparison of fixed-cadence vs movement-triggered refresh;
+7. policy-weight synchronization overhead between trainer and rollout workers.
 
-A strong public result should include the hardware, model revision, serving
+A strong public result should include hardware, model revision, serving
 version, seeds, profiler traces, and a reproducible command.
+
+See `docs/systems_split_plan.md` for the criteria for extracting this package
+into a standalone systems repository.

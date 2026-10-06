@@ -5,16 +5,25 @@ on:
     paths:
       - 'src/rvl_systems/**'
       - 'src/run_rlvr_systems_demo.py'
+      - 'src/run_hf_grpo_smoke.py'
+      - 'src/benchmark_rollout_engine.py'
       - 'tests/test_rlvr_systems.py'
+      - 'tests/test_rlvr_reliability.py'
+      - 'tests/test_rlvr_objectives.py'
+      - 'requirements-systems.txt'
       - 'docs/xai_rl_systems.md'
       - '.github/workflows/rl-systems.yml'
   push:
     branches:
-      - systems/xai-rl-stack-v1
+      - 'systems/**'
     paths:
       - 'src/rvl_systems/**'
       - 'src/run_rlvr_systems_demo.py'
+      - 'src/run_hf_grpo_smoke.py'
+      - 'src/benchmark_rollout_engine.py'
       - 'tests/test_rlvr_systems.py'
+      - 'tests/test_rlvr_reliability.py'
+      - 'tests/test_rlvr_objectives.py'
       - '.github/workflows/rl-systems.yml'
 
 permissions:
@@ -30,6 +39,10 @@ jobs:
         with:
           python-version: '3.11'
       - name: Unit tests
-        run: python -m unittest tests.test_rlvr_systems -v
+        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives -v
+      - name: Optional-backend syntax check
+        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/run_hf_grpo_smoke.py
       - name: End-to-end CPU smoke test
         run: python -m src.run_rlvr_systems_demo --rounds 3 --samples 8
+      - name: Async rollout benchmark smoke test
+        run: python -m src.benchmark_rollout_engine --requests 4 --samples 2 --latency-ms 2 --concurrency 4
