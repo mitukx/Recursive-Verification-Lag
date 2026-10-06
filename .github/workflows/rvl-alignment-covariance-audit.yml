@@ -1,0 +1,66 @@
+name: rvl-alignment-covariance-audit
+
+on:
+  push:
+    branches: [research/rvl-transfer-evidence-v3]
+    paths:
+      - configs/alignment_covariance_audit_v1.json
+      - src/alignment_covariance_audit.py
+      - tests/test_alignment_covariance_audit.py
+      - .github/workflows/rvl-alignment-covariance-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rvl-alignment-covariance-audit-v1
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/rvl-transfer-evidence-v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Validate audit contracts
+        run: python -m unittest tests.test_alignment_covariance_audit -v
+      - name: Execute locked covariance audit
+        run: |
+          rm -rf results/alignment_covariance_audit_v1
+          python -m src.alignment_covariance_audit             --protocol configs/alignment_covariance_audit_v1.json             --output results/alignment_covariance_audit_v1
+      - name: Enforce locked primary decision
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('results/alignment_covariance_audit_v1/manifest.json').read_text())
+          print(json.dumps(m, indent=2))
+          if not m['primary_prediction_passed']:
+              raise SystemExit('locked covariance-audit prediction failed')
+          PY
+      - name: Upload complete evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvl-alignment-covariance-audit-v1-${{ github.run_id }}
+          path: |
+            configs/alignment_covariance_audit_v1.json
+            results/alignment_covariance_audit_v1/
+          retention-days: 90
+      - name: Commit deterministic evidence
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/alignment_covariance_audit_v1
+          git diff --cached --quiet && exit 0
+          git commit -m "Archive geometry-aware covariance audit evidence [skip ci]"
+          git fetch origin research/rvl-transfer-evidence-v3
+          git rebase origin/research/rvl-transfer-evidence-v3
+          git push origin HEAD:research/rvl-transfer-evidence-v3
