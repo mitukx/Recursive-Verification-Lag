@@ -101,6 +101,43 @@ class EnsembleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(maximum,2)
 
 
+class ToolAgentTests(unittest.IsolatedAsyncioTestCase):
+    async def test_model_tool_loop_preserves_version_and_hides_trusted_tests(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from src.rvl_systems.lab.coding import CodingTask,IOTest
+        from src.rvl_systems.lab.tool_agent import CodingToolAgent
+        task = CodingTask("double","Implement double(x)=2*x","double",
+                          (IOTest((0,),0),),(IOTest((-917,),-1834),))
+        calls = [{"tool":"inspect"},{"tool":"edit","source":"def double(x): return 2*x"},
+                 {"tool":"public_test"},{"tool":"finish"}]
+        class Lease:
+            version = 3
+            def __init__(self):
+                self.prompts = []
+            async def generate(self,request):
+                self.prompts.append(request.prompt)
+                return [Generation(request.prompt_id,request.prompt,json.dumps(calls[len(self.prompts)-1]),
+                                   -.1,4,0,{"policy_version":3})]
+        async def public(g):
+            return 1.0
+        agent = CodingToolAgent(public)
+        lease = Lease()
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = Path(tmp)/"episode.json"
+            episode = await agent.run(task,lease,"episode",journal=journal)
+            self.assertTrue(episode.completed)
+            self.assertEqual(episode.policy_version,3)
+            self.assertEqual(len(episode.generations),4)
+            self.assertTrue(all("-917" not in p for p in lease.prompts))
+            restored = await agent.run(task,lease,"episode",journal=journal)
+            self.assertEqual(restored.generations,episode.generations)
+            turns = agent.training_turns(episode,1,2)
+            self.assertEqual(len(turns),4)
+            self.assertTrue(all(s.generation.response.startswith("{") for s in turns))
+
+
 class GPUMeasurementTests(unittest.TestCase):
     def test_mfu_requires_explicit_flop_model_and_peak(self):
         from src.rvl_systems.lab.measurement import mfu_estimate,parse_gpu_csv

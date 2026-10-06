@@ -251,6 +251,31 @@ class AgentTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 lab.close()
 
+    async def test_regression_gate_preserves_serving_snapshot_on_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = LabConfig(episodes=8,actors=1,batch_size=4,deterministic=True,tool_latency_s=0)
+            lab = MiniLab(tmp,cfg)
+            try:
+                for i in range(4):
+                    lab.store.put(trajectory(str(i),program=(1,2),action=1),verdict())
+                lab.evaluate = lambda:1.0
+                accepted = lab._train_batch(lab.store.claim(4,0,16))
+                self.assertTrue(accepted)
+                served_version = lab.serving.version
+                for i in range(4,8):
+                    lab.store.put(trajectory(str(i),program=(1,2),action=1),verdict())
+                lab.evaluate = lambda:0.0
+                self.assertFalse(lab._train_batch(lab.store.claim(4,1,16)))
+                self.assertEqual(lab.serving.version,served_version)
+                self.assertGreater(lab.learner.version,lab.serving.version)
+            finally:
+                lab.close()
+            restarted = MiniLab(tmp,cfg)
+            try:
+                self.assertEqual(restarted.registry.active.version,served_version)
+            finally:
+                restarted.close()
+
     async def test_reserved_episode_is_recovered_on_restart(self):
         with tempfile.TemporaryDirectory() as tmp:
             cfg = LabConfig(episodes=8,actors=1,batch_size=4,deterministic=True,tool_latency_s=0)

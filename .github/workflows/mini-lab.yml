@@ -77,3 +77,20 @@ jobs:
           name: mini-lab-real-lm-${{ github.run_id }}
           path: artifacts/
           if-no-files-found: error
+
+  executable-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build isolated runtime and pin exact image ID
+        run: |
+          docker build -f docker/Dockerfile.mbppplus -t rvl-agent-tests .
+          docker image inspect rvl-agent-tests --format '{{.Id}}' > /tmp/rvl-agent-image
+      - name: Real generated Python tests and grader attack checks
+        run: |
+          export RVL_TEST_DOCKER_IMAGE="$(cat /tmp/rvl-agent-image)"
+          python -m unittest discover -s tests -p 'test_mini_lab_docker.py' -v
