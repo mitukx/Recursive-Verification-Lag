@@ -23,7 +23,7 @@ relative to fixed cadence at comparable actual label cost.
    same asynchronous LM learner. Useful training requires a model that can
    produce valid tool calls. No coding-capability gain has yet been established.
 
-The existing scheduling/RPC/dynamic-batching stack remains available. The new
+The CPU lab now uses **transactional policy promotion**: every learner update is a candidate, the candidate and currently-serving incumbent are evaluated on the same frozen held-out task/seed suite, and a fail-closed gate checks global reward, family-slice regressions, and uncompensated new failures. Rejected candidates restore the learner state to the incumbent instead of becoming parents of later updates. Every decision is appended to a hash-chained promotion ledger verified on restart. This is a deterministic regression gate, not a significance test or a safety proof.\n\nThe existing scheduling/RPC/dynamic-batching stack remains available. The new
 blue/green serving fleet uses its load balancing, admission, deadlines and
 failover, while retaining old policy pools for in-flight episode leases.
 
