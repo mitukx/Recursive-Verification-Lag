@@ -148,6 +148,7 @@ def distributed_step(
             model_state,optim_state = get_state_dict(model,trainer.optimizer)
             save({"model":model_state,"optimizer":optim_state},checkpoint_id=str(Path(output)/"sharded-checkpoint"))
         report = {
+            "git_sha": os.environ.get("GITHUB_SHA", "unknown"),
             "mode": mode,
             "backend": dist.get_backend(),
             "world_size": world,
