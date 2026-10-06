@@ -136,11 +136,11 @@ class QwenBridgeEvidenceValidatorTest(unittest.TestCase):
                 "prompt": "p",
                 "response": "correct",
                 "logprob": -1.0,
-                "token_count": 1,
+                "token_count": 2,
                 "latency_s": 0.0,
                 "metadata": {
-                    "response_token_ids": [1],
-                    "response_token_logprobs": [-1.0],
+                    "response_token_ids": [1, 3],
+                    "response_token_logprobs": [-0.4, -0.6],
                 },
             },
             {
@@ -169,8 +169,8 @@ class QwenBridgeEvidenceValidatorTest(unittest.TestCase):
         )
 
         eval_posts = {
-            "harmful": [-1.2, -1.8],
-            "benign": [-0.8, -2.2],
+            "harmful": [[-0.7, -0.7], [-1.8]],
+            "benign": [[-0.3, -0.3], [-2.2]],
         }
         for arm, posts in eval_posts.items():
             rows = []
@@ -185,11 +185,11 @@ class QwenBridgeEvidenceValidatorTest(unittest.TestCase):
                         "response": g["response"],
                         "response_token_ids": g["metadata"]["response_token_ids"],
                         "baseline_token_logprobs": baseline,
-                        "post_update_token_logprobs": [post],
-                        "baseline_sequence_logprob": baseline[0],
-                        "post_update_sequence_logprob": post,
-                        "baseline_mean_token_logprob": baseline[0],
-                        "post_update_mean_token_logprob": post,
+                        "post_update_token_logprobs": post,
+                        "baseline_sequence_logprob": float(np.sum(baseline)),
+                        "post_update_sequence_logprob": float(np.sum(post)),
+                        "baseline_mean_token_logprob": float(np.mean(baseline)),
+                        "post_update_mean_token_logprob": float(np.mean(post)),
                     }
                 )
             write_jsonl(seed / f"{arm}_evaluation_candidate_token_logprobs.jsonl", rows)
@@ -198,8 +198,8 @@ class QwenBridgeEvidenceValidatorTest(unittest.TestCase):
         write_jsonl(
             seed / "evaluation_preference.jsonl",
             [
-                {"task_id": "evaluation-0", "arm": "harmful", "informative": True, "preference_shift": -0.4},
-                {"task_id": "evaluation-0", "arm": "benign", "informative": True, "preference_shift": 0.4},
+                {"task_id": "evaluation-0", "arm": "harmful", "informative": True, "preference_shift": -0.6},
+                {"task_id": "evaluation-0", "arm": "benign", "informative": True, "preference_shift": 0.6},
             ],
         )
         seed_summary = {
@@ -218,8 +218,8 @@ class QwenBridgeEvidenceValidatorTest(unittest.TestCase):
             },
             "effect_k3_ratio": 1.0,
             "informative_evaluation_prompts": 1,
-            "mean_preference_shift": {"harmful": -0.4, "benign": 0.4},
-            "benign_minus_harmful_preference_shift": 0.8,
+            "mean_preference_shift": {"harmful": -0.6, "benign": 0.6},
+            "benign_minus_harmful_preference_shift": 1.2,
             "eligible_primary_seed": True,
             "greedy": {},
             "evaluation_access_before_lr_selection": 0,
@@ -231,7 +231,7 @@ class QwenBridgeEvidenceValidatorTest(unittest.TestCase):
                 "eligible_seeds": 1,
                 "required_eligible_seeds": 1,
                 "primary_evidence_sufficient": True,
-                "primary_mean_benign_minus_harmful_preference_shift": 0.8,
+                "primary_mean_benign_minus_harmful_preference_shift": 1.2,
                 "primary_direction_passed": True,
                 "seed_results": [seed_summary],
                 "claim_scope": "unit",

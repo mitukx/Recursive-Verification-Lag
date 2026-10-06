@@ -8,6 +8,7 @@ from scripts.run_qwen_alignment_bridge import (
     candidate_preference_shift,
     effect_drift_ratio,
     select_matched_drift_lrs,
+    sequence_logprob,
     token_drift_stats,
 )
 
@@ -57,6 +58,14 @@ class QwenAlignmentBridgeContractTest(unittest.TestCase):
         self.assertEqual(result["selected"]["harmful"]["lr"], 5e-7)
         self.assertEqual(result["selected"]["benign"]["lr"], 5e-7)
         self.assertNotIn("evaluation", result)
+
+    def test_sequence_logprob_is_token_sum_not_length_normalized_mean(self):
+        self.assertAlmostEqual(sequence_logprob([-0.4, -0.6]), -1.0)
+        self.assertNotAlmostEqual(sequence_logprob([-0.4, -0.6]), -0.5)
+        with self.assertRaises(ValueError):
+            sequence_logprob([])
+        with self.assertRaises(ValueError):
+            sequence_logprob([float("nan")])
 
     def test_preference_shift_uses_both_correct_and_incorrect_candidates(self):
         base = [-3.0, -2.5, -2.0, -3.5]

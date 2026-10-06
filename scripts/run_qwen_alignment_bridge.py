@@ -147,14 +147,22 @@ def select_matched_drift_lrs(
     }
 
 
+def sequence_logprob(token_logps: list[float] | np.ndarray) -> float:
+    """Return the unnormalized response sequence log-probability."""
+    values = np.asarray(token_logps, float)
+    if values.ndim != 1 or values.size == 0 or not np.isfinite(values).all():
+        raise ValueError("nonempty finite 1D token logprobs required")
+    return float(values.sum())
+
+
 def candidate_preference_shift(
-    baseline_avg_logps: list[float],
-    post_avg_logps: list[float],
+    baseline_sequence_logps: list[float],
+    post_sequence_logps: list[float],
     trusted_rewards: list[float],
 ) -> dict[str, Any]:
     """Correct-vs-incorrect sequence-logprob margin and its update-induced shift."""
-    base = np.asarray(baseline_avg_logps, float)
-    post = np.asarray(post_avg_logps, float)
+    base = np.asarray(baseline_sequence_logps, float)
+    post = np.asarray(post_sequence_logps, float)
     y = np.asarray(trusted_rewards, float)
     if (
         base.ndim != 1
@@ -675,7 +683,7 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
                     baseline = np.asarray(
                         generation.metadata["response_token_logprobs"], float
                     )
-                    task_values.append(float(np.mean(current)))
+                    task_values.append(sequence_logprob(current))
                     evaluation_logprob_rows.append(
                         {
                             "task_id": group["task_id"],
@@ -690,8 +698,8 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
                             ],
                             "baseline_token_logprobs": baseline.tolist(),
                             "post_update_token_logprobs": current.tolist(),
-                            "baseline_sequence_logprob": float(np.sum(baseline)),
-                            "post_update_sequence_logprob": float(np.sum(current)),
+                            "baseline_sequence_logprob": sequence_logprob(baseline),
+                            "post_update_sequence_logprob": sequence_logprob(current),
                             "baseline_mean_token_logprob": float(np.mean(baseline)),
                             "post_update_mean_token_logprob": float(np.mean(current)),
                         }
@@ -756,13 +764,13 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
                 }
                 for candidate_index, reward in enumerate(rewards)
             )
-            baseline_avg = [
-                float(np.mean(g.metadata["response_token_logprobs"]))
+            baseline_sequence_logps = [
+                sequence_logprob(g.metadata["response_token_logprobs"])
                 for g in group["generations"]
             ]
             for arm in ("harmful", "benign"):
                 metric = candidate_preference_shift(
-                    baseline_avg,
+                    baseline_sequence_logps,
                     evaluation_post_logps[arm][task_id],
                     rewards,
                 )

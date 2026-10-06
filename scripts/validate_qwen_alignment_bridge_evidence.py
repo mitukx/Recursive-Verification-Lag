@@ -212,8 +212,8 @@ def validate_seed(seed_root: Path, seed_summary: dict[str, Any]) -> dict[str, An
         informative += 1
         positive = y > 0.5
         for arm in ARMS:
-            base = np.asarray([eval_rows[arm][cid]["baseline_mean_token_logprob"] for cid in ids], float)
-            post = np.asarray([eval_rows[arm][cid]["post_update_mean_token_logprob"] for cid in ids], float)
+            base = np.asarray([eval_rows[arm][cid]["baseline_sequence_logprob"] for cid in ids], float)
+            post = np.asarray([eval_rows[arm][cid]["post_update_sequence_logprob"] for cid in ids], float)
             base_margin = float(base[positive].mean() - base[~positive].mean())
             post_margin = float(post[positive].mean() - post[~positive].mean())
             shifts[arm].append(post_margin - base_margin)

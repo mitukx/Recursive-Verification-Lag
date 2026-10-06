@@ -29,6 +29,7 @@ from scripts.run_qwen_alignment_bridge import (
     _set_optimizer_lr,
     candidate_preference_shift,
     post_update_drift_evidence,
+    sequence_logprob,
     save_json,
     save_jsonl,
     sha256,
@@ -463,7 +464,7 @@ def _save_eval_logprobs(
         for index, generation in enumerate(group["generations"]):
             baseline = np.asarray(generation.metadata["response_token_logprobs"], float)
             current = _current_token_logps(model, generation)
-            task_values.append(float(np.mean(current)))
+            task_values.append(sequence_logprob(current))
             rows.append(
                 {
                     "task_id": group["task_id"],
@@ -476,8 +477,8 @@ def _save_eval_logprobs(
                     "post_update_token_logprobs": current.tolist(),
                     "baseline_mean_token_logprob": float(np.mean(baseline)),
                     "post_update_mean_token_logprob": float(np.mean(current)),
-                    "baseline_sequence_logprob": float(np.sum(baseline)),
-                    "post_update_sequence_logprob": float(np.sum(current)),
+                    "baseline_sequence_logprob": sequence_logprob(baseline),
+                    "post_update_sequence_logprob": sequence_logprob(current),
                 }
             )
         means[group["task_id"]] = task_values
@@ -1000,7 +1001,7 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
                     }
                 )
             baseline = [
-                float(np.mean(g.metadata["response_token_logprobs"]))
+                sequence_logprob(g.metadata["response_token_logprobs"])
                 for g in group["generations"]
             ]
             for arm in ARMS:
