@@ -11,6 +11,8 @@ from src.rvl_systems.openai_math import (
     OpenAIMathTask,
     hash_chain,
     summarize_rows,
+    build_calibrated_math_verifier,
+    trusted_label_record,
 )
 from src.rvl_systems.types import Generation
 
@@ -94,6 +96,33 @@ class LeanVerifierTests(unittest.TestCase):
         )
         self.assertEqual(asyncio.run(grader(generation)), 1.0)
         self.assertEqual(grader.calls, 1)
+
+    @patch("src.rvl_systems.openai_math.subprocess.run")
+    def test_calibrated_multiverifier_closed_loop(self, run):
+        run.return_value.returncode = 0
+        run.return_value.stdout = b""
+        run.return_value.stderr = b""
+
+        async def cheap(_generation):
+            return 0.8
+
+        verifier, trusted = build_calibrated_math_verifier(
+            self.verifier.manifest,
+            self.verifier,
+            {"cheap": cheap},
+        )
+        generation = Generation(
+            prompt_id="fixture", prompt="p", response="exact True.intro",
+            logprob=-1.0, token_count=2, latency_s=0.0
+        )
+        sample = asyncio.run(verifier.verify(generation))
+        y = asyncio.run(verifier.audit(generation))
+        verifier.fit([trusted_label_record(generation, sample.reward, y)])
+        rescored = asyncio.run(verifier.verify(generation))
+        self.assertEqual(y, 1.0)
+        self.assertEqual(trusted.calls, 1)
+        self.assertEqual(verifier.version, 1)
+        self.assertIn("critic_score", rescored.metadata)
 
 
 class MetricsTests(unittest.TestCase):
