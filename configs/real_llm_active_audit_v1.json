@@ -16,7 +16,7 @@
       "shuffled"
     ],
     "expected_input_protocol_sha256": "8c1bba69ea0351cbfd8c3b186f62b0f821cbccc55cca78fce901580e5cbad0d7",
-    "expected_input_research_source_sha": "1d63f67e4bede2ff2d1e1af13da4bb48b00ee50f",
+    "expected_input_research_source_sha": "a7fc4e0a300c30fb5292c757e4441579ab16334d",
     "expected_seed_values": [
       17,
       29,
