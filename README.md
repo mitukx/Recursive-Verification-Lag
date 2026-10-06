@@ -4,6 +4,44 @@
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.
 
+## Verified RL systems engineering track
+
+Alongside the RVL research, this repository contains a tested post-training
+systems stack for verifiable-reward RL. The engineering path is deliberately
+separated into lightweight CI checks, real-model checks, and GPU-scale
+experiments that still require external hardware.
+
+| Capability | Evidence |
+|---|---|
+| Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update runs in GitHub Actions |
+| Distributed training primitives | real `torchrun --nproc-per-node=2` test with broadcast, all-reduce, DDP backward, optimizer step, and cross-rank parameter equality |
+| Rollout serving | bounded async rollout, least-loaded scheduling, per-worker in-flight limits, backpressure and timeouts |
+| Failure handling | retries, worker quarantine, fail-fast health logic, stale policy-version rejection |
+| Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
+| Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
+| Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, fp32/fp16/bf16 loading policy |
+| Observability | counters, tokens/s, p50/p95/max latency, Chrome trace export, machine-readable benchmark reports |
+| GPU serving integration | OpenAI-compatible vLLM/SGLang adapter and multi-endpoint benchmark harness |
+
+Start with [the systems architecture](docs/rl_system_architecture.md), the
+[engineering runbook](docs/xai_rl_systems.md), and the
+[evidence/gap matrix](docs/xai_evidence_matrix.md).
+
+A local control-plane smoke run requires no GPU:
+
+```bash
+python -m unittest tests.test_rlvr_systems -v
+python -m src.run_rlvr_systems_demo --rounds 12 --samples 32
+python -m src.benchmark_rollout_engine --requests 16 --samples 8 --latency-ms 5 --concurrency 8
+```
+
+The repository does **not** yet claim production-scale GPU performance. Real
+vLLM/SGLang GPU measurements, held-out Qwen RLVR results, and NCCL/FSDP
+multi-GPU validation are explicit open acceptance criteria in issues
+[#10](https://github.com/mitukx/Recursive-Verification-Lag/issues/10),
+[#11](https://github.com/mitukx/Recursive-Verification-Lag/issues/11), and
+[#12](https://github.com/mitukx/Recursive-Verification-Lag/issues/12).
+
 **Evidence checkpoint (2026-09-23):** The first isolated, scored
 pretrained-code-model MBPP+ pilot has a largely **negative** timing result:
 early versus uniform verification differs by just one baseline failure among
