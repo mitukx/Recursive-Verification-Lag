@@ -91,15 +91,18 @@ class RSIController:
                 candidate_eval,lag,hacking=refreshed_eval,refreshed_lag,refreshed_hacking
                 self.memory.event("verifier_refresh_intervention",candidate_id=candidate.candidate_id,verifier_version=refreshed_version,reason="uncertain verifier trust",reevaluation_elapsed_s=refresh_run.elapsed_s)
                 candidate_verifier_version=refreshed_version; candidate=replace(candidate,full_state=refreshed_state)
-            self.memory.record_decision(decision)
             if decision.accepted:
                 new_id="champion-"+digest({"candidate":candidate.candidate_id,"generation":generation})[:12]; new_state=json.loads(json.dumps(candidate.full_state))
                 new_state.setdefault("theta",{})["version"]=candidate_policy_version; new_state.setdefault("V",{})["version"]=candidate_verifier_version
-                champion=ChampionSnapshot(new_id,generation,new_state,candidate_policy_version,candidate_verifier_version,champion.champion_id); self.memory.add_champion(champion)
+                champion=ChampionSnapshot(new_id,generation,new_state,candidate_policy_version,candidate_verifier_version,champion.champion_id)
                 promoted+=1; status="PROMOTED"; lesson=f"Supported: {proposal.hypothesis}"
+                activated=champion
             else:
                 rejected+=1; status="REJECTED"; lesson="Rejected: "+"; ".join(decision.reasons)
-            self.memory.add_lesson(generation,candidate.candidate_id,lesson)
+                activated=None
+            self.memory.commit_generation(
+                decision,generation,candidate.candidate_id,lesson,champion=activated
+            )
             record=GenerationRecord(generation,champion.champion_id,candidate.candidate_id,candidate_eval.development.trusted_score,candidate_eval.promotion.trusted_score,candidate_eval.development.reward,candidate_eval.promotion.trusted_score,hacking.verification_gap,candidate_eval.verifier_version,candidate_eval.policy_version,candidate_eval.policy_verifier_age,candidate_eval.promotion.latency_p50,candidate_eval.promotion.latency_p95,candidate_eval.promotion.throughput,candidate_eval.promotion.failure_rate,candidate_eval.promotion.compute_cost,status)
             self.metrics.append(record); print(f"Generation {generation} | {candidate.candidate_id} | {status} | promotion={record.promotion_score:.4f} gap={record.verification_gap:.4f}")
 
