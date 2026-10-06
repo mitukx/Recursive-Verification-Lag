@@ -251,6 +251,53 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 lab.close()
 
+    async def test_verifier_fleet_scores_groups_concurrently(self):
+        model = self.model()
+        owner = self
+        class Backend:
+            model_name = "offline-verifier-fleet"
+            resolved_device = "cpu"
+            _torch = torch
+            def __init__(self):
+                self.model = copy.deepcopy(model)
+            def ensure_loaded(self):
+                pass
+            async def generate(self,pid,prompt,*,n,temperature,seed):
+                await asyncio.sleep(.001)
+                return [s.generation for s in owner.samples(self.model)]
+        class SlowVerifier:
+            def __init__(self):
+                self.version = 0
+                self.active = 0
+                self.peak = 0
+            async def verify(self,generation):
+                self.active += 1
+                self.peak = max(self.peak,self.active)
+                try:
+                    await asyncio.sleep(.02)
+                    return VerifiedGeneration(generation,1.0,.02,self.version)
+                finally:
+                    self.active -= 1
+        with tempfile.TemporaryDirectory() as tmp:
+            verifier = SlowVerifier()
+            lab = AsyncHFLab(
+                tmp,Backend(),verifier,learning_rate=1e-3,
+                verification_workers=2,capacity=8,
+            )
+            try:
+                report = await asyncio.wait_for(
+                    lab.run({f"p{i}":"prompt" for i in range(4)},samples=4),30
+                )
+                self.assertGreaterEqual(verifier.peak,2)
+                self.assertEqual(report["replay_counts"].get("consumed",0),4)
+                self.assertEqual(report["verification_backlog"],0)
+                self.assertTrue(all(
+                    row["worker_id"] in (0,1)
+                    for row in report["verification_history"]
+                ))
+            finally:
+                lab.close()
+
     async def test_async_isolated_models_real_update_and_resume(self):
         model = self.model()
         owner = self
