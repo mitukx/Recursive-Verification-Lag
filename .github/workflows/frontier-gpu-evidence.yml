@@ -1,6 +1,9 @@
 name: frontier-gpu-evidence
 
 on:
+  push:
+    branches:
+      - 'gpu-evidence/**'
   workflow_dispatch:
     inputs:
       model:
@@ -24,9 +27,9 @@ jobs:
     runs-on: [self-hosted, linux, gpu]
     timeout-minutes: 360
     env:
-      MODEL: ${{ inputs.model }}
-      RLVR_STEPS: ${{ inputs.rlvr_steps }}
-      SERVING_REQUESTS: ${{ inputs.serving_requests }}
+      MODEL: ${{ inputs.model || 'Qwen/Qwen2.5-0.5B-Instruct' }}
+      RLVR_STEPS: ${{ inputs.rlvr_steps || '8' }}
+      SERVING_REQUESTS: ${{ inputs.serving_requests || '32' }}
       ROOT: artifacts/frontier-gpu-evidence
       TOKENIZERS_PARALLELISM: 'false'
       HF_HUB_DISABLE_TELEMETRY: '1'
