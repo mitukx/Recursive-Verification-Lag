@@ -61,6 +61,25 @@ class ResearchMemory:
         if not row: raise KeyError(champion_id)
         return ChampionSnapshot(**json.loads(row[0]))
     def add_lesson(self,generation,candidate_id,lesson): self.db.execute("INSERT INTO lessons(generation,candidate_id,lesson) VALUES(?,?,?)",(generation,candidate_id,lesson))
+    def commit_generation(self,decision,generation,candidate_id,lesson,champion=None):
+        """Atomically commit the promotion decision, optional activation, and lesson."""
+        self.db.execute("BEGIN IMMEDIATE")
+        try:
+            self.record_decision(decision)
+            if champion is not None:
+                self.add_champion(champion)
+            self.add_lesson(generation,candidate_id,lesson)
+            self.event(
+                "generation_committed",
+                generation=generation,
+                candidate_id=candidate_id,
+                accepted=decision.accepted,
+                champion_id=champion.champion_id if champion is not None else None,
+            )
+            self.db.execute("COMMIT")
+        except BaseException:
+            self.db.execute("ROLLBACK")
+            raise
     def rejected_hypotheses(self):
         rows=self.db.execute("SELECT p.payload FROM proposals p JOIN decisions d ON d.candidate_id IN (SELECT id FROM candidates WHERE proposal_id=p.id) WHERE d.accepted=0 ORDER BY p.generation").fetchall()
         return [json.loads(r[0])["hypothesis"] for r in rows]
