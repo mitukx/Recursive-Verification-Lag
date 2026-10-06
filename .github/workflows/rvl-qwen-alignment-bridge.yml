@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: research/rvl-transfer-evidence-v3
+          ref: 9b539907da02e4832d3fa5186940a72803a0e2c7
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
