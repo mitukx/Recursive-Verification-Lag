@@ -12,7 +12,8 @@ The controller separates `theta` (policy/model), `F` (optimization), `V` (verifi
 champion -> development evidence -> failure clusters -> hypothesis proposal
          -> allowlisted candidate -> bounded sandbox
          -> development evaluation -> anti-gaming/RVL checks
-         -> promotion evaluation -> sealed evaluation -> promote/reject
+         -> independent promotion evaluation -> promote/reject
+         -> [after the last generation only] sealed terminal audit
 ```
 
 Every proposal records a concrete hypothesis, target component, deterministic change, expected effects, risks, evaluation plan, rollback plan, seed, dependency metadata and resource limits. Rejected candidates remain in history.
@@ -27,12 +28,12 @@ The controller does **not** implement credential acquisition, unrestricted exter
 
 ## Evaluation separation
 
-`EvaluationStack` distinguishes four result families and never reports them as interchangeable:
+`EvaluationStack` distinguishes four result families and enforces an access boundary rather than treating them as interchangeable:
 
 - **evolution**: repeatedly exposed optimization/evolution tasks;
 - **development**: observable diagnostics used during candidate iteration;
 - **promotion**: independent gate used to compare champion/challenger;
-- **sealed**: hidden tasks whose contents are held by `SealedEvaluationVault`; the improvement process sees only aggregate results and a SHA-256 suite digest.
+- **sealed**: hidden tasks held by `SealedEvaluationVault`; normal candidate evaluation returns no sealed metric. The suite is opened once after the final promotion decision, and that terminal result cannot be followed by more generations in the same experiment directory.
 
 Real integrations should replace the synthetic task model with repository benchmark/grader adapters while preserving this split contract. A task-generating model must not unilaterally provide the authoritative answer.
 
@@ -44,13 +45,13 @@ Real integrations should replace the synthetic task model with repository benchm
 
 ## Champion/challenger promotion
 
-A higher proxy reward is insufficient. `PromotionGate` checks promotion-set gain, sealed gain, trusted gain, verifier agreement, failure-rate regression, p95 latency, uncertainty margin, verification gap, reward-hacking indicators and RVL trust. Thresholds are configuration-driven.
+A higher proxy reward is insufficient. `PromotionGate` checks development trusted performance, independent promotion-set gain, trusted gain, verifier agreement, failure-rate regression, p95 latency, uncertainty margin, verification gap, reward-hacking indicators and RVL trust. It never consumes sealed metrics. Thresholds are configuration-driven.
 
 False-progress diagnostics expose:
 
 - `apparent_gain`: development reward delta;
 - `trusted_gain`: independent promotion trusted-score delta;
-- `generalization_gain`: sealed trusted-score delta;
+- `generalization_gain`: independent promotion trusted-score delta;
 - `verification_gap`: largest proxy/trusted or apparent/trusted divergence.
 
 A run is not called self-improvement unless improvement survives an appropriate independent evaluation.
@@ -86,9 +87,9 @@ python -m src.rsi_controller.run \
   --generations 4
 ```
 
-Outputs include `research_memory.sqlite`, JSONL/CSV generation metrics, `summary.json`, and six SVG plots: capability vs generation, reward vs trusted score, verification gap, verifier age vs failure rate, champion progression, and evolution/development vs sealed performance. Rejected generations are never filtered from these artifacts.
+Outputs include `research_memory.sqlite`, JSONL/CSV generation metrics, `summary.json`, and six SVG plots. Adaptive generation telemetry contains development/promotion metrics but no sealed score. `summary.json` contains a single `final_sealed_audit` comparing the baseline and terminal champion after all promotion decisions. Rejected generations are never filtered from the artifacts.
 
-The local reference execution performed during implementation produced one deliberate negative generation: reward-facing formatting raised proxy reward while independent trusted/sealed quality fell, and the promotion gate rejected it.
+The acceptance workflow exercises both promotion and rejection. Historical implementation-session outputs produced under the older repeatedly-opened sealed contract were removed rather than presented as evidence for the stronger terminal-only protocol.
 
 ## Known limitations
 
