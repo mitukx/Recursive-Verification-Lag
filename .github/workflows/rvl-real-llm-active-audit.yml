@@ -1,0 +1,116 @@
+name: rvl-real-llm-active-audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      learned_verifier_run_id:
+        description: 'Completed Issue #43 Actions run ID whose immutable artifact will gate this replay'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rvl-real-llm-active-audit-v1
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      LEARNED_VERIFIER_SOURCE_SHA: '8602c0a94d246a25efea7079c2e65cd514995d48'
+      ACTIVE_AUDIT_SOURCE_SHA: '857264b432c8d10fdc2a5bb838f9afc5e8c7b3c6'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 857264b432c8d10fdc2a5bb838f9afc5e8c7b3c6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install active-audit dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install 'numpy>=1.26' 'pandas>=2.2'
+      - name: Download exact Issue #43 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rvl-qwen-learned-verifier-v1-${{ inputs.learned_verifier_run_id }}
+          path: upstream/qwen_learned_verifier
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.learned_verifier_run_id }}
+      - name: Revalidate Issue #43 and its Issue #38 promotion receipt
+        run: |
+          test "$(git rev-parse HEAD)" = "$ACTIVE_AUDIT_SOURCE_SHA"
+          mkdir -p promotion/recomputed
+          python scripts/validate_qwen_learned_verifier_evidence.py \
+            upstream/qwen_learned_verifier/results/qwen_learned_verifier_bridge_v1 \
+            --protocol upstream/qwen_learned_verifier/configs/qwen_learned_verifier_bridge_v1.json \
+            --expected-research-sha "$LEARNED_VERIFIER_SOURCE_SHA" \
+            --output promotion/recomputed/qwen_learned_verifier_bridge_v1.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          recorded=json.loads(Path('upstream/qwen_learned_verifier/validation/qwen_learned_verifier_bridge_v1.json').read_text())
+          recomputed=json.loads(Path('promotion/recomputed/qwen_learned_verifier_bridge_v1.json').read_text())
+          assert recorded == recomputed, 'Issue #43 validation report differs from independent recomputation'
+          assert recomputed['valid'] is True
+          assert recomputed['execution_status'] == 'completed'
+          assert recomputed['scientific_result'] in {'direction_passed','direction_failed','underpowered'}
+          PY
+          python scripts/research_evidence_promotion.py validate \
+            upstream/qwen_learned_verifier/promotion/qwen_alignment_to_learned_verifier.json \
+            --stage qwen_alignment_to_learned_verifier \
+            --downstream-run-id "${{ inputs.learned_verifier_run_id }}" \
+            --downstream-source-sha "$LEARNED_VERIFIER_SOURCE_SHA" \
+            --downstream-protocol upstream/qwen_learned_verifier/configs/qwen_learned_verifier_bridge_v1.json
+          python scripts/research_evidence_promotion.py create \
+            --stage learned_verifier_to_real_active_audit \
+            --upstream-run-id "${{ inputs.learned_verifier_run_id }}" \
+            --upstream-artifact-name "rvl-qwen-learned-verifier-v1-${{ inputs.learned_verifier_run_id }}" \
+            --upstream-manifest upstream/qwen_learned_verifier/results/qwen_learned_verifier_bridge_v1/manifest.json \
+            --upstream-validation upstream/qwen_learned_verifier/validation/qwen_learned_verifier_bridge_v1.json \
+            --downstream-run-id "${{ github.run_id }}" \
+            --downstream-source-sha "$ACTIVE_AUDIT_SOURCE_SHA" \
+            --downstream-protocol configs/real_llm_active_audit_v1.json \
+            --output promotion/learned_verifier_to_real_active_audit.json
+      - name: Validate active-audit CPU contracts
+        run: |
+          python -m py_compile \
+            scripts/run_real_llm_active_audit.py \
+            scripts/validate_real_llm_active_audit_evidence.py \
+            scripts/research_evidence_promotion.py
+          python -m unittest \
+            tests.test_real_llm_active_audit \
+            tests.test_research_evidence_promotion -v
+      - name: Execute locked real-LLM active-audit replay
+        run: |
+          rm -rf results/real_llm_active_audit_v1
+          python scripts/run_real_llm_active_audit.py \
+            --protocol configs/real_llm_active_audit_v1.json \
+            --input-root upstream/qwen_learned_verifier/results/qwen_learned_verifier_bridge_v1 \
+            --output results/real_llm_active_audit_v1
+      - name: Independently validate active-audit output
+        run: |
+          mkdir -p validation
+          python scripts/validate_real_llm_active_audit_evidence.py \
+            results/real_llm_active_audit_v1 \
+            --protocol configs/real_llm_active_audit_v1.json \
+            --input-root upstream/qwen_learned_verifier/results/qwen_learned_verifier_bridge_v1 \
+            --output validation/real_llm_active_audit_v1.json
+      - name: Upload immutable real-LLM active-audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvl-real-llm-active-audit-v1-${{ github.run_id }}
+          path: |
+            configs/real_llm_active_audit_v1.json
+            results/real_llm_active_audit_v1/
+            validation/real_llm_active_audit_v1.json
+            promotion/learned_verifier_to_real_active_audit.json
+            promotion/recomputed/qwen_learned_verifier_bridge_v1.json
+          if-no-files-found: error
+          retention-days: 90
