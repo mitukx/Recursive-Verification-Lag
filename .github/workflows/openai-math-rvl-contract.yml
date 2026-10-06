@@ -1,0 +1,33 @@
+name: openai-math-rvl-contract
+
+on:
+  pull_request:
+    paths:
+      - "src/rvl_systems/openai_math.py"
+      - "src/run_openai_math_rvl.py"
+      - "configs/openai_math_rvl_v1.json"
+      - "tests/test_openai_math_rvl.py"
+      - "docs/openai_math_rvl.md"
+      - ".github/workflows/openai-math-rvl-contract.yml"
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Unit contracts
+        run: python -m unittest tests.test_openai_math_rvl -v
+      - name: Compile runner
+        run: python -m py_compile src/rvl_systems/openai_math.py src/run_openai_math_rvl.py
+      - name: Validate locked manifest
+        run: |
+          python - <<'PY'
+          from src.rvl_systems.openai_math import OpenAIMathManifest
+          m = OpenAIMathManifest.load("configs/openai_math_rvl_v1.json")
+          print(m.upstream_sha, m.fingerprint)
+          print([(t.task_id, t.split) for t in m.tasks])
+          PY
