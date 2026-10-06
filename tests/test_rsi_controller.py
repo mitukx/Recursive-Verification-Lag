@@ -12,7 +12,7 @@ from src.rsi_controller.config import MutationPolicy, RSIConfig, VerifierTrustTh
 from src.rsi_controller.controller import DEFAULT_STATE, RSIController
 from src.rsi_controller.evaluation import EvaluationStack, synthetic_experiment_entrypoint
 from src.rsi_controller.memory import ResearchMemory
-from src.rsi_controller.models import ChampionSnapshot, Component, EvaluationPlan, ExpectedEffect, ImprovementProposal, ResourceLimits, RSIMode
+from src.rsi_controller.models import ChampionSnapshot, Component, EvaluationPlan, ExpectedEffect, ImprovementProposal, PromotionDecision, ResourceLimits, RSIMode
 from src.rsi_controller.promotion import PromotionGate, detect_false_progress
 from src.rsi_controller.sandbox import SandboxRunner
 from src.rsi_controller.verifier_lag import RecursiveVerificationLagMonitor
@@ -108,6 +108,31 @@ class MemorySandboxTests(unittest.TestCase):
                 with self.assertRaises(sqlite3.DatabaseError): m.db.execute("UPDATE champions SET generation=99 WHERE id='c0'")
                 self.assertEqual(m.integrity_check(),"ok")
             finally: m.close()
+
+    def test_generation_commit_is_atomic_on_champion_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            m=ResearchMemory(Path(tmp)/"memory.sqlite")
+            try:
+                m.add_champion(ChampionSnapshot("c0",0,DEFAULT_STATE,0,0))
+                p=proposal()
+                m.record_proposal(1,p)
+                cand=CandidateGenerator(MutationPolicy(),RSIMode.HARNESS).generate(p,DEFAULT_STATE)
+                m.record_candidate(cand)
+                decision=PromotionDecision(cand.candidate_id,True,("ok",),{},{"gate":True})
+                duplicate=ChampionSnapshot("c0",1,DEFAULT_STATE,1,0,"c0")
+                with self.assertRaises(sqlite3.IntegrityError):
+                    m.commit_generation(
+                        decision,1,cand.candidate_id,"lesson",champion=duplicate
+                    )
+                self.assertEqual(
+                    m.db.execute("SELECT COUNT(*) FROM decisions").fetchone()[0],0
+                )
+                self.assertEqual(
+                    m.db.execute("SELECT COUNT(*) FROM lessons").fetchone()[0],0
+                )
+                self.assertEqual(m.current_champion().champion_id,"c0")
+            finally:
+                m.close()
 
     def test_timeout_recovery_and_kill_switch(self):
         runner=SandboxRunner(("src.rsi_controller.sandbox:timeout_test_entrypoint","src.rsi_controller.evaluation:synthetic_experiment_entrypoint"))
