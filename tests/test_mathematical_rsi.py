@@ -134,6 +134,48 @@ class MathematicalRSIGateTests(unittest.TestCase):
         self.assertGreater(above["criticality"], 1.0)
         self.assertTrue(above["supercritical"])
 
+    def test_coded_gate_can_replace_one_noncritical_base_check(self):
+        thresholds = PromotionThresholds(
+            min_promotion_gain=0.0,
+            min_development_gain=0.0,
+            min_trusted_gain=0.0,
+            confidence_z=0.0,
+        )
+        degraded = replace(
+            self.base,
+            promotion=replace(
+                self.base.promotion,
+                latency_p95=self.base.promotion.latency_p95 * 1.4,
+            ),
+        )
+        hacking = detect_false_progress(degraded, self.base)
+        lag = RecursiveVerificationLagMonitor(
+            VerifierTrustThresholds()
+        ).assess(degraded, self.base)
+        math_gate = MathematicalRSIGate(
+            MathematicalRSIConfig(
+                enabled=True,
+                coded_replaces_noncritical_checks=True,
+                max_corrupt_fraction=0.20,
+            ),
+            thresholds,
+        )
+        assessment = math_gate.assess(
+            candidate(), degraded, self.base, hacking, lag
+        )
+        self.assertIn("latency_ratio", assessment.coded.failed_constraints)
+        self.assertTrue(assessment.coded.passed)
+        self.assertTrue(assessment.owns_noncritical_promotion_checks)
+
+        ordinary = PromotionGate(thresholds).decide(
+            "candidate", degraded, self.base, hacking, lag
+        )
+        coded = PromotionGate(thresholds).decide(
+            "candidate", degraded, self.base, hacking, lag, assessment
+        )
+        self.assertFalse(ordinary.accepted)
+        self.assertTrue(coded.accepted)
+
     def test_promotion_gate_enforces_mathematical_certificate(self):
         thresholds = PromotionThresholds(
             min_promotion_gain=0.0,
