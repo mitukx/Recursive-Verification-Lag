@@ -10,6 +10,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from ..hf_trainer import HFCausalLMGRPOTrainer, HFTTrainerConfig
+from .async_rwlock import AsyncRWLock
 from .token_replay import TokenReplay
 from .verification_debt import VerificationDebtConfig, VerificationDebtController
 
@@ -30,12 +31,14 @@ class AsyncHFLab:
     def __init__(self, root, backend, verifier, *, learning_rate=1e-5,
                  max_policy_lag=4, max_verifier_lag=0, capacity=4, control=None,
                  verification_lease_s=30, max_verification_attempts=3,
-                 verification_debt=None):
+                 verification_workers=1, verification_debt=None):
         import fcntl
         if min(max_policy_lag,max_verifier_lag) < 0:
             raise ValueError("lag bounds must be non-negative")
         if verification_lease_s <= 0 or max_verification_attempts <= 0:
             raise ValueError("invalid verification retry configuration")
+        if verification_workers <= 0:
+            raise ValueError("verification_workers must be positive")
         self.root = Path(root)
         self.root.mkdir(parents=True,exist_ok=True)
         self.lock = (self.root/"driver.lock").open("a+")
@@ -61,6 +64,7 @@ class AsyncHFLab:
         self.max_verifier_lag = max_verifier_lag
         self.verification_lease_s = verification_lease_s
         self.max_verification_attempts = max_verification_attempts
+        self.verification_workers = verification_workers
         self.metrics = []
         self.verification_metrics = []
         self.verification_debt_controller = VerificationDebtController(
@@ -93,7 +97,7 @@ class AsyncHFLab:
         self.ready,self.space = asyncio.Event(),asyncio.Event()
         self.actor_done = False
         self.verifier_done = False
-        self.verifier_lock = asyncio.Lock()
+        self.verifier_gate = AsyncRWLock()
         self.verification_progress = asyncio.Event()
 
     def _weights(self):
@@ -167,7 +171,7 @@ class AsyncHFLab:
                 metadata.setdefault(key,sample.generation.metadata[key])
         return replace(sample,metadata=metadata)
 
-    async def _verification_worker(self):
+    async def _verification_worker(self,worker_id):
         while True:
             claim = self.replay.claim_verification(
                 self.version,self.max_policy_lag,self.verifier.version,
@@ -184,7 +188,7 @@ class AsyncHFLab:
             token,rid,behavior_version,generations = claim
             started = time.perf_counter()
             try:
-                async with self.verifier_lock:
+                async with self.verifier_gate.read():
                     verifier_version_before = self.verifier.version
                     results = list(await asyncio.gather(
                         *(self.verifier.verify(g) for g in generations),
@@ -208,6 +212,7 @@ class AsyncHFLab:
                 elapsed = time.perf_counter()-started
                 self.verification_metrics.append({
                     "group_id":rid,
+                    "worker_id":worker_id,
                     "behavior_version":behavior_version,
                     "verifier_version":verifier_version_before,
                     "verification_latency_s":elapsed,
@@ -224,6 +229,7 @@ class AsyncHFLab:
                 )
                 self.verification_metrics.append({
                     "group_id":rid,
+                    "worker_id":worker_id,
                     "behavior_version":behavior_version,
                     "verifier_version":self.verifier.version,
                     "verification_latency_s":time.perf_counter()-started,
@@ -269,7 +275,7 @@ class AsyncHFLab:
                 s.verifier_version for s in samples
             )
             if self.rvl_enabled:
-                async with self.verifier_lock:
+                async with self.verifier_gate.write():
                     samples = await self._intervene(
                         rid,behavior_version,samples
                     )
@@ -401,12 +407,14 @@ class AsyncHFLab:
             "verification_debt_config":vars(self.verification_debt_controller.config),
             "verification_lease_s":self.verification_lease_s,
             "max_verification_attempts":self.max_verification_attempts,
+            "verification_workers":self.verification_workers,
             "verifier_type":type(self.verifier).__name__,
         })
         before = self._weights()
         async with asyncio.TaskGroup() as group:
             group.create_task(self._actor(prompts,samples,seed))
-            group.create_task(self._verification_worker())
+            for worker_id in range(self.verification_workers):
+                group.create_task(self._verification_worker(worker_id))
             group.create_task(self._learner())
         delta = sum(
             float((self.published[1][k]-v).abs().sum())
@@ -439,7 +447,7 @@ class AsyncHFLab:
             "quarantined_verification_groups":counts.get("quarantined",0),
             "limitations":[
                 "one local HF inference actor",
-                "one local verification worker",
+                f"{self.verification_workers} local verification worker(s)",
                 "no GPU scale validation of verification-aware pipeline",
                 "reward semantics supplied by caller",
                 "residual calibration is feature dependent",
