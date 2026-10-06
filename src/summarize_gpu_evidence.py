@@ -32,6 +32,7 @@ def summarize(
     fsdp_resume: str | Path | None = None,
     vllm: str | Path | None = None,
     failover: str | Path | None = None,
+    low_precision: str | Path | None = None,
     gpu_inventory: str | Path | None = None,
 ) -> dict[str, Any]:
     checks: dict[str, bool] = {}
@@ -148,6 +149,38 @@ def summarize(
         )
         sources["vllm_failover"] = _source(failover)
 
+    if low_precision is not None:
+        payload = _load(low_precision)
+        git_shas.append(str(payload.get("git_sha", "unknown")))
+        runs = payload.get("runs", {})
+        comparisons = payload.get("comparisons", {})
+        compact_runs = {}
+        finite = True
+        for precision in ("fp32", "bf16", "fp16"):
+            row = runs.get(precision, {})
+            compact_runs[precision] = {
+                "success": bool(row.get("success")),
+                "tokens_per_s": row.get("tokens_per_s"),
+                "gpu_peak_memory_bytes": row.get("gpu_peak_memory_bytes"),
+                "loss": (row.get("metrics") or {}).get("loss"),
+                "grad_norm": (row.get("metrics") or {}).get("grad_norm"),
+                "behavior_kl_estimate": (row.get("metrics") or {}).get("behavior_kl_estimate"),
+            }
+            finite = finite and bool(row.get("success"))
+            for key in ("tokens_per_s", "gpu_peak_memory_bytes"):
+                value = row.get(key)
+                finite = finite and isinstance(value, (int, float)) and math.isfinite(float(value)) and float(value) > 0
+        evidence["low_precision_grpo"] = {
+            "model": payload.get("model"),
+            "device_name": payload.get("device_name"),
+            "runs": compact_runs,
+            "comparisons": comparisons,
+        }
+        checks["low_precision_grpo"] = (
+            payload.get("all_precisions_finite") is True and finite
+        )
+        sources["low_precision_grpo"] = _source(low_precision)
+
     known_git_shas = [sha for sha in git_shas if sha and sha != "unknown"]
     checks["consistent_git_sha"] = (
         len(known_git_shas) == len(git_shas)
@@ -166,6 +199,7 @@ def summarize(
         "fsdp_resume_verified",
         "vllm_concurrency_sweep",
         "vllm_failover_verified",
+        "low_precision_grpo",
         "consistent_git_sha",
     }
     missing = sorted(required - checks.keys())
@@ -241,6 +275,19 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Peak measured requests/s: {serving.get('max_requests_per_s')}",
             "",
         ]
+    precision = evidence.get("low_precision_grpo")
+    if precision:
+        lines += [
+            "## Low-precision RL numerics",
+            "",
+            f"- Device: {precision.get('device_name')}",
+            f"- FP32 tokens/s: {precision.get('runs',{}).get('fp32',{}).get('tokens_per_s')}",
+            f"- BF16 tokens/s: {precision.get('runs',{}).get('bf16',{}).get('tokens_per_s')}",
+            f"- FP16 tokens/s: {precision.get('runs',{}).get('fp16',{}).get('tokens_per_s')}",
+            f"- BF16 relative loss error: {precision.get('comparisons',{}).get('bf16',{}).get('relative_loss_error')}",
+            f"- FP16 relative loss error: {precision.get('comparisons',{}).get('fp16',{}).get('relative_loss_error')}",
+            "",
+        ]
     failover = evidence.get("vllm_failover")
     if failover:
         lines += [
@@ -276,6 +323,7 @@ def main() -> None:
     parser.add_argument("--fsdp-resume")
     parser.add_argument("--vllm")
     parser.add_argument("--failover")
+    parser.add_argument("--low-precision")
     parser.add_argument("--gpu-inventory")
     parser.add_argument("--output", required=True)
     parser.add_argument("--markdown")
@@ -288,6 +336,7 @@ def main() -> None:
         fsdp_resume=args.fsdp_resume,
         vllm=args.vllm,
         failover=args.failover,
+        low_precision=args.low_precision,
         gpu_inventory=args.gpu_inventory,
     )
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
