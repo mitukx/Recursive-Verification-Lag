@@ -6,6 +6,7 @@ on:
       - 'src/rvl_systems/**'
       - 'src/run_rlvr_systems_demo.py'
       - 'src/run_hf_grpo_smoke.py'
+      - 'src/run_torch_distributed_smoke.py'
       - 'src/benchmark_rollout_engine.py'
       - 'src/benchmark_scheduler.py'
       - 'src/benchmark_vllm_cluster.py'
@@ -21,6 +22,7 @@ on:
       - 'src/rvl_systems/**'
       - 'src/run_rlvr_systems_demo.py'
       - 'src/run_hf_grpo_smoke.py'
+      - 'src/run_torch_distributed_smoke.py'
       - 'src/benchmark_rollout_engine.py'
       - 'src/benchmark_scheduler.py'
       - 'src/benchmark_vllm_cluster.py'
@@ -40,9 +42,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Unit tests
-        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_scheduler_health tests.test_telemetry tests.test_weight_sync tests.test_profiling tests.test_worker_health tests.test_precision_numerics tests.test_worker_rpc -v
+        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_scheduler_health tests.test_telemetry tests.test_weight_sync tests.test_profiling tests.test_worker_health tests.test_precision_numerics tests.test_worker_rpc tests.test_torch_distributed_config -v
       - name: Optional-backend syntax check
-        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/run_hf_grpo_smoke.py src/benchmark_vllm_cluster.py
+        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/rvl_systems/torch_distributed.py src/run_hf_grpo_smoke.py src/run_torch_distributed_smoke.py src/benchmark_vllm_cluster.py
       - name: End-to-end CPU smoke test
         run: python -m src.run_rlvr_systems_demo --rounds 3 --samples 8
       - name: Generate async rollout benchmark report
