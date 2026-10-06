@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install CPU contract dependencies
-        run: python -m pip install 'numpy>=1.26'
+        run: python -m pip install 'numpy>=1.26' 'pandas>=2.2'
       - name: Compile real-LLM active-audit runner and validator
         run: |
           python -m py_compile \
