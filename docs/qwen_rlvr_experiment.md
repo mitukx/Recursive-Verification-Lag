@@ -52,3 +52,7 @@ empirical, and a negative or zero result must remain visible rather than being
 hidden by a benchmark script. The hiring evidence is the raw before/after
 result, training diagnostics, exact config and the engineering explanation of
 why the result moved or did not move.
+
+## Transactional promotion mode
+
+Add `--transactional-promotion` to treat every optimizer step as a candidate. Before the step, the trainer snapshots model parameters, AdamW optimizer state and RNG state. The incumbent and candidate are then greedily evaluated on the same frozen held-out task identities. A deterministic regression gate checks mean accuracy delta and uncompensated new failures; rejected updates restore the complete training state instead of becoming the parent of the next step. Every decision is appended to `promotion-ledger.jsonl` as a hash-chained audit record. This is a deployment/regression gate, not a significance test.
