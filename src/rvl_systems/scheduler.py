@@ -8,6 +8,7 @@ from .admission import AdmissionLease, FairWorkloadAdmission, OverloadedError
 from .backends import InferenceBackend
 from .event_log import ControlPlaneEventLog
 from .rollout import RolloutRequest
+from .serving_cost import estimate_serving_cost
 from .telemetry import Telemetry
 from .types import Generation
 from .worker_health import WorkerHealth
@@ -22,11 +23,27 @@ class WorkerSlot:
     name: str
     backend: InferenceBackend
     max_inflight: int = 1
+    prefill_tokens_per_s: float | None = None
+    decode_tokens_per_s: float | None = None
+    max_kv_tokens: int | None = None
     latency_ewma_s: float | None = field(init=False, default=None)
+    active_kv_tokens: int = field(init=False, default=0)
 
     def __post_init__(self) -> None:
         if self.max_inflight <= 0:
             raise ValueError("max_inflight must be positive")
+        if (
+            self.prefill_tokens_per_s is not None
+            and self.prefill_tokens_per_s <= 0
+        ):
+            raise ValueError("prefill_tokens_per_s must be positive")
+        if (
+            self.decode_tokens_per_s is not None
+            and self.decode_tokens_per_s <= 0
+        ):
+            raise ValueError("decode_tokens_per_s must be positive")
+        if self.max_kv_tokens is not None and self.max_kv_tokens <= 0:
+            raise ValueError("max_kv_tokens must be positive")
         self.inflight = 0
         self.semaphore = asyncio.Semaphore(self.max_inflight)
 
@@ -133,32 +150,83 @@ class LeastLoadedScheduler:
         ]
         return min(known) if known else 1e-6
 
-    def _worker_score(self, worker: WorkerSlot) -> tuple[float, float, str]:
+    def _worker_score(
+        self,
+        worker: WorkerSlot,
+        request: RolloutRequest,
+    ) -> tuple[float, float, float, str]:
         predicted = (
             worker.latency_ewma_s
             if worker.latency_ewma_s is not None
             else self._fallback_latency_s()
         )
-        completion_cost = predicted * (worker.inflight + 1) / worker.max_inflight
-        return completion_cost, worker.inflight / worker.max_inflight, worker.name
+        serving = estimate_serving_cost(request)
+        modeled = 0.0
+        if worker.prefill_tokens_per_s is not None:
+            modeled += serving.prefill_tokens / worker.prefill_tokens_per_s
+        if worker.decode_tokens_per_s is not None:
+            modeled += serving.decode_tokens / worker.decode_tokens_per_s
+        service_cost = max(predicted, modeled) if modeled > 0 else predicted
+        load_factor = (worker.inflight + 1) / worker.max_inflight
+        kv_pressure = 0.0
+        if worker.max_kv_tokens is not None:
+            kv_pressure = (
+                worker.active_kv_tokens + serving.kv_tokens
+            ) / worker.max_kv_tokens
+        completion_cost = service_cost * load_factor * (1.0 + kv_pressure**2)
+        return (
+            completion_cost,
+            kv_pressure,
+            worker.inflight / worker.max_inflight,
+            worker.name,
+        )
 
-    async def _pick_worker(self, excluded: set[str] | None = None) -> WorkerSlot:
+    async def _pick_worker(
+        self,
+        request: RolloutRequest,
+        excluded: set[str] | None = None,
+    ) -> WorkerSlot:
         excluded = excluded or set()
         async with self._pick_lock:
+            serving = estimate_serving_cost(request)
             candidates = [
                 w
                 for w in self.workers
-                if w.name not in excluded and self.health.is_available(w.name)
+                if (
+                    w.name not in excluded
+                    and self.health.is_available(w.name)
+                    and (
+                        w.max_kv_tokens is None
+                        or w.active_kv_tokens + serving.kv_tokens
+                        <= w.max_kv_tokens
+                    )
+                )
             ]
             while candidates:
-                worker = min(candidates, key=self._worker_score)
+                worker = min(
+                    candidates,
+                    key=lambda candidate: self._worker_score(
+                        candidate,
+                        request,
+                    ),
+                )
                 if self.health.reserve(worker.name):
                     worker.inflight += 1
+                    worker.active_kv_tokens += serving.kv_tokens
                     self.telemetry.increment(
                         f"scheduler.dispatch.{worker.name}",
                         1,
                     )
                     self.telemetry.observe("scheduler.inflight", worker.inflight)
+                    self.telemetry.observe(
+                        f"scheduler.kv_tokens.{worker.name}",
+                        worker.active_kv_tokens,
+                    )
+                    if worker.max_kv_tokens is not None:
+                        self.telemetry.observe(
+                            f"scheduler.kv_pressure.{worker.name}",
+                            worker.active_kv_tokens / worker.max_kv_tokens,
+                        )
                     return worker
                 candidates.remove(worker)
 
@@ -168,14 +236,32 @@ class LeastLoadedScheduler:
             if not healthy:
                 self.telemetry.increment("scheduler.no_healthy_worker", 1)
                 raise RuntimeError("no healthy rollout worker is available")
+            if any(
+                w.name not in excluded
+                and w.max_kv_tokens is not None
+                and w.active_kv_tokens + serving.kv_tokens > w.max_kv_tokens
+                for w in healthy
+            ):
+                self.telemetry.increment(
+                    "scheduler.kv_capacity_rejections",
+                    1,
+                )
             self.telemetry.increment("scheduler.no_untried_worker", 1)
             raise RuntimeError("no untried healthy rollout worker is available")
 
-    async def _release_worker(self, worker: WorkerSlot) -> None:
+    async def _release_worker(
+        self,
+        worker: WorkerSlot,
+        request: RolloutRequest,
+    ) -> None:
+        serving = estimate_serving_cost(request)
         async with self._pick_lock:
             worker.inflight -= 1
+            worker.active_kv_tokens -= serving.kv_tokens
             if worker.inflight < 0:
                 raise RuntimeError("worker inflight count underflow")
+            if worker.active_kv_tokens < 0:
+                raise RuntimeError("worker KV reservation underflow")
 
     def _record_latency(self, worker: WorkerSlot, elapsed_s: float) -> None:
         if worker.latency_ewma_s is None:
@@ -233,7 +319,7 @@ class LeastLoadedScheduler:
         except TimeoutError:
             self.telemetry.increment("scheduler.deadline_exceeded", 1)
             self.health.cancel_reservation(worker.name)
-            await self._release_worker(worker)
+            await self._release_worker(worker, request)
             raise
 
         semaphore_acquired = False
@@ -324,7 +410,7 @@ class LeastLoadedScheduler:
         finally:
             if semaphore_acquired:
                 worker.semaphore.release()
-            await self._release_worker(worker)
+            await self._release_worker(worker, request)
 
     async def _finish_success(
         self,
@@ -410,7 +496,7 @@ class LeastLoadedScheduler:
                     return None, 1, exc, True
 
         try:
-            secondary = await self._pick_worker(attempted)
+            secondary = await self._pick_worker(request, attempted)
         except RuntimeError:
             if hedge_lease is not None:
                 await hedge_lease.release()
@@ -580,7 +666,7 @@ class LeastLoadedScheduler:
             had_failure = False
             attempts = 0
 
-            primary = await self._pick_worker(attempted)
+            primary = await self._pick_worker(request, attempted)
             attempted.add(primary.name)
             self._event(
                 "worker_selected",
@@ -667,7 +753,7 @@ class LeastLoadedScheduler:
                     1,
                 )
                 try:
-                    worker = await self._pick_worker(attempted)
+                    worker = await self._pick_worker(request, attempted)
                 except RuntimeError:
                     break
                 attempted.add(worker.name)
