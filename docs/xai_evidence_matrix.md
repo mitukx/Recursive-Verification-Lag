@@ -15,7 +15,7 @@ require real GPU measurements.
 | Remote worker transport | asyncio TCP RPC server/client with request IDs and policy-version checks | implemented + integration CI |
 | Remote inference integration | OpenAI-compatible `VLLMHTTPBackend` | implemented; real GPU benchmark pending |
 | Local real-model rollout | `HFLocalBackend` with CUDA/MPS/CPU selection | real Transformers smoke CI |
-| RLVR / GRPO update | grouped advantages + clipped token-level causal-LM trainer + held-out Qwen/GSM8K before/after runner | real Transformers update smoke CI; GPU quality measurement pending |
+| RLVR / GRPO update | grouped advantages + clipped token-level causal-LM trainer + held-out Qwen/GSM8K before/after runner; optional per-step transactional held-out promotion with exact model/optimizer/RNG rollback | real Transformers update smoke CI; GPU quality measurement pending |
 | PyTorch distributed execution | 2-process torchrun, broadcast, all-reduce, DDP gradient sync + optimizer step | real CI |
 | RL numerics safety | fp32 log-softmax, finite checks, clipped ratios, grad non-finite guard, clip diagnostics, FP16/BF16 parity gates | implemented + CI; real GPU kernel parity pending |
 | Low-precision policy | auto/fp32/fp16/bf16 model-load policy with CUDA bf16 capability guard | implemented; GPU numerical comparison pending |
