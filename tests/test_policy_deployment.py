@@ -1,6 +1,7 @@
 import asyncio
 import tempfile
 import unittest
+from pathlib import Path
 
 from src.rvl_systems.backends import ToyTabularBackend
 from src.rvl_systems.policy_deployment import PolicyDeploymentCoordinator
@@ -35,6 +36,49 @@ class PolicyDeploymentTest(unittest.TestCase):
                 coordinator.acknowledge("w0", 2)
             with self.assertRaises(KeyError):
                 coordinator.acknowledge("unknown", 1)
+
+    def test_restart_recovers_partial_ack_then_active_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first = PolicyDeploymentCoordinator(tmp, ["w0", "w1"])
+            pending = first.publish(b"v1")
+            first.acknowledge("w0", pending.version)
+
+            recovered = PolicyDeploymentCoordinator(tmp, ["w0", "w1"])
+            status = recovered.status()
+            self.assertEqual(status.active_version, 0)
+            self.assertEqual(status.pending_version, 1)
+            self.assertEqual(status.workers_behind, {"w1": 1})
+            recovered.acknowledge("w1", 1)
+            self.assertEqual(recovered.activate(), 1)
+
+            restarted = PolicyDeploymentCoordinator(tmp, ["w0", "w1"])
+            self.assertEqual(restarted.status().active_version, 1)
+            self.assertIsNone(restarted.status().pending_version)
+            self.assertEqual(restarted.publish(b"v2").version, 2)
+
+    def test_new_epoch_fences_stale_coordinator(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stale = PolicyDeploymentCoordinator(tmp, ["w0"])
+            fresh = PolicyDeploymentCoordinator(tmp, ["w0"])
+            with self.assertRaisesRegex(RuntimeError, "stale policy deployment coordinator"):
+                stale.publish(b"must-not-publish")
+            manifest = fresh.publish(b"fresh")
+            with self.assertRaisesRegex(RuntimeError, "stale policy deployment coordinator"):
+                stale.acknowledge("w0", manifest.version)
+
+    def test_corrupt_pending_artifact_fails_closed_on_recovery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            coordinator = PolicyDeploymentCoordinator(tmp, ["w0"])
+            pending = coordinator.publish(b"good")
+            (Path(tmp) / pending.artifact).write_bytes(b"corrupt")
+            with self.assertRaisesRegex(RuntimeError, "checksum mismatch"):
+                PolicyDeploymentCoordinator(tmp, ["w0"])
+
+    def test_worker_set_change_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            PolicyDeploymentCoordinator(tmp, ["w0", "w1"])
+            with self.assertRaisesRegex(RuntimeError, "worker set changed"):
+                PolicyDeploymentCoordinator(tmp, ["w0"])
 
     def test_real_rpc_workers_follow_active_version(self):
         async def run():
