@@ -40,11 +40,16 @@ jobs:
           assert 'PROMOTED' in outcomes, outcomes
           assert 'REJECTED' in outcomes, outcomes
           assert len(list(Path('artifacts/rsi-ci/metrics').glob('*.svg'))) == 6
+          assert all('sealed_score' not in r for r in rows), 'sealed metric leaked into adaptive telemetry'
+          summary=json.loads(Path('artifacts/rsi-ci/metrics/summary.json').read_text())
+          audit=summary['final_sealed_audit']
+          assert 'never used' in audit['access_policy']
+          assert audit['suite_digest'] == summary['evaluation']['suite_digests']['sealed']
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: rsi-controller-${{ matrix.os }}-${{ github.run_id }}
           path: artifacts/rsi-ci/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 90
