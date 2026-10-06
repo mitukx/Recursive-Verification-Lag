@@ -9,6 +9,9 @@ on:
       - 'scripts/validate_qwen_alignment_bridge_evidence.py'
       - 'tests/test_qwen_learned_verifier_bridge.py'
       - 'tests/test_qwen_learned_verifier_evidence.py'
+      - 'scripts/research_evidence_promotion.py'
+      - 'tests/test_research_evidence_promotion.py'
+      - '.github/workflows/rvl-qwen-learned-verifier.yml'
   workflow_dispatch:
 
 permissions:
@@ -29,9 +32,11 @@ jobs:
         run: |
           python -m py_compile \
             scripts/run_qwen_learned_verifier_bridge.py \
-            scripts/validate_qwen_learned_verifier_evidence.py
+            scripts/validate_qwen_learned_verifier_evidence.py \
+            scripts/research_evidence_promotion.py
       - name: Run learned-verifier CPU contracts
         run: |
           python -m unittest \
             tests.test_qwen_learned_verifier_bridge \
-            tests.test_qwen_learned_verifier_evidence -v
+            tests.test_qwen_learned_verifier_evidence \
+            tests.test_research_evidence_promotion -v
