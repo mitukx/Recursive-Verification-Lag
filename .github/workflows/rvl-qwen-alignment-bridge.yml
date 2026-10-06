@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: a7fc4e0a300c30fb5292c757e4441579ab16334d
+          ref: d02826584b8df391dfad059b92756b5acdc38e63
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -43,9 +43,13 @@ jobs:
           assert torch.cuda.is_available(), 'CUDA required'
           print('torch', torch.__version__, 'cuda', torch.version.cuda, 'device', torch.cuda.get_device_name(0))
           PY
-          test "$(git rev-parse HEAD)" = "a7fc4e0a300c30fb5292c757e4441579ab16334d"
+          test "$(git rev-parse HEAD)" = "d02826584b8df391dfad059b92756b5acdc38e63"
       - name: Validate CPU-side bridge contracts
-        run: python -m unittest tests.test_qwen_alignment_bridge -v
+        run: |
+          python -m py_compile scripts/run_qwen_alignment_bridge.py scripts/validate_qwen_alignment_bridge_evidence.py
+          python -m unittest \
+            tests.test_qwen_alignment_bridge \
+            tests.test_qwen_alignment_bridge_evidence -v
       - name: Execute locked real-model bridge
         run: |
           rm -rf results/qwen_alignment_bridge_v1
@@ -63,6 +67,15 @@ jobs:
               failure=Path('results/qwen_alignment_bridge_v1/failure.json')
               print(failure.read_text() if failure.exists() else 'no summary/failure file')
           PY
+      - name: Recompute and validate retained bridge evidence
+        if: always()
+        run: |
+          mkdir -p validation
+          python scripts/validate_qwen_alignment_bridge_evidence.py \
+            results/qwen_alignment_bridge_v1 \
+            --protocol configs/qwen_alignment_bridge_v1.json \
+            --expected-research-sha d02826584b8df391dfad059b92756b5acdc38e63 \
+            --output validation/qwen_alignment_bridge_v1.json
       - name: Upload immutable raw bridge evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,5 +84,6 @@ jobs:
           path: |
             configs/qwen_alignment_bridge_v1.json
             results/qwen_alignment_bridge_v1/
+            validation/qwen_alignment_bridge_v1.json
           if-no-files-found: error
           retention-days: 90
