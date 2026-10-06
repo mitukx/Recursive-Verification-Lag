@@ -40,6 +40,7 @@ experiments that still require external hardware.
 | Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
 | Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
 | Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, FP16/BF16 parity gates, fp32/fp16/bf16 loading policy |
+| Kernel optimization | optional fused Triton tokenwise GRPO surrogate with custom backward, PyTorch forward/gradient parity benchmark, GPU speed harness |
 | Observability | counters, tokens/s, p50/p95/max latency, Chrome traces, deterministic control-plane replay, machine-readable benchmark reports |
 | GPU serving integration | OpenAI-compatible vLLM/SGLang adapter, streaming TTFT/TBT benchmark, Prometheus metrics capture, GPU telemetry, and real process-failure harness |
 
@@ -48,7 +49,8 @@ Start with [the systems architecture](docs/rl_system_architecture.md), the
 [SLO-aware scheduler design](docs/slo_scheduler.md),
 [workload admission design](docs/admission_control.md),
 [replay/regression design](docs/replay_and_regression.md),
-[free-GPU runbook](docs/free_gpu_runbook.md), and the
+[free-GPU runbook](docs/free_gpu_runbook.md),
+[Triton GRPO kernel note](docs/triton_grpo.md), and the
 [evidence/gap matrix](docs/xai_evidence_matrix.md).
 
 A local control-plane smoke run requires no GPU:

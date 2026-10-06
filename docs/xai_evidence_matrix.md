@@ -31,7 +31,7 @@ require real GPU measurements.
 | Artifact lineage | benchmark/replay manifest with path, size, SHA-256 and immediate verification | implemented + CI artifact |
 | Cluster throughput benchmark | `benchmark_vllm_cluster.py` | runnable; GPU endpoints required |
 | FSDP / NCCL multi-GPU | not yet validated | gap |
-| Custom CUDA/Triton kernels | not yet implemented | gap |
+| Custom CUDA/Triton kernels | fused tokenwise GRPO surrogate + custom autograd backward, PyTorch parity benchmark and GPU microbenchmark harness | implemented; real CUDA speedup evidence pending |
 | BF16/FP16 empirical stability study | harness supported | measurement gap |
 
 ## Persistent asynchronous training and RVL integration
