@@ -9,6 +9,9 @@ on:
       - 'tests/test_real_llm_active_audit.py'
       - 'src/active_alignment_audit.py'
       - 'src/propensity_alignment_audit.py'
+      - 'scripts/research_evidence_promotion.py'
+      - 'tests/test_research_evidence_promotion.py'
+      - '.github/workflows/rvl-real-llm-active-audit.yml'
   workflow_dispatch:
 
 permissions:
@@ -29,6 +32,10 @@ jobs:
         run: |
           python -m py_compile \
             scripts/run_real_llm_active_audit.py \
-            scripts/validate_real_llm_active_audit_evidence.py
+            scripts/validate_real_llm_active_audit_evidence.py \
+            scripts/research_evidence_promotion.py
       - name: Run real-LLM active-audit contracts
-        run: python -m unittest tests.test_real_llm_active_audit -v
+        run: |
+          python -m unittest \
+            tests.test_real_llm_active_audit \
+            tests.test_research_evidence_promotion -v

@@ -16,13 +16,18 @@
       "shuffled"
     ],
     "expected_input_protocol_sha256": "80fdf4973a849f208aae01fcae9a7cf28d2b0b57cbf5807cf4e2cd39bc4b215f",
-    "expected_input_research_source_sha": "30e343e47923d4378b43afd8268456bfae1e0f28",
+    "expected_input_research_source_sha": "8602c0a94d246a25efea7079c2e65cd514995d48",
     "expected_seed_values": [
       17,
       29,
       43
     ],
-    "expected_candidate_count_per_seed": 64
+    "expected_candidate_count_per_seed": 64,
+    "promotion_receipt": {
+      "required": true,
+      "stage": "qwen_alignment_to_learned_verifier",
+      "rationale": "Issue #46 may consume only a completed semantically validated Issue #43 artifact that itself was promoted from a completed validated Issue #38 artifact"
+    }
   },
   "methods": {
     "passive_fixed": "existing covariance_audit(mode=passive), fixed number of with-replacement trusted-label queries",
