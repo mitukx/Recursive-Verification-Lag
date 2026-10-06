@@ -1,0 +1,68 @@
+name: rvl-active-alignment-audit
+
+on:
+  push:
+    branches: [research/active-alignment-audit-v4]
+    paths:
+      - configs/active_alignment_audit_v1.json
+      - src/active_alignment_audit.py
+      - tests/test_active_alignment_audit.py
+      - notes/theory/active_alignment_audit.md
+      - notes/progress/41_active_alignment_audit.md
+      - .github/workflows/rvl-active-alignment-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rvl-active-alignment-audit-v1
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research/active-alignment-audit-v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Validate active-audit contracts
+        run: python -m unittest tests.test_active_alignment_audit -v
+      - name: Execute locked active audit
+        run: |
+          rm -rf results/active_alignment_audit_v1
+          python -m src.active_alignment_audit             --protocol configs/active_alignment_audit_v1.json             --output results/active_alignment_audit_v1
+      - name: Enforce prospective primary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('results/active_alignment_audit_v1/manifest.json').read_text())
+          print(json.dumps(m, indent=2))
+          if not m['primary_prediction_passed']:
+              raise SystemExit('locked active-audit primary prediction failed')
+          PY
+      - name: Upload complete evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvl-active-alignment-audit-v1-${{ github.run_id }}
+          path: |
+            configs/active_alignment_audit_v1.json
+            results/active_alignment_audit_v1/
+          retention-days: 90
+      - name: Commit deterministic evidence
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/active_alignment_audit_v1
+          git diff --cached --quiet && exit 0
+          git commit -m "Archive active alignment audit evidence [skip ci]"
+          git fetch origin research/active-alignment-audit-v4
+          git rebase origin/research/active-alignment-audit-v4
+          git push origin HEAD:research/active-alignment-audit-v4
