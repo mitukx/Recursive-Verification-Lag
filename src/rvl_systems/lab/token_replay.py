@@ -125,6 +125,14 @@ class TokenReplay:
     def active_count(self):
         return self._active_count()
 
+    def recover_verification_leases(self):
+        """Reclaim local verification work after exclusive-driver restart."""
+        cur = self.db.execute(
+            """UPDATE groups SET status='pending_verification',verification_token=NULL,
+               verification_lease_until=NULL WHERE status='verifying'"""
+        )
+        return cur.rowcount
+
     def put_pending(self,rid,version,generations,*,now=None):
         if not generations:
             raise ValueError("empty behavior group")
