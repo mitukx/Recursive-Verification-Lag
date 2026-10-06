@@ -21,8 +21,8 @@ jobs:
           python -c "import torch; assert torch.cuda.device_count() >= 2; print(torch.__version__)"
           nvidia-smi > artifacts/gpu-environment.txt
           pip freeze > artifacts/dependencies.txt
-      - name: CUDA NCCL FSDP token-level RL and sharded checkpoint
-        run: torchrun --standalone --nproc-per-node=2 -m src.run_distributed_mini_lab --mode fsdp --output artifacts/fsdp
+      - name: CUDA NCCL FSDP scaling and checkpoint-resume acceptance
+        run: OUT=artifacts/fsdp-scaling bash scripts/run_fsdp_scaling_gpu.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:

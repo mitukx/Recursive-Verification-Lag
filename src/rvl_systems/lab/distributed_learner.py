@@ -28,32 +28,90 @@ def initialize(model,mode="ddp"):
     if not dist.is_initialized():
         dist.init_process_group("nccl" if cuda else "gloo")
     model.to(device)
+    precision_name = "fp32"
     if mode == "fsdp":
         from torch.distributed.fsdp import FullyShardedDataParallel, MixedPrecision
         from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
         from functools import partial
-        model = FullyShardedDataParallel(model,device_id=device,use_orig_params=True,
-            auto_wrap_policy=partial(size_based_auto_wrap_policy,min_num_params=1_000_000),
-            mixed_precision=MixedPrecision(param_dtype=torch.bfloat16,
-                                            reduce_dtype=torch.float32,
-                                            buffer_dtype=torch.bfloat16))
+        low_precision = (
+            torch.bfloat16
+            if torch.cuda.is_bf16_supported()
+            else torch.float16
+        )
+        precision_name = (
+            "bf16" if low_precision == torch.bfloat16 else "fp16"
+        )
+        model = FullyShardedDataParallel(
+            model,
+            device_id=device,
+            use_orig_params=True,
+            auto_wrap_policy=partial(
+                size_based_auto_wrap_policy,
+                min_num_params=1_000_000,
+            ),
+            mixed_precision=MixedPrecision(
+                param_dtype=low_precision,
+                reduce_dtype=torch.float32,
+                buffer_dtype=low_precision,
+            ),
+        )
     elif mode == "ddp":
         model = DistributedDataParallel(model,device_ids=[local] if cuda else None)
     else:
         raise ValueError("unknown distributed mode")
-    return model,rank,world,device
+    return model,rank,world,device,precision_name
 
 
-def distributed_step(model,samples,output,*,mode="ddp",learning_rate=1e-5):
+def distributed_step(
+    model,
+    samples,
+    output,
+    *,
+    mode="ddp",
+    learning_rate=1e-5,
+    resume_from=None,
+):
     import torch
     import torch.distributed as dist
-    model,rank,world,device = initialize(model,mode)
+    model,rank,world,device,precision_name = initialize(model,mode)
     try:
         if not samples or len(samples)%world:
             raise ValueError("global replay batch must be nonempty and divisible by world size")
         # Global grouping precedes sharding; per-rank normalization is incorrect.
         advantages = [r.advantage for r in compute_group_advantages(samples)]
-        trainer = HFCausalLMGRPOTrainer(model,config=HFTTrainerConfig(learning_rate=learning_rate))
+        trainer = HFCausalLMGRPOTrainer(
+            model,
+            config=HFTTrainerConfig(learning_rate=learning_rate),
+        )
+        resumed = False
+        if resume_from:
+            if mode != "fsdp":
+                raise ValueError("resume_from is currently supported for fsdp mode")
+            from torch.distributed.checkpoint import load
+            from torch.distributed.checkpoint.state_dict import (
+                get_state_dict,
+                set_state_dict,
+            )
+            model_state, optim_state = get_state_dict(
+                model,
+                trainer.optimizer,
+            )
+            state = {
+                "model": model_state,
+                "optimizer": optim_state,
+            }
+            load(
+                state,
+                checkpoint_id=str(resume_from),
+            )
+            set_state_dict(
+                model,
+                trainer.optimizer,
+                model_state_dict=state["model"],
+                optim_state_dict=state["optimizer"],
+            )
+            resumed = True
+            dist.barrier()
         indices = list(range(rank,len(samples),world))
         local = [samples[i] for i in indices]
         start = time.perf_counter()
@@ -89,10 +147,25 @@ def distributed_step(model,samples,output,*,mode="ddp",learning_rate=1e-5):
             from torch.distributed.checkpoint.state_dict import get_state_dict
             model_state,optim_state = get_state_dict(model,trainer.optimizer)
             save({"model":model_state,"optimizer":optim_state},checkpoint_id=str(Path(output)/"sharded-checkpoint"))
-        report = {"mode":mode,"backend":dist.get_backend(),"world_size":world,
-                  "tokens_per_s":total_tokens/float(duration),"elapsed_s":float(duration),
-                  "metrics":metrics,"gpu_peak_memory_bytes":torch.cuda.max_memory_allocated() if device.type=="cuda" else None,
-                  "mfu":None,"note":"MFU requires measured model FLOPs and device peak throughput"}
+        report = {
+            "mode": mode,
+            "backend": dist.get_backend(),
+            "world_size": world,
+            "tokens_per_s": total_tokens / float(duration),
+            "elapsed_s": float(duration),
+            "metrics": metrics,
+            "gpu_peak_memory_bytes": (
+                torch.cuda.max_memory_allocated()
+                if device.type == "cuda"
+                else None
+            ),
+            "mixed_precision": precision_name,
+            "resumed_from_checkpoint": resumed,
+            "mfu": None,
+            "note": (
+                "MFU requires measured model FLOPs and device peak throughput"
+            ),
+        }
         if rank == 0:
             Path(output).mkdir(parents=True,exist_ok=True)
             (Path(output)/"distributed-report.json").write_text(json.dumps(report,indent=2,sort_keys=True))

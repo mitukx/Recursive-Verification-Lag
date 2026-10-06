@@ -128,8 +128,8 @@ class HFLocalBackend:
     ) -> list[Generation]:
         if n <= 0:
             raise ValueError("n must be positive")
-        if temperature <= 0:
-            raise ValueError("temperature must be positive")
+        if temperature < 0:
+            raise ValueError("temperature must be non-negative")
         self.ensure_loaded()
         torch = self._torch
         tokenizer = self._tokenizer
@@ -148,18 +148,30 @@ class HFLocalBackend:
         start = time.perf_counter()
         was_training = model.training
         model.eval()
+        generation_kwargs = {
+            "do_sample": temperature > 0,
+            "num_return_sequences": n,
+            "max_new_tokens": self.max_new_tokens,
+            "return_dict_in_generate": True,
+            "output_scores": True,
+            "pad_token_id": tokenizer.pad_token_id,
+        }
+        if temperature > 0:
+            generation_kwargs.update(
+                {
+                    "temperature": temperature,
+                    "top_k": 0,
+                    "top_p": 1.0,
+                }
+            )
+        elif n != 1:
+            raise ValueError(
+                "greedy decoding supports exactly one return sequence"
+            )
         with torch.inference_mode():
             outputs = model.generate(
                 **encoded,
-                do_sample=True,
-                temperature=temperature,
-                top_k=0,
-                top_p=1.0,
-                num_return_sequences=n,
-                max_new_tokens=self.max_new_tokens,
-                return_dict_in_generate=True,
-                output_scores=True,
-                pad_token_id=tokenizer.pad_token_id,
+                **generation_kwargs,
             )
             transition = model.compute_transition_scores(
                 outputs.sequences,
