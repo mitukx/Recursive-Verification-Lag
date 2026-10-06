@@ -6,7 +6,8 @@ require real GPU measurements.
 | Frontier RL / inference capability | Evidence in this repository | Status |
 |---|---|---|
 | Async rollout orchestration | `AsyncRolloutEngine` | implemented + CI |
-| High-throughput multi-worker scheduling | predicted-completion routing from EWMA service time, bounded queue, per-worker inflight limits | implemented + CI |\n| SLO / tail-latency control | end-to-end request deadlines, queue/capacity deadline accounting, optional distinct-worker hedging + loser cancellation | implemented + synthetic CI artifact; real GPU evidence pending |
+| High-throughput multi-worker scheduling | predicted-completion routing from EWMA service time, bounded queue, per-worker inflight limits | implemented + CI |
+| SLO / tail-latency control | end-to-end request deadlines, queue/capacity deadline accounting, optional distinct-worker hedging + loser cancellation | implemented + synthetic CI artifact; real GPU evidence pending |
 | Dynamic micro-batching | compatibility-keyed `DynamicBatcher` + vLLM batch-chat adapter | implemented + contract CI; GPU throughput pending |
 | Backpressure / timeout handling | scheduler counters and timeout paths | implemented + CI |
 | Worker failure handling | cross-worker failover retries, circuit breaker, cooldown, single half-open probe, explicit recovery, deterministic chaos benchmark | implemented + CI artifact |

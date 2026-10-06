@@ -1,1 +1,32 @@
-# SLO-aware rollout scheduling\n\nThis note documents the control-plane guarantees implemented by the rollout scheduler. The mechanisms are validated on CPU in CI; they are not presented as GPU-scale performance claims.\n\n## Request deadline\n\nA RolloutRequest may carry deadline_s. The deadline is end-to-end: queue wait, worker-capacity wait, hedging, retries, and backend execution all consume the same budget. The scheduler records queue_wait_s, end_to_end_latency_s, deadline_exceeded, queue_deadline_exceeded, and capacity_wait_timeouts.\n\n## Latency-aware routing\n\nEach worker maintains an EWMA of observed successful service time. Selection minimizes a simple predicted completion cost: EWMA latency multiplied by the number of in-flight slots that must be serviced, normalized by worker capacity. Unknown workers inherit the best observed latency so they can be explored rather than permanently starved.\n\n## Hedged requests\n\nWhen hedge_after_s is configured, a request that has not completed by the hedge threshold may be raced on one distinct healthy worker. The first successful result wins. The losing asyncio task is cancelled and its half-open reservation, if any, is released. Hedging is optional because it trades extra inference compute for lower tail latency.\n\n## Circuit breaker\n\nWorkerHealth retains failure streaks and quarantine. If quarantine_cooldown_s is configured, an elapsed cooldown exposes exactly one half-open reservation. A successful probe restores the worker; a failed probe reopens the circuit and restarts the cooldown. Manual recovery remains the default when no cooldown is configured.\n\n## Correctness invariants\n\n1. A request never retries the same worker within one dispatch.\n2. A hedged copy always targets a distinct healthy worker.\n3. At most one half-open probe is reserved for a quarantined worker.\n4. Deadline exhaustion does not classify capacity wait as a backend failure.\n5. In-flight counters and semaphores are released on success, failure, timeout, and cancellation.\n6. Hedging is bounded by max_attempts_per_request.\n\n## Evidence\n\ntests/test_scheduler_slo.py covers adaptive selection, hedged tail-latency recovery, end-to-end queue deadlines, and half-open automatic recovery. src/benchmark_scheduler_slo.py emits a machine-readable synthetic tail-latency report. Real vLLM/SGLang GPU measurements remain an explicit acceptance criterion.\n
+# SLO-aware rollout scheduling
+
+This note documents the control-plane guarantees implemented by the rollout scheduler. The mechanisms are validated on CPU in CI; they are not presented as GPU-scale performance claims.
+
+## Request deadline
+
+A RolloutRequest may carry deadline_s. The deadline is end-to-end: queue wait, worker-capacity wait, hedging, retries, and backend execution all consume the same budget. The scheduler records queue_wait_s, end_to_end_latency_s, deadline_exceeded, queue_deadline_exceeded, and capacity_wait_timeouts.
+
+## Latency-aware routing
+
+Each worker maintains an EWMA of observed successful service time. Selection minimizes a simple predicted completion cost: EWMA latency multiplied by the number of in-flight slots that must be serviced, normalized by worker capacity. Unknown workers inherit the best observed latency so they can be explored rather than permanently starved.
+
+## Hedged requests
+
+When hedge_after_s is configured, a request that has not completed by the hedge threshold may be raced on one distinct healthy worker. The first successful result wins. The losing asyncio task is cancelled and its half-open reservation, if any, is released. Hedging is optional because it trades extra inference compute for lower tail latency.
+
+## Circuit breaker
+
+WorkerHealth retains failure streaks and quarantine. If quarantine_cooldown_s is configured, an elapsed cooldown exposes exactly one half-open reservation. A successful probe restores the worker; a failed probe reopens the circuit and restarts the cooldown. Manual recovery remains the default when no cooldown is configured.
+
+## Correctness invariants
+
+1. A request never retries the same worker within one dispatch.
+2. A hedged copy always targets a distinct healthy worker.
+3. At most one half-open probe is reserved for a quarantined worker.
+4. Deadline exhaustion does not classify capacity wait as a backend failure.
+5. In-flight counters and semaphores are released on success, failure, timeout, and cancellation.
+6. Hedging is bounded by max_attempts_per_request.
+
+## Evidence
+
+tests/test_scheduler_slo.py covers adaptive selection, hedged tail-latency recovery, end-to-end queue deadlines, and half-open automatic recovery. src/benchmark_scheduler_slo.py emits a machine-readable synthetic tail-latency report. Real vLLM/SGLang GPU measurements remain an explicit acceptance criterion.

@@ -30,6 +30,7 @@ python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.tes
 python -m src.run_rlvr_systems_demo --rounds 12 --samples 32
 python -m src.benchmark_rollout_engine --requests 16 --samples 8 --latency-ms 5 --concurrency 8
 python -m src.benchmark_scheduler_chaos --requests 32 --recovery-requests 12
+python -m src.benchmark_scheduler_slo --trials 12 --primary-ms 40 --backup-ms 2 --hedge-after-ms 5 --deadline-ms 20
 ```
 
 ## Real local model on Apple Silicon, CUDA, or CPU

@@ -10,11 +10,13 @@ on:
       - 'src/benchmark_rollout_engine.py'
       - 'src/benchmark_scheduler.py'
       - 'src/benchmark_scheduler_chaos.py'
+      - 'src/benchmark_scheduler_slo.py'
       - 'src/benchmark_vllm_cluster.py'
       - 'tests/**'
       - 'requirements-systems.txt'
       - 'docs/xai_rl_systems.md'
       - 'docs/xai_evidence_matrix.md'
+      - 'docs/slo_scheduler.md'
       - '.github/workflows/rl-systems.yml'
   push:
     branches:
@@ -55,6 +57,8 @@ jobs:
         run: python -m src.benchmark_scheduler --workers 2 --requests 16 --latency-ms 2 --queue-limit 4 --output artifacts/scheduler.json
       - name: Run scheduler failover/recovery chaos benchmark
         run: python -m src.benchmark_scheduler_chaos --requests 24 --recovery-requests 9 --latency-ms 1 --queue-limit 8 --output artifacts/scheduler-chaos.json
+      - name: Run SLO tail-latency benchmark
+        run: python -m src.benchmark_scheduler_slo --trials 8 --primary-ms 40 --backup-ms 2 --hedge-after-ms 5 --deadline-ms 20 --output artifacts/scheduler-slo.json
       - name: Upload benchmark evidence
         uses: actions/upload-artifact@v4
         with:
