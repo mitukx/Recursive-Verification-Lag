@@ -52,42 +52,41 @@ class WorkloadAwareRequestLoadBalancer:
         self._full_determinism = bool(full_determinism)
 
     def require_acquire_fields(self) -> list[str]:
-        return ["prompt_ids", "sampling_params"]
+        return ["prompt_tokens", "decode_budget"]
 
     def require_release_fields(self) -> list[str]:
         return ["request_id"]
 
     def _estimate_work(
         self,
-        prompt_ids: list[int] | None,
-        sampling_params: dict[str, Any] | None,
+        prompt_tokens: int | None,
+        decode_budget: int | None,
     ) -> float:
-        prompt_tokens = len(prompt_ids or ())
-        params = sampling_params or {}
-        decode_tokens = params.get("max_tokens")
-        if decode_tokens is None:
-            decode_tokens = params.get("max_new_tokens")
-        if decode_tokens is None:
-            decode_tokens = self._default_decode_tokens
         try:
-            decode_tokens = max(0, int(decode_tokens))
+            prompt_tokens = max(0, int(prompt_tokens or 0))
         except (TypeError, ValueError):
-            decode_tokens = self._default_decode_tokens
+            prompt_tokens = 0
+        if decode_budget is None:
+            decode_budget = self._default_decode_tokens
+        try:
+            decode_budget = max(0, int(decode_budget))
+        except (TypeError, ValueError):
+            decode_budget = self._default_decode_tokens
         return (
             self._prefill_weight * prompt_tokens
-            + self._decode_weight * decode_tokens
+            + self._decode_weight * decode_budget
         )
 
     def acquire_server(
         self,
         request_id: str,
-        prompt_ids: list[int] | None = None,
-        sampling_params: dict[str, Any] | None = None,
+        prompt_tokens: int | None = None,
+        decode_budget: int | None = None,
     ) -> tuple[str, Any]:
         if not self._inflight_requests:
             raise RuntimeError("No available servers in load balancer")
 
-        work = self._estimate_work(prompt_ids, sampling_params)
+        work = self._estimate_work(prompt_tokens, decode_budget)
 
         if request_id in self._request_id_to_server:
             server_id = self._request_id_to_server[request_id]
