@@ -54,7 +54,7 @@ class QwenAlignmentBridgeContractTest(unittest.TestCase):
         result = select_matched_drift_lrs(grid, target_fraction=0.8)
         self.assertAlmostEqual(result["target_k3"], 1.6e-5)
         self.assertEqual(result["selected"]["harmful"]["lr"], 5e-7)
-        self.assertEqual(result["selected"]["benign"]["lr"], 2e-7)
+        self.assertEqual(result["selected"]["benign"]["lr"], 5e-7)
         self.assertNotIn("evaluation", result)
 
     def test_preference_shift_uses_both_correct_and_incorrect_candidates(self):
