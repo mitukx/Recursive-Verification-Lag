@@ -39,6 +39,34 @@ class WorkloadAwareRouterTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             lb.acquire_server("same", prompt_tokens=1, decode_budget=1)
 
+    def test_inflight_accounting_is_not_evicted_by_sticky_cache(self):
+        lb = WorkloadAwareRequestLoadBalancer(
+            {"a": None, "b": None}, max_cache_size=2
+        )
+        assignments = []
+        for i in range(8):
+            sid, _ = lb.acquire_server(
+                f"r{i}", prompt_tokens=i + 1, decode_budget=1
+            )
+            assignments.append((sid, f"r{i}"))
+        self.assertEqual(lb.get_total_inflight(), 8)
+        self.assertGreater(lb.get_status()["total_predicted_work"], 0)
+        for sid, request_id in assignments:
+            lb.release_server(sid, request_id=request_id)
+        self.assertEqual(lb.get_total_inflight(), 0)
+        self.assertEqual(lb.get_status()["total_predicted_work"], 0)
+
+    def test_release_mismatch_preserves_accounting(self):
+        lb = WorkloadAwareRequestLoadBalancer({"a": None, "b": None})
+        sid, _ = lb.acquire_server("r", prompt_tokens=100, decode_budget=20)
+        wrong = "b" if sid == "a" else "a"
+        with self.assertRaises(ValueError):
+            lb.release_server(wrong, request_id="r")
+        self.assertEqual(lb.get_total_inflight(), 1)
+        self.assertEqual(lb.get_status()["total_predicted_work"], 120)
+        lb.release_server(sid, request_id="r")
+        self.assertEqual(lb.get_total_inflight(), 0)
+
     def test_removed_server_does_not_leave_accounting(self):
         lb = WorkloadAwareRequestLoadBalancer({"a": None, "b": None})
         sid, _ = lb.acquire_server(
