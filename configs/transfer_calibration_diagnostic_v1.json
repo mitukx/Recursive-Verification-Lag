@@ -1,0 +1,17 @@
+{
+  "status": "exploratory development diagnostic locked after inspecting original transfer summaries",
+  "bank_sha256": "1aba49310cf5fd44bedabb9dd0ee25b70e5c0ef2e98b4a01611c450f35755d82",
+  "original_protocol_sha256": "d736a4f24c49de4d2365f3fdf1eed59b9ce0947c20442fd3fcd8b2e6491e9ef0",
+  "original_transfer_directory": "results/fresh_task_verifier_transfer_v1",
+  "requested_kl_from_uniform": [0.02, 0.1, 0.3, 0.6],
+  "arms": ["all_frozen", "all_refreshed", "public_frozen", "public_refreshed", "public_score"],
+  "common_task_kl": "min(requested KL, half the smallest attainable limiting KL across all five arms); constant-score arms imply a zero common radius, retained and reported",
+  "coefficients": "use original paid-transcript fits, independently reproduce theta before any new evaluation",
+  "negative_control": "one within-training-task permutation of the refreshed paid labels, seed 20261007; separate own-attainable radius, never used to choose the common five-arm radius",
+  "policy_input": "cheap features, common baseline and training-only paid transcript; no evaluation-task labels accepted",
+  "ranking_diagnostic": "exact pairwise order/tie disagreements on supported occurrences, plus a declared 1e-10 numerical score-tie sensitivity check",
+  "reporting": "all 16 original development evaluation tasks; paired descriptive task-bootstrap intervals; all budgets and both representations retained; no primary significance claim or variant selection",
+  "interpretation": "equal KL removes positive affine scale changes, but does not hold computational cost or all policy coordinates fixed and cannot certify safety",
+  "heldout_access": "none",
+  "generator_parameter_updates": 0
+}

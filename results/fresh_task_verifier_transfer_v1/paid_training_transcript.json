@@ -1,0 +1,386 @@
+[
+  {
+    "task_id": "778",
+    "source": "2045dfba5d310052b239d96c6f3e1c7ca13b4a69ff8307139072772a2da8970f",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "778",
+    "source": "6ee7348fca02792d6c38f0982d34dd072052a850faddf6f7045adc88841eacf7",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "771",
+    "source": "1f0bc29281a10a1040df9cb7b9302df1a0a676e3d6b00d61bc557e5490015aa3",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "771",
+    "source": "afe92a4d7c05665fbdb1b38a69890b244521ef8682e2523da8ff2c0ab6467fc3",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "262",
+    "source": "9de7008f5a6793eacee382cbadf495dc4acb375f1521daf9dcde3a95f4699e48",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "262",
+    "source": "9f00811c9a43581628024e2b6c0a893531162121f47e976f49987dde0c272f88",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "770",
+    "source": "4095dda5fa57cbab50ff8d8af262d3c1b4e249fc56cc8c71f946ab84e0bbd818",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "770",
+    "source": "40668b57886eb26938d247ec45602f563d40368e91c95356d6c5bef1e8810c16",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "560",
+    "source": "e6145ad4f1dec88dca1fe6c83a62c2e156905ab8b23c606f51d5bcc39be99a92",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "560",
+    "source": "0ea6c1c2841e75ebae68898bb98efdfae8d235cbe74b1b670b75b70d1fe2468f",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "474",
+    "source": "62dc1a157f4e1682f6a5b49a74f1c39ba499513a0e7fb90277445b98f1980267",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "474",
+    "source": "bf837bc9b9eadcac8f7912990b3c69c86507a8f599d9c7f31be18e16e0eb84fb",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "309",
+    "source": "1eff8d615c97e43bbb5c5e6e0c1b9cb9d32ad7b206ef6c1509b6e2ff26e466b0",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "309",
+    "source": "a82579b172d2676dcbde8a2a6bc6354930a29e57e9fb05f9eaaa3a864628487f",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "142",
+    "source": "0ad81425e7adc3fb6df83259a65be48c1268e21a19ac49f622848c4cc48098de",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "142",
+    "source": "ae7eef34fca35bfbf4ac7b6d382f0fa5f6191aadc9dc61035d98449db647a00b",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "259",
+    "source": "2a03d4a67ec7e060db0e128d18b5a00cf75af91593b2811487f06e2037ff4f61",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "259",
+    "source": "bfae5bbd5727f596919fa286a25bdbbc433b41954117552a3bac553300da9557",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "264",
+    "source": "6625bcf2887d42dc9803dcae776e53753aa9d6c58b35efbe94ea6794dcd3af1e",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "264",
+    "source": "d911ba1f2adff40ad9a4a121a0b64803a8a96c0e2bf99594935184cde6c71e18",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "619",
+    "source": "42798c2ceb39e6c568e03bd34e43f32a0139970be1bf2e18230b7627b0efbab2",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "619",
+    "source": "9b4aabb275d0219132c31a6bb0d8b3a808571590b2a9510badb010e59e797789",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "19",
+    "source": "7188a20951c4a78a1281bc35479f6956d0a154a5a2cbc053cafecf8768984617",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "19",
+    "source": "835ea66747f41edbc1c29eb0cdffb1e4372366281e9eb9f7f679a75660ece825",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "139",
+    "source": "4e2a5d1ed7ef16964dfb72f9c9a4edcb8d574b0134cd82b6c3e18bd5c6559562",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "139",
+    "source": "3ca7d06f57affd30945812372f7395fb4319107695de232a1574b63c8769a791",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "453",
+    "source": "01de53134b7291bcefe406481240a71d66bfc4b44e897c4d8c99da838bb0ec0a",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "453",
+    "source": "a44c636d7a43e328b33c3117e37964a44e0e07c7c0dac82d18263fac73876fb1",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "805",
+    "source": "332d44a1221db02595dc3c7f5dd963e3f68af1860487fe2ce3e9a1f4ac9a7c6a",
+    "paid_label": 0.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "805",
+    "source": "3d75073709071199121191b50ed0549c3b399b9a63bec740521aa877ed432ed5",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "460",
+    "source": "4a5a266f2803d845cb5f3d1a77288fccfcf0fa86f4bdad8d2ab5c5d76ac0b406",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "460",
+    "source": "6c8a8c27f44a2b974fdf4b9b0f862c383f1607e29e939f170e60916488cc88fc",
+    "paid_label": 1.0,
+    "release": "initial"
+  },
+  {
+    "task_id": "778",
+    "source": "2adf9cf7bc5fd3d214b942394b3c5f0a45251e1abc41cea3fadb29c05438d308",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "778",
+    "source": "5a94d5beadea27658fa328361902dab559caaebec7a28e03312eb8bb2f161cfc",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "771",
+    "source": "29c0c8bce773c2f728f29b13e65b66071d205dc820b0f9bb7379da344543e486",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "771",
+    "source": "ae916d192258090ea75c5d9ff18a7b8dba87ad7f83702f71a0b1b12497ca68dc",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "262",
+    "source": "5333003b3925f99703ee260a79e95b210230d9988e2547eb90da9eb6432efefc",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "262",
+    "source": "d7b027444257beacbd7bb41d946c576e0b926b6c3a02a7d76e29909cdefb93be",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "770",
+    "source": "23eab637560603a892e43fc3a4d5dac25b502b1b3d2486a3bb6ec9df88d62708",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "770",
+    "source": "5b1058e59d2723d86288f0383ff6d8bf5f576ca7d219355274a12521e40bd807",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "560",
+    "source": "a001b2a756319c2b7fe4bb327c216c30e3be4a8661b80702665059885fa97185",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "560",
+    "source": "2fd9f6ce1fe1279649b9df8869d02ca7182adde8af1ef8fb4eb04d4c871f787b",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "474",
+    "source": "4793e2327920212cda705f739c36cb0d5ca349b0c2e5c34594dd04d6f78a60d1",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "474",
+    "source": "c464482082fac5ac495f174ed5101d73e1d5b9c2e52b0f2ec59a1421c1b2c22f",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "309",
+    "source": "6f951d29438544e0b9970d49c24dc3a11f55cfedac3bbf45657a41eb492307c5",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "309",
+    "source": "d3243d642586079beacc27b4079f4ee46cab7a240e156e54491e0fd3c91a52b9",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "142",
+    "source": "244d4a3c83771cd44141d2996a04892b30983cccbed704e83a1d99b7d899d556",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "142",
+    "source": "79e4960e5e86e7c12afbf6d4685047b508142c5a0f77adb990389c7e9b479300",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "259",
+    "source": "2f68a22b05f7d3d3ce6bb60c4efdb35bd19becd1df7e18cc4c9a8127271e5726",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "259",
+    "source": "b5818c24ca3f03d1514d8e8be8e99b9e3e054156ee560266bdc1f8d5e0f6c79d",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "264",
+    "source": "919aba5dc3068cc0f47a34333dbb99e2ee6693e108becb669b4896c7c000a43b",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "264",
+    "source": "d24462059dc6ce143ed6daa0dafac3f16a9f01e1f93cb2fc039e1da459d3c017",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "619",
+    "source": "45815f8511904b91722bf292e54d6f1c481e383a10ffc9b9b2ec343f30c750d9",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "619",
+    "source": "8c662fe643dd914e6d42c0ef6b90e9858f4a4fa7d4675d068a52a152735add5c",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "19",
+    "source": "69341551a3a275951645f582239e4bfcb64aa27c0ace37e68c9454a7fdd7ee80",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "19",
+    "source": "8767c15f1c3a68a603bf492e3e3b5dbf9397a6a0d4571f2e06601da23484af09",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "139",
+    "source": "43b77e61435037dbae0ca0cba4359b6bee046fd011c28b7ee6cc785fabd0fcef",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "139",
+    "source": "7d46930a84f62f2143daa21fc659edef5aeb0619022460e467d07600efe9233d",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "453",
+    "source": "3b9440f86d65e752b6e78d02453bd46ccf9f2fb021f2700717d53364be1d870c",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "453",
+    "source": "a0c795d0c64f23ab6eac8643eeac924a4df5d6079888595a6e8f6966dcdf6751",
+    "paid_label": 0.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "805",
+    "source": "0f6a797bab24434e43bcc3b1851ee385a2b7400424af53c78e83d92ecd6b9215",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "805",
+    "source": "669495e9baadea29eb923184ca03f5e97c4f0e3e417f6d116219b70a122613bd",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "460",
+    "source": "8bd9a8d18ee23b0b2876d0ac5cf61e35a1a03ebfcdc17fd6b238a6a9bb0090c6",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  },
+  {
+    "task_id": "460",
+    "source": "3268f62ae42625d14785d4b7518bc2d8ff8e8621d353fa286e492b79bcf7319b",
+    "paid_label": 1.0,
+    "release": "after frozen decisions, before refreshed decisions"
+  }
+]

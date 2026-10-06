@@ -1,0 +1,41 @@
+{
+  "status": "pre-execution real-model geometry bridge locked before GPU outcomes; external-validity pilot, not confirmatory frontier-scale evidence",
+  "systems_source_sha": "1a63903d22e1233594d1f1f0c269f7f55baf99b7",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "dataset": "openai/gsm8k",
+  "dataset_revision": "740312add88f781978c0658806c59bc2815b9866",
+  "precision": "fp32",
+  "seeds": [17, 29, 43],
+  "task_partition": {
+    "calibration_train_rows": [0, 1, 2, 3],
+    "effect_train_rows": [4, 5, 6, 7, 8, 9, 10, 11],
+    "evaluation_test_rows": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  },
+  "samples_per_prompt": 8,
+  "max_new_tokens": 192,
+  "temperature": 1.0,
+  "alignment_intervention": {
+    "sigma": 2.0,
+    "arms": {"harmful": -0.75, "benign": 0.75},
+    "construction": "within each informative prompt group, standardize binary trusted correctness and add a deterministic unit nuisance direction orthogonal to both the constant vector and trusted direction; proxy = y_std + sigma*(rho*y_std + sqrt(1-rho^2)*u)",
+    "constant_trusted_groups": "retain in manifests but do not train on them because group-normalized GRPO has no trusted alignment direction"
+  },
+  "drift_calibration": {
+    "learning_rate_grid": [0.0000001, 0.0000002, 0.0000005, 0.000001, 0.000002],
+    "metric": "post-update mean token k3 = mean(exp(log_ratio)-1-log_ratio) on the fixed calibration rollout bank, with old behavior logprobs from generation",
+    "selection_rule": "for each seed, evaluate every declared LR for both arms from the exact same model/optimizer/RNG snapshot; set target to 0.8 times the smaller arm-specific maximum finite calibration k3; choose each arm LR minimizing absolute log-distance to target, ties to smaller LR",
+    "evaluation_access": "none"
+  },
+  "effect_update": "restore the common pre-update snapshot, apply exactly one GRPO update per arm to the same fixed effect rollout bank using only the arm proxy rewards and the calibrated LR",
+  "primary_evaluation": {
+    "metric": "on the untouched evaluation prompt bank, change from baseline in per-prompt mean sequence logprob(correct candidates) minus mean sequence logprob(incorrect candidates), averaged over informative prompts",
+    "candidate_bank": "generated once from the common baseline before any arm update and never used for LR selection or gradient updates",
+    "prediction": "among seeds with at least 3 informative evaluation prompts and effect realized-k3 arm ratio <= 1.5, benign minus harmful trusted preference shift is positive on average",
+    "no_success_claim_if": "fewer than 2 eligible seeds or fewer than 3 informative evaluation prompts in an eligible seed"
+  },
+  "secondary_evaluation": "terminal greedy GSM8K exact-match on the same fixed evaluation prompt identities, reported per arm and seed but never used for calibration or update selection",
+  "negative_controls": ["common baseline", "same rollout identities across arms", "same sigma with opposite rho", "evaluation never selects LR or updates"],
+  "reporting": "retain calibration grid, selected LRs, all rollout texts and true/proxy rewards, pre/post token logprobs, realized effect drift, evaluation candidate-bank margins, greedy outputs, failures, environment and hashes",
+  "scope": "single-GPU <=0.5B external-validity bridge from controlled verifier geometry to neural policy updates; artificial proxy intervention, not a learned verifier and not evidence of production-scale training"
+}

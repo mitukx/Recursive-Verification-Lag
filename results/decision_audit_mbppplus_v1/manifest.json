@@ -1,0 +1,80 @@
+{
+  "scope": "retrospective eight-task finite-bank audit-acquisition study; not independent transfer",
+  "bank_sha256": "1bd600975d6f69b9aeb34afa285836bc9b5bc287a92109fc01a6eef6d0edf4bf",
+  "gain_floor": 0.01,
+  "initial_distinct_sources": 2,
+  "strategies": [
+    "stream",
+    "impact",
+    "decision"
+  ],
+  "decision_prior": "independent Bernoulli(0.5); uncalibrated",
+  "stale_block_rounds": 12,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "strengths": [
+    [
+      "soft",
+      0.25
+    ],
+    [
+      "soft",
+      1.0
+    ],
+    [
+      "soft",
+      4.0
+    ],
+    [
+      "bon",
+      2
+    ],
+    [
+      "bon",
+      4
+    ],
+    [
+      "bon",
+      16
+    ]
+  ],
+  "tasks": [
+    "279",
+    "4",
+    "451",
+    "573",
+    "606",
+    "733",
+    "754",
+    "787"
+  ],
+  "comparisons": 7200,
+  "recursive_rows": 51840,
+  "elapsed_seconds": 31.97371080300013,
+  "versions": {
+    "numpy": "2.3.5",
+    "pandas": "2.2.3"
+  },
+  "source_hashes": {
+    "src/decision_audit.py": "0a7e5c8fe2871a8e053d2e3b6069ce421423dc6b1ca024dbf93b1624b51004d6",
+    "src/decision_refresh.py": "67530a38040f5bb3784c10976edac4697138d23f76eb0d99b90d2bbdc457e035",
+    "src/evaluate_decision_audit.py": "cc773605d2053d461b6e9c2711e33cf73455939ee30e118d5efb4350e0461fc6",
+    "src/candidate_bank_experiment.py": "c13c7543fa66582a6f87cda4359fb7d0be6860106a352430e56cb8a107e872f2",
+    "src/identified_gain.py": "a1e4a1628551eff1597681d8d3cda99169ab4d74719a3ff6ef8556f63590709d"
+  },
+  "artifact_sha256": {
+    "recursive_by_task.csv": "c707d962ac7cab0e19bc429d4fb15c9d741467b6921c38b5e16e575345c57f03",
+    "recursive_summary.csv": "f3918dbc88ccaba2645fb92bc950ab3d20d4e42b15f4a4f455bc3197a5c0a893",
+    "comparison_summary.csv": "cd826206fcf439804f5591038ad5a50c45e003d671eea4e3352ef7bbed851927",
+    "query_transcripts.jsonl.gz": "396ce239b076ed440a79899adec67a258fa34cfa013df3c2f9a512cc89117bd4",
+    "recursive_runs.csv.gz": "194af0afa277588fe0d7044f0b158f905cb243eba8084aef0db59e89fa9fd58b",
+    "comparisons.csv.gz": "79ce85b2fbf9906406be482729a50e3d247c28983929c50fce69bc0236dea183",
+    "comparison_by_task.csv": "4b2ccdfa01d99906b19ddb195ede100e86b0ed8c8f68a96ef516ece44c639ac5",
+    "paired_contrasts.csv": "08cf85ec0460155f280b5544b3118a3b079a817ca2e4e2198c816d99fb67fff8"
+  }
+}

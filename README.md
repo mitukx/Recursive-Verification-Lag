@@ -1,8 +1,56 @@
 # Recursive Verification Lag
 
+**Latest evidence (2026-10-07):** [completed development and fresh-task transfer](notes/progress/36_completed_development_and_transfer.md).
+The locked 16/16 development transfer has a negative primary refresh effect
+(-0.0002595 expected pass probability; descriptive interval crosses zero).
+The public-score control is stronger. All 32 development tasks, the scored
+candidate bank, paid transcripts and full results are archived. Five tasks
+show later-onset failures in the separate timing study; independent heldout
+confirmation and real generator improvement remain open.
+
+**Calibration diagnosis:** [equal-KL controls and theory](notes/progress/37_kl_matched_transfer_diagnostic.md)
+show that the secondary public-only refresh benefit vanishes after removing
+score-scale changes. The public-only fit preserves rankings exactly; the
+all-feature fit has 20 strict pairwise reversals across 3/16 tasks. More
+importantly, matched-KL policy differences occur on 14/16 tasks, including
+12 tasks with no reversal, implicating within-ranking score geometry rather
+than rank change alone. This is an explicitly exploratory development analysis.
+
+**Prospective mechanism test:** [equal-KL verifier-error alignment](notes/progress/39_equal_kl_alignment_phase.md)
+was locked before execution and run on 512 independent finite-support tasks.
+At matched policy KL, rotating only verifier-error alignment produces opposite
+true-progress signs while proxy reward still improves. The declared small-KL
+phase prediction achieved 1.0 mean-sign accuracy: harmful cells have false-
+progress rate 1.0 and benign cells 0.0 at KL 0.005. The boundary remains correct
+in mean sign through KL 0.3. This is synthetic mechanism identification, not
+heldout LLM evidence.
+
+**Geometry-aware audit controller:** [trusted-label covariance gate](notes/progress/40_geometry_aware_trusted_label_gate.md)
+was also locked before execution and run on 1,024 independent tasks. Using only
+trusted audit labels plus free proxy scores, the fail-closed gate blocks harmful
+alignment and allows benign alignment with 84.1% / 82.1% decisive rates at 16
+labels and 97.75% / 97.75% at 32 labels; no wrong-sign decisive decision was
+observed at any reported budget. The bound is valid only for explicit i.i.d.
+single-policy audits; adaptive priority sampling is not treated as certified.
+
 **When must verification catch up with a self-improving policy?**
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.
+
+**Evidence checkpoint (2026-09-23):** The first isolated, scored
+pretrained-code-model MBPP+ pilot has a largely **negative** timing result:
+early versus uniform verification differs by just one baseline failure among
+480 matched settings, and safe projection never activates. See the
+[scored pilot](notes/progress/33_mbppplus_first_scored_pilot.md) and the
+[claim/decision record](docs/oral_research_decision.md) before extrapolating
+from the controlled phase diagrams below. Eight benchmark tasks and a frozen
+candidate bank cannot establish learned self-improvement or an Oral result.
+
+The central question is:
+
+> How much genuinely fresh trusted verification is needed to sustain recursive policy improvement when the policy adaptively optimizes an imperfect verifier?
+
+The working hypothesis is more nuanced than “verify every round”: fresh verification is needed when optimization creates **statistically new or poorly covered policy comparisons faster than the verifier can generalize or refresh**. The scored standard-program pilot has not confirmed a general failure boundary.
 
 ## Executable asynchronous RVL lab
 
@@ -157,6 +205,20 @@ This leads to the working interpretation:
 
 > **Verification lag is policy shift relative to verifier-error geometry, not elapsed time.**
 
+### 5. Finite-KL progress is a path integral of verifier/truth alignment
+
+For the exponential path (q_\beta \propto p e^{\beta v}),
+
+\[
+\mathbb E_{q_\beta}[y]-\mathbb E_p[y]
+=\int_0^\beta \operatorname{Cov}_{q_t}(y,v)\,dt,
+\]
+
+while proxy progress is (int_0^\beta \operatorname{Var}_{q_t}(v)dt\ge0)
+and endpoint KL is (int_0^\beta t\operatorname{Var}_{q_t}(v)dt).
+Thus equal endpoint KL does not determine true progress unless extra assumptions
+couple verifier/truth covariance to proxy variance.
+
 ## Representative empirical results
 
 | Experiment | Main result |
@@ -169,6 +231,8 @@ This leads to the working interpretation:
 | Recursive refresh cadence | fast refresh self-corrects; stale reuse can collapse |
 | 2D recursive phase | failure approximately collapses under stale exposure within a fixed score calibration |
 | Invariance test | max log-density ratio transfers well across optimizer families, but no shift-only scalar works across verifier classes |
+| Prospective equal-KL alignment stress | same KL + same error norm can flip true progress by rotating verifier-error alignment; primary phase accuracy 1.0 |
+| Geometry-aware covariance audit | 1,024 tasks; harmful/benign decisive rates 84.1%/82.1% at 16 trusted labels and 97.75%/97.75% at 32; zero observed wrong-sign decisions |
 
 ## Key figures
 
@@ -241,18 +305,20 @@ The project currently has a theorem/experiment bridge but is not presented here 
 
 ## Current next step
 
-The highest-value external validation is a pretrained code-model experiment with:
+The central mechanism is now prospective in a controlled environment. The highest-value external-validity step is to move the same geometry into a real-model post-training experiment:
 
-1. multiple sampled candidate programs per task,
-2. public tests as a cheap proxy,
-3. hidden/exhaustive tests as trusted semantic reward,
-4. independent sweeps over optimization pressure, verifier refresh cadence, and trusted-label budget,
-5. a richer-verifier control,
-6. comparison of stale-shift coordinates such as max density ratio, KL, and restricted feature geometry.
+1. use actual sampled LLM rollouts and independent trusted reward,
+2. measure or intervene on verifier-error alignment before the update,
+3. match realized policy KL across alignment conditions,
+4. keep a no-update and shuffled/misaligned-reward control,
+5. evaluate only on an untouched terminal split across multiple seeds,
+6. retain raw generations, verifier outputs, parameter-update diagnostics, compute and failures.
+
+A separately pinned Qwen/GSM8K matched-drift bridge now implements the real-update contract: paired harmful/benign proxy geometry, calibration-only learning-rate selection, realized token-KL matching, and evaluation labels withheld until both updates are fixed. Its immutable-source self-hosted GPU workflow has been triggered; real GPU outcomes remain a separate evidence gate.
 
 ---
 
-**Status:** active independent research, September 2026.
+**Status:** active independent research, October 2026.
 
 
 ## Pretrained candidate-bank pipeline
@@ -268,23 +334,3 @@ it does not update the code LM weights. See [the runbook](docs/pretrained_pilot_
 The prospective two-bank transfer study preserves both the favorable 32-draw result
 and a reversed six-source safety comparison. All 512 transfer candidates are
 imperfect. See [transfer evidence and limitations](notes/progress/26_prospective_transfer.md).
-
-
-## RLVR systems engineering track
-
-This repository now also includes a small end-to-end post-training systems
-stack designed to make the implementation path from the RVL research question
-explicit. It includes bounded-concurrency asynchronous rollouts, verifier
-execution, grouped reward normalization with a GRPO-style policy update,
-movement/staleness-triggered verifier refresh, telemetry, and an
-OpenAI-compatible HTTP backend for remote vLLM/SGLang serving.
-
-The CPU path is intentionally runnable on a Mac and in CI:
-
-```bash
-python -m unittest tests.test_rlvr_systems -v
-python -m src.run_rlvr_systems_demo --rounds 12 --samples 32
-```
-
-See [docs/xai_rl_systems.md](docs/xai_rl_systems.md) for the architecture,
-GPU-serving integration point, and systems benchmark plan.

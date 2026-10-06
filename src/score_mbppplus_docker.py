@@ -19,6 +19,10 @@ from src.generate_mbppplus_bank import (load_selected,validate_frozen_split,
 MAX_OUTPUT=65536
 
 
+class CandidateResourceLimit(RuntimeError):
+    """Candidate hit declared output/CPU/memory limit, not an infra failure."""
+
+
 def sanitize(source):
     source=source.strip()
     fence=re.fullmatch(r'```(?:python)?\s*\n(.*?)\n```\s*',source,re.S)
@@ -86,9 +90,13 @@ def run_capped(command,payload,container_name,timeout=20):
                     selector.unregister(key.fileobj);continue
                 key.data.extend(chunk)
                 if len(out)+len(err)>MAX_OUTPUT:
-                    raise RuntimeError('Docker candidate exceeded output cap')
-        if process.wait(timeout=1)!=0:
-            raise RuntimeError('Docker evaluation failed: '+err.decode(errors='replace')[-300:])
+                    raise CandidateResourceLimit('Docker candidate exceeded output cap')
+        exit_code=process.wait(timeout=1)
+        if exit_code in (137,152):
+            raise CandidateResourceLimit('Docker candidate exceeded CPU/memory limit')
+        if exit_code!=0:
+            raise RuntimeError('Docker infrastructure or unclassified execution failure: '+
+                               str(exit_code)+' '+err.decode(errors='replace')[-300:])
         return json.loads(out.decode())
     except BaseException:
         process.kill()
@@ -160,8 +168,10 @@ def main():
                 if len(passes)!=len(task['test_list']) or any(v not in (0,1) for v in passes) or trusted not in (0,1):
                     raise ValueError('malformed test result')
                 status='scored'
-            except (RuntimeError,TimeoutError,ValueError,KeyError) as exc:
+            except (CandidateResourceLimit,TimeoutError) as exc:
                 passes=[0]*len(task['test_list']);trusted=0;status=type(exc).__name__
+            # Runtime failures, malformed replies and missing fields abort the
+            # scoring job. Never turn a broken evaluator into a zero label.
             record.update({'public_score':sum(passes)/len(passes),
                 'trusted_score':float(trusted),
                 'features':{'public_score':sum(passes)/len(passes),

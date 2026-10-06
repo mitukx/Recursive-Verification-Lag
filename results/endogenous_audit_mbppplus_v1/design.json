@@ -1,0 +1,52 @@
+{
+  "scope": "exploratory retrospective full eight-task pilot, no new transfer evidence",
+  "bank_sha256": "1bd600975d6f69b9aeb34afa285836bc9b5bc287a92109fc01a6eef6d0edf4bf",
+  "initial_sources": 2,
+  "additional_source_cap": 2,
+  "accepted_update_cap": 2,
+  "gain_floor": 0.01,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "representations": [
+    "public",
+    "all"
+  ],
+  "optimizers": [
+    "soft eta=1",
+    "bon N=4"
+  ],
+  "controllers": [
+    "myopic refit after each query",
+    "stream all queries before updates",
+    "direct paid-known-positive selection outside the fitted-proposal action family",
+    "escape one stream query from an all-zero paid transcript",
+    "one_update receding horizon with the full label cap",
+    "lookahead over stop/query/certified-update"
+  ],
+  "lookahead_independent_binary_priors": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "primary_prior": 0.5,
+  "prior_sensitivity": "uncalibrated, not selected by outcomes",
+  "uncertainty": "descriptive paired task bootstrap, eight clusters, no confirmatory claim",
+  "limitations": [
+    "previously inspected tasks",
+    "frozen candidate support",
+    "no parameter training",
+    "deterministic binary finite-bank labels",
+    "small exact action space"
+  ],
+  "code_sha256": {
+    "src/endogenous_audit.py": "fc32299cc4d2d7e5419c28a79b154378e4bd9817a8e2628eebc70654254d911b",
+    "src/evaluate_endogenous_audit.py": "e58ac55ddae73f90e3a05a33f4b174774dba056760f742303e023316a5cd4d77",
+    "src/candidate_bank_experiment.py": "c13c7543fa66582a6f87cda4359fb7d0be6860106a352430e56cb8a107e872f2",
+    "src/decision_audit.py": "0a7e5c8fe2871a8e053d2e3b6069ce421423dc6b1ca024dbf93b1624b51004d6"
+  }
+}

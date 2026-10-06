@@ -1,0 +1,204 @@
+{
+  "status": "prospective learned-verifier neural bridge locked before GPU outcomes; pilot external-validity study, negative/null/underpowered outcomes retained",
+  "source_parent_sha": "22d928a8eb14a2c3864f0886eedfb46d7b8b4589",
+  "systems_source_sha": "1a63903d22e1233594d1f1f0c269f7f55baf99b7",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "dataset": "openai/gsm8k",
+  "dataset_revision": "740312add88f781978c0658806c59bc2815b9866",
+  "precision": "fp32",
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "samples_per_prompt": 8,
+  "max_new_tokens": 192,
+  "temperature": 1,
+  "task_partition": {
+    "verifier_fit_train_rows": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ],
+    "verifier_holdout_train_rows": [
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "stale_inducing_shift_train_rows": [
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
+    ],
+    "lr_calibration_train_rows": [
+      48,
+      49,
+      50,
+      51
+    ],
+    "effect_train_rows": [
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59
+    ],
+    "evaluation_test_rows": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ]
+  },
+  "learned_verifier": {
+    "representation": "mean pooled final-layer causal-LM hidden states over response tokens",
+    "stale_backbone": "exact pre-shift policy snapshot",
+    "fresh_backbone": "exact post-shift common policy snapshot",
+    "head": {
+      "architecture": "LayerNorm(hidden_size) -> Linear(hidden_size,128) -> GELU -> Linear(128,1)",
+      "hidden_width": 128,
+      "optimizer": "AdamW",
+      "learning_rate": 0.001,
+      "weight_decay": 0.01,
+      "full_batch_steps": 300,
+      "class_balance": "BCEWithLogitsLoss pos_weight=n_negative/n_positive",
+      "initialization_seed_offset": 700000,
+      "minimum_positive_labels": 8,
+      "minimum_negative_labels": 8
+    },
+    "arms": {
+      "oracle": "trusted GSM8K exact-match reward",
+      "fresh": "neural verifier trained on post-shift current-policy verifier-fit rollouts",
+      "stale": "same neural architecture trained on pre-shift verifier-fit rollouts and scored with the pre-shift backbone",
+      "shuffled": "fresh verifier scores deterministically permuted within each prompt, preserving per-prompt score multiset"
+    },
+    "shuffled_seed_offset": 910000
+  },
+  "stale_inducing_policy_shift": {
+    "reward": "oracle GSM8K exact-match",
+    "learning_rate": 0.000001,
+    "update_count": 1,
+    "rollout_bank": "fixed baseline-policy rollouts on stale_inducing_shift_train_rows",
+    "snapshot_rule": "post-shift model/optimizer/RNG state becomes the common policy snapshot for all verifier arms",
+    "underpowered_if": "sampled post-shift-vs-pre-shift token k3 on the current effect bank is non-finite or exactly zero"
+  },
+  "pre_update_measurements": [
+    "Cov(y,v) over current effect candidate occurrences",
+    "verifier error e=v-y",
+    "Cov(y,e)",
+    "Brier score",
+    "10-bin equal-width ECE",
+    "positive-vs-negative pairwise ranking accuracy",
+    "fresh-vs-stale pairwise score-order reversal rate",
+    "sampled current-vs-pre-shift policy KL on current effect candidates",
+    "sampled current-vs-pre-shift k3 and max absolute log-ratio",
+    "secondary: within-prompt/between-prompt covariance decomposition and Cov(y, group-normalized GRPO advantage)"
+  ],
+  "drift_calibration": {
+    "learning_rate_grid": [
+      1e-7,
+      2e-7,
+      5e-7,
+      0.000001,
+      0.000002
+    ],
+    "metric": "post-update mean token k3 on the fixed current-policy LR calibration rollout bank",
+    "selection_rule": "evaluate every LR for all four verifier arms from the exact same post-shift model/optimizer/RNG snapshot; target=0.8*minimum arm-specific maximum positive finite calibration k3; choose each arm LR minimizing absolute log-distance to target, ties to smaller LR",
+    "evaluation_access": "none"
+  },
+  "effect_update": "restore the common post-shift snapshot and apply exactly one GRPO update per arm to identical current-policy effect rollout identities using only that arm reward",
+  "terminal_evaluation": {
+    "candidate_bank": "generated once from the common post-shift policy before any arm effect update and never used for LR selection or gradients",
+    "correctness_access": "not read until all four arm LR choices, effect updates, candidate-logprob collection and terminal greedy generations are fixed",
+    "metric": "change from common post-shift baseline in per-prompt mean sequence logprob(correct candidates)-mean sequence logprob(incorrect candidates)",
+    "minimum_informative_prompts": 3
+  },
+  "primary_analysis": {
+    "eligibility": "verifier fit eligibility for stale and fresh; at least 3 informative terminal prompts; max/min realized effect-update k3 across four arms <=1.5",
+    "estimand": "within each eligible seed, Spearman rank correlation across the four arms between pre-update Cov(y,v) and trusted terminal preference shift",
+    "comparator": "within-seed Spearman rank correlation between realized effect-update k3 and trusted terminal preference shift",
+    "directional_prediction": "mean verifier-geometry rank correlation across at least 2 eligible seeds is positive and exceeds mean k3 rank correlation",
+    "underpowered_if": "fewer than 2 eligible seeds"
+  },
+  "secondary_analysis": [
+    "fresh vs stale verifier holdout Brier/ECE/ranking accuracy on current-policy candidates",
+    "oracle/fresh/stale/shuffled terminal greedy GSM8K exact match",
+    "pairwise sign consistency between differences in Cov(y,v) and differences in trusted preference shift",
+    "effect-update gradient norm, behavior KL estimate, k3 and max log-ratio",
+    "compare locked pooled Cov(y,v) with within-prompt Cov(y,v) and Cov(y,GRPO advantage) without changing the primary estimand"
+  ],
+  "no_success_only_substitution": "Do not change model, rows, precision, seeds, head architecture/training, shift update, LR grid, arms, eligibility or endpoint after inspecting GPU outcomes. Retain negative/null/underpowered/failure evidence.",
+  "scope": "single-GPU 0.5B learned-neural-verifier pilot using a frozen-at-version Qwen representation plus trained MLP reward head; not an end-to-end reward-model fine-tune and not frontier-scale evidence",
+  "optimizer_aligned_geometry_diagnostic": {
+    "status": "secondary diagnostic locked before any Issue #43 GPU trigger/outcome; primary pooled-Cov(y,v) analysis remains unchanged",
+    "rationale": "HFCausalLMGRPOTrainer centers and standardizes reward within each prompt before the surrogate update, so between-prompt verifier calibration can affect pooled Cov(y,v) while being invisible to the GRPO advantage",
+    "advantage_definition": "per prompt: a=clip((v-mean(v))/sqrt(mean((v-mean(v))^2)+advantage_eps), -clip_advantage, +clip_advantage), using the instantiated pinned trainer config",
+    "metrics": [
+      "occurrence-weighted within-prompt Cov(y,v)",
+      "between-prompt Cov(E[y|prompt], E[v|prompt])",
+      "law-of-total-covariance reconstruction error",
+      "mean prompt Cov(y,v)",
+      "mean prompt Cov(y,e)",
+      "mean prompt Cov(y,GRPO advantage)",
+      "occurrence-weighted Cov(y,GRPO advantage)",
+      "per-prompt trusted/score means, score variance and covariance diagnostics"
+    ],
+    "selection_use": "none; not used for LR selection, eligibility, arm selection, or the locked primary directional prediction",
+    "interpretation": "diagnostic for whether pooled verifier geometry agrees with the reward geometry actually exposed to group-normalized GRPO"
+  }
+}

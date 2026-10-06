@@ -1,0 +1,22 @@
+{
+  "code_sha256": "d423651384a60028e1ccd4683a49192a75947e59514422d47a64b65b14e39061",
+  "heldout_benchmark_access": 0,
+  "new_pretrained_model_runs": 0,
+  "output_sha256": {
+    "rows.csv.gz": "e048ad8ba0bfb6b8b2f8589c182ecbbe8cd78c41f548d908c1ff490aa9a95827",
+    "summary.csv": "061ef6727751f11e5632d281fcb8cfc103f224417d36159fffe57658a541c613"
+  },
+  "policy_kl_used_for_decision": false,
+  "primary_benign_allow_rate": 1.0,
+  "primary_benign_wrong_sign_rate": 0.0,
+  "primary_budget": 128,
+  "primary_harmful_block_rate": 1.0,
+  "primary_harmful_wrong_sign_rate": 0.0,
+  "primary_prediction_passed": true,
+  "protocol_sha256": "3961169ab500f25bd389190b1f08d85b069936881aaae0dfe6c6ee2d5a450846",
+  "row_count": 12288,
+  "scope": "finite-support proof-of-concept for an audit controller; it uses trusted labels and exact proxy scores and does not claim an LLM verifier is calibrated this way",
+  "status": "prospective geometry-aware audit experiment locked before execution; synthetic controller validation, not learned-LLM evidence",
+  "support_size": 32,
+  "task_count": 1024
+}

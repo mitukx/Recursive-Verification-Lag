@@ -1,0 +1,86 @@
+{
+  "status": "pre-outcome development analysis lock; not a preregistered heldout study",
+  "purpose": "test verifier refresh transfer to new tasks without paid evaluation-task labels",
+  "split_manifest_sha256": "30977463323db7e5e22cec1a28e5b07dda3b1b75093a790d958dda1fb72490da",
+  "generator_model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "generator_revision": "2e1fd397ee46e1388853d2af2c993145b0f1098a",
+  "samples_per_task": 16,
+  "training_task_ids": [
+    "778",
+    "771",
+    "262",
+    "770",
+    "560",
+    "474",
+    "309",
+    "142",
+    "259",
+    "264",
+    "619",
+    "19",
+    "139",
+    "453",
+    "805",
+    "460"
+  ],
+  "evaluation_task_ids": [
+    "629",
+    "127",
+    "631",
+    "628",
+    "90",
+    "644",
+    "753",
+    "635",
+    "476",
+    "306",
+    "170",
+    "410",
+    "91",
+    "567",
+    "234",
+    "439"
+  ],
+  "initial_sources_per_training_task": 2,
+  "total_sources_per_training_task": 4,
+  "source_seed": 0,
+  "insufficient_unique_sources": "use all available, report lower actual cost, never replace task",
+  "ridge": 0.0001,
+  "primary": {
+    "representation": "all",
+    "optimizer": "soft",
+    "eta": 1.0,
+    "rounds": 4,
+    "contrast": "refreshed minus frozen expected trusted pass probability on 16 unseen tasks"
+  },
+  "secondary": {
+    "representations": [
+      "public",
+      "all"
+    ],
+    "optimizers": [
+      "soft eta=1",
+      "bon N=4"
+    ],
+    "rounds": [
+      1,
+      4,
+      12
+    ]
+  },
+  "controls": [
+    "uniform occurrence policy",
+    "public-score selection",
+    "frozen verifier: additional shared labels released after decisions",
+    "refreshed verifier: additional shared labels released before decisions"
+  ],
+  "cost_semantics": "same distinct training-source identities and same simulated paid-source oracle ledger on a fully scored development bank; zero decision-time evaluation-task labels; all physical bank scoring and reference validations reported separately",
+  "scope": "fixed base generator; learned linear verifier and fresh-task selection, no generator parameter update or self-improvement claim",
+  "outcome_selection": "all 16 evaluation tasks, including zero-success tasks",
+  "uncertainty": "paired task bootstrap descriptive intervals; no tuning on evaluation outcomes",
+  "abort_conditions": [
+    "development task IDs or sample count mismatch",
+    "scored-bank hash or frozen-split provenance mismatch",
+    "trusted label inconsistent for an exact within-task source"
+  ]
+}

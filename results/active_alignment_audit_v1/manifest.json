@@ -1,0 +1,27 @@
+{
+  "code_sha256": "44317b95ffc1bc1016777edf05624a6255e2f8ab7a5862f7861ae5359f156528",
+  "development_seed_policy": "thresholds were chosen from separate exploratory seeds 0-399; evaluation uses disjoint seeds 20000-21023 and must not be changed after outcomes",
+  "evaluation_task_count": 1024,
+  "harmful_primary_active_block_rate": 0.8427734375,
+  "harmful_primary_active_mean_range_width": 2.2739045668630493,
+  "harmful_primary_passive_block_rate": 0.0,
+  "harmful_primary_passive_mean_range_width": 6.1806604022640075,
+  "heldout_benchmark_access": 0,
+  "new_pretrained_model_runs": 0,
+  "output_sha256": {
+    "rows.csv.gz": "b333cd671fecd5eb15069b7180fcd3d5923b990e0202a1e368607caddc9e4e03",
+    "summary.csv": "5cde55b97fe964d2e6971da83b278262d08998c68f4c68b0c8581cc50e246dc2"
+  },
+  "primary_budget": 256,
+  "primary_conditions": {
+    "active_harmful_block_rate": true,
+    "active_range_strictly_smaller": true,
+    "active_wrong_sign_rate": true,
+    "passive_harmful_block_rate": true
+  },
+  "primary_prediction_passed": true,
+  "protocol_sha256": "7334391b4099433ee8e28fb2957562122f25e639f430057af67da416ecec8ac9",
+  "scope": "finite-support active-auditing proof of concept with exact policy and proxy scores; no claim that this is optimal for learned LLM verifiers, correlated labels, or production traffic",
+  "status": "prospective active covariance audit locked before evaluation outcomes; finite-support controller study, not learned-LLM evidence",
+  "support_size": 32
+}

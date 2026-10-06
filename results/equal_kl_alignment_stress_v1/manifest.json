@@ -1,0 +1,23 @@
+{
+  "attainable_rows": 71655,
+  "code_sha256": "69c83d63825a1557091feeee094e8c599d9f1bbb7bf1d28da9ea413bb6fa1d5e",
+  "heldout_benchmark_access": 0,
+  "learned_verifier_updates": 0,
+  "new_pretrained_model_runs": 0,
+  "output_sha256": {
+    "cells.csv": "56b4ffe04b055cd017fbe99b03e34ee6d4ab3ede594e92ab875629a60222b755",
+    "rows.csv.gz": "0d3895d2654831cdcf6fce3c347c00aaed54b5a5ae14e8b597382770100c2b95",
+    "summary.csv": "1352c304b08ed3b9db9c5bff1688f578b051f753fe2c423e8134a62342e8eec3"
+  },
+  "primary_budget": 0.005,
+  "primary_phase_accuracy": 1.0,
+  "primary_prediction_passed": true,
+  "primary_proxy_nonnegative": true,
+  "protocol_sha256": "83137a9c1d53d68b058305d3a7a23e207102a66d10ae487a70c741099001f17f",
+  "scope": "mechanism identification only; no pretrained model, no learned verifier, no claim of frontier-model improvement or deployment safety",
+  "status": "prospective controlled-mechanism experiment locked before outcome execution; synthetic finite-support stress test, not heldout LLM evidence",
+  "support_size": 32,
+  "task_count": 512,
+  "total_grid_rows": 73728,
+  "unattainable_rows": 2073
+}

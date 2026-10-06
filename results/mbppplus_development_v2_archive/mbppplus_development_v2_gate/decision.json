@@ -1,0 +1,21 @@
+{
+  "bank_sha256": "1aba49310cf5fd44bedabb9dd0ee25b70e5c0ef2e98b4a01611c450f35755d82",
+  "scope": "development only; task-bootstrap intervals are descriptive",
+  "later_onset_task_ids": [
+    "142",
+    "264",
+    "410",
+    "476",
+    "778"
+  ],
+  "later_onset_task_count": 5,
+  "development_gate": "continue_to_freeze_predictor_and_cost_rule",
+  "gate_status": "development triage; does not satisfy the five-task heldout criterion",
+  "all_task_count": 32,
+  "source_timing_unidentified_task_ids": [
+    "127",
+    "139"
+  ],
+  "evaluation_only_test_note": "released additional tests; pretraining contamination possible",
+  "source_sha256": "196fdfd082b76102f82331a329c1987175fcb08546fb5e74666fb23e00b815a3"
+}

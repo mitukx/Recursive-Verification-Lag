@@ -1,0 +1,24 @@
+{
+  "code_sha256": "7b832a136207010749ffcd51758f7247133b9633cb5f73b6fd197f09ce18cf25",
+  "heldout_benchmark_access": 0,
+  "new_pretrained_model_runs": 0,
+  "output_sha256": {
+    "rows.csv.gz": "2338beeb414eccb8a1106a0e95e97bc39eb483012acacaa2d32d3e983468b7ef",
+    "selection_records.jsonl.gz": "55f78f603f80b98682649ab43d78f2f7a2c47b9a5033c2ee21a92a8b95976836",
+    "summary.csv": "dc25e9d89a9509e0501e6099ed289e283dfabeaeecd870f9a940add0b81d3ac2"
+  },
+  "primary_budget": 16.0,
+  "primary_decisive_not_worse": true,
+  "primary_pooled_decisive_proxy_leverage": 0.11279296875,
+  "primary_pooled_decisive_uniform": 0.01611328125,
+  "primary_prediction_passed": true,
+  "primary_radius_better_both_arms": true,
+  "primary_wrong_sign_rates_ok": true,
+  "protocol_sha256": "b6ca6360c76c63e5da2b49f6d6e294b2e9a78d0b82c4dca1bf010bbe69765733",
+  "row_count": 16384,
+  "scope": "synthetic audit-efficiency study; not a population guarantee for an LLM policy and not evidence of a learned verifier",
+  "status": "prospective post-v1 efficiency follow-up locked before execution; synthetic propensity-weighted audit study, not independent confirmation",
+  "support_size": 64,
+  "task_count": 1024,
+  "trusted_reward_used_for_propensity_allocation": false
+}

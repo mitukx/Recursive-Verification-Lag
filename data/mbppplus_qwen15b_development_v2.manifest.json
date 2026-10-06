@@ -1,0 +1,391 @@
+{
+  "status": "unscored_pretrained_python_program_bank",
+  "evidence": "real_pretrained_lm_generating_standard_MBPPplus_programs; no trusted execution yet",
+  "dataset": "evalplus/mbppplus",
+  "dataset_revision": "b2d74c91837c3f2a20c1299ae98133cbe7cfa077",
+  "dataset_file": "data/test-00000-of-00001-d5781c9c51e02795.parquet",
+  "dataset_file_sha256": "dc20030b3788fccf617444edcb34138ef13d7e4fafd17bfcb8c1279dbb12399b",
+  "selection_salt": "rvl-mbppplus-pilot-v1:",
+  "selection_rule": "hash ranks [8,40) among eligible tasks; unique reference def, >=3 public tests, prompt<600 chars",
+  "selection_offset": 8,
+  "selection_count": 32,
+  "frozen_split": "development_unscored",
+  "frozen_split_sha256": "30977463323db7e5e22cec1a28e5b07dda3b1b75093a790d958dda1fb72490da",
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "model_revision": "2e1fd397ee46e1388853d2af2c993145b0f1098a",
+  "generation": {
+    "seed": 20260928,
+    "samples": 16,
+    "max_new_tokens": 256,
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "batch_size": 4,
+    "threads": 4,
+    "device": "cpu"
+  },
+  "selected_tasks": [
+    {
+      "task_id": "778",
+      "entry_point": "pack_consecutive_duplicates",
+      "public_tests": [
+        "assert pack_consecutive_duplicates([0, 0, 1, 2, 3, 4, 4, 5, 6, 6, 6, 7, 8, 9, 4, 4])==[[0, 0], [1], [2], [3], [4, 4], [5], [6, 6, 6], [7], [8], [9], [4, 4]]",
+        "assert pack_consecutive_duplicates([10, 10, 15, 19, 18, 18, 17, 26, 26, 17, 18, 10])==[[10, 10], [15], [19], [18, 18], [17], [26, 26], [17], [18], [10]]",
+        "assert pack_consecutive_duplicates(['a', 'a', 'b', 'c', 'd', 'd'])==[['a', 'a'], ['b'], ['c'], ['d', 'd']]"
+      ],
+      "prompt": "Write a function to pack consecutive duplicates of a given list elements into sublists.",
+      "plus_test_sha256": "92a76bd17abc7f91ba7ad63d40efa6a1cae36799248fd3f5da3ec1c16cf6704a"
+    },
+    {
+      "task_id": "771",
+      "entry_point": "check_expression",
+      "public_tests": [
+        "assert check_expression(\"{()}[{}]\") == True",
+        "assert check_expression(\"{()}[{]\") == False",
+        "assert check_expression(\"{()}[{}][]({})\") == True"
+      ],
+      "prompt": "Write a function to check if the given expression is balanced or not. https://www.geeksforgeeks.org/check-for-balanced-parentheses-in-an-expression/",
+      "plus_test_sha256": "f312475ecded9d43a273ba096b5ac1700bbbde1cd41774da485e8f5917b11a72"
+    },
+    {
+      "task_id": "262",
+      "entry_point": "split_two_parts",
+      "public_tests": [
+        "assert split_two_parts([1,1,2,3,4,4,5,1],3)==([1, 1, 2], [3, 4, 4, 5, 1])",
+        "assert split_two_parts(['a', 'b', 'c', 'd'],2)==(['a', 'b'], ['c', 'd'])",
+        "assert split_two_parts(['p', 'y', 't', 'h', 'o', 'n'],4)==(['p', 'y', 't', 'h'], ['o', 'n'])"
+      ],
+      "prompt": "Write a function that takes in a list and an integer L and splits the given list into two parts where the length of the first part of the list is L, and returns the resulting lists in a tuple.",
+      "plus_test_sha256": "01e9aa2ed131d97f2f0db495120f3bf613a89011c656b42b33719451b33c0817"
+    },
+    {
+      "task_id": "770",
+      "entry_point": "odd_num_sum",
+      "public_tests": [
+        "assert odd_num_sum(2) == 82",
+        "assert odd_num_sum(3) == 707",
+        "assert odd_num_sum(4) == 3108"
+      ],
+      "prompt": "Write a python function to find the sum of fourth power of first n odd natural numbers.",
+      "plus_test_sha256": "b28c1b0d5efa8d2bed075240550547bdd8dd00fde123ef77e8a46c25ee903f30"
+    },
+    {
+      "task_id": "560",
+      "entry_point": "union_elements",
+      "public_tests": [
+        "assert union_elements((3, 4, 5, 6),(5, 7, 4, 10) ) == (3, 4, 5, 6, 7, 10)",
+        "assert union_elements((1, 2, 3, 4),(3, 4, 5, 6) ) == (1, 2, 3, 4, 5, 6)",
+        "assert union_elements((11, 12, 13, 14),(13, 15, 16, 17) ) == (11, 12, 13, 14, 15, 16, 17)"
+      ],
+      "prompt": "Write a function to find the union of the elements of two given tuples and output them in sorted order.",
+      "plus_test_sha256": "960fd1533abbe1474d8f6ddfd08b747f6f2b93298ec48f0faf922b6b24c537aa"
+    },
+    {
+      "task_id": "474",
+      "entry_point": "replace_char",
+      "public_tests": [
+        "assert replace_char(\"polygon\",'y','l')==(\"pollgon\")",
+        "assert replace_char(\"character\",'c','a')==(\"aharaater\")",
+        "assert replace_char(\"python\",'l','a')==(\"python\")"
+      ],
+      "prompt": "Write a function to replace characters in a string.",
+      "plus_test_sha256": "6959a025e4f731e2a09f0f48fc763eeba9ba87a16cd913c893afba82f2af4f26"
+    },
+    {
+      "task_id": "309",
+      "entry_point": "maximum",
+      "public_tests": [
+        "assert maximum(5,10) == 10",
+        "assert maximum(-1,-2) == -1",
+        "assert maximum(9,7) == 9"
+      ],
+      "prompt": "Write a python function to find the maximum of two numbers.",
+      "plus_test_sha256": "a9e93427af71917a592dfb142be414f8f4f563be0011f0e26f02a2ea07b14d63"
+    },
+    {
+      "task_id": "142",
+      "entry_point": "count_samepair",
+      "public_tests": [
+        "assert count_samepair([1,2,3,4,5,6,7,8],[2,2,3,1,2,6,7,9],[2,1,3,1,2,6,7,9])==3",
+        "assert count_samepair([1,2,3,4,5,6,7,8],[2,2,3,1,2,6,7,8],[2,1,3,1,2,6,7,8])==4",
+        "assert count_samepair([1,2,3,4,2,6,7,8],[2,2,3,1,2,6,7,8],[2,1,3,1,2,6,7,8])==5"
+      ],
+      "prompt": "Write a function to count number items that are identical in the same position of three given lists.",
+      "plus_test_sha256": "3f8ea08bb7a00b150bfb41ea87ee18b4c0d49a9585bdbb16a1982c77a92f64f7"
+    },
+    {
+      "task_id": "259",
+      "entry_point": "maximize_elements",
+      "public_tests": [
+        "assert maximize_elements(((1, 3), (4, 5), (2, 9), (1, 10)), ((6, 7), (3, 9), (1, 1), (7, 3))) == ((6, 7), (4, 9), (2, 9), (7, 10))",
+        "assert maximize_elements(((2, 4), (5, 6), (3, 10), (2, 11)), ((7, 8), (4, 10), (2, 2), (8, 4))) == ((7, 8), (5, 10), (3, 10), (8, 11))",
+        "assert maximize_elements(((3, 5), (6, 7), (4, 11), (3, 12)), ((8, 9), (5, 11), (3, 3), (9, 5))) == ((8, 9), (6, 11), (4, 11), (9, 12))"
+      ],
+      "prompt": "Write a function to maximize the given two tuples.",
+      "plus_test_sha256": "9fc8ec6ae26a708758697423ffee010cab3ac4e842a475528e7db30739ac05ea"
+    },
+    {
+      "task_id": "264",
+      "entry_point": "dog_age",
+      "public_tests": [
+        "assert dog_age(12)==61",
+        "assert dog_age(15)==73",
+        "assert dog_age(24)==109"
+      ],
+      "prompt": "Write a function to calculate a dog's age in dog's years.",
+      "plus_test_sha256": "129ac1bfaf82b1fbdbde402338705914a01296f9e938397035fcf4477b6f81c9"
+    },
+    {
+      "task_id": "619",
+      "entry_point": "move_num",
+      "public_tests": [
+        "assert move_num('I1love143you55three3000thousand') == 'Iloveyouthreethousand1143553000'",
+        "assert move_num('Avengers124Assemble') == 'AvengersAssemble124'",
+        "assert move_num('Its11our12path13to14see15things16do17things') == 'Itsourpathtoseethingsdothings11121314151617'"
+      ],
+      "prompt": "Write a function to move all the numbers to the end of the given string.",
+      "plus_test_sha256": "7d8c7a894e118354c5c8b6ef3a1ff6642da1911ebe83d628e4a6778043ff01a8"
+    },
+    {
+      "task_id": "19",
+      "entry_point": "test_duplicate",
+      "public_tests": [
+        "assert test_duplicate(([1,2,3,4,5]))==False",
+        "assert test_duplicate(([1,2,3,4, 4]))==True",
+        "assert test_duplicate([1,1,2,2,3,3,4,4,5])==True"
+      ],
+      "prompt": "Write a function to find whether a given array of integers contains any duplicate element.",
+      "plus_test_sha256": "694e36a6f5f48120b5662ec4e6eb0f453627eaf372f2bf26104f94d9d6a474e7"
+    },
+    {
+      "task_id": "139",
+      "entry_point": "circle_circumference",
+      "public_tests": [
+        "assert math.isclose(circle_circumference(10), 62.830000000000005, rel_tol=0.001)",
+        "assert math.isclose(circle_circumference(5), 31.415000000000003, rel_tol=0.001)",
+        "assert math.isclose(circle_circumference(4), 25.132, rel_tol=0.001)"
+      ],
+      "prompt": "Write a function to find the circumference of a circle.",
+      "plus_test_sha256": "ac428878616072b4dbdbde29e5bc3d6b50349bdbe4b51f7dee9fe57c439da2af"
+    },
+    {
+      "task_id": "453",
+      "entry_point": "sumofFactors",
+      "public_tests": [
+        "assert sumofFactors(18) == 26",
+        "assert sumofFactors(30) == 48",
+        "assert sumofFactors(6) == 8"
+      ],
+      "prompt": "Write a python function to find the sum of even factors of a number.",
+      "plus_test_sha256": "6d744b83dae91f7d26685ebda0749e309909e1100afaab05384394d93734256b"
+    },
+    {
+      "task_id": "805",
+      "entry_point": "max_sum_list",
+      "public_tests": [
+        "assert max_sum_list([[1,2,3], [4,5,6], [10,11,12], [7,8,9]])==[10, 11, 12]",
+        "assert max_sum_list([[3,2,1], [6,5,4], [12,11,10]])==[12,11,10]",
+        "assert max_sum_list([[2,3,1]])==[2,3,1]"
+      ],
+      "prompt": "Write a function that returns the list in a list of lists whose sum of elements is the highest.",
+      "plus_test_sha256": "cf6ab5d8b9439584d592d7de5d45e79aaceb617f6cf59b8102bdb5fe0662fbcc"
+    },
+    {
+      "task_id": "460",
+      "entry_point": "Extract",
+      "public_tests": [
+        "assert Extract([[1, 2], [3, 4, 5], [6, 7, 8, 9]]) == [1, 3, 6]",
+        "assert Extract([[1,2,3],[4, 5]]) == [1,4]",
+        "assert Extract([[9,8,1],[1,2]]) == [9,1]"
+      ],
+      "prompt": "Write a python function to get the first element of each sublist.",
+      "plus_test_sha256": "fe4a6742696e9523644bd7a855784845d62d7e72f3876dcc6ba04fe6ad208cb1"
+    },
+    {
+      "task_id": "629",
+      "entry_point": "Split",
+      "public_tests": [
+        "assert Split([1,2,3,4,5]) == [2,4]",
+        "assert Split([4,5,6,7,8,0,1]) == [4,6,8,0]",
+        "assert Split ([8,12,15,19]) == [8,12]"
+      ],
+      "prompt": "Write a python function to find even numbers from a list of numbers.",
+      "plus_test_sha256": "dd786846d165e92566eb6e7be99b0dfbe5922ee8c9be1ab4f76efe494dacb5b4"
+    },
+    {
+      "task_id": "127",
+      "entry_point": "multiply_int",
+      "public_tests": [
+        "assert multiply_int(10,20)==200",
+        "assert multiply_int(5,10)==50",
+        "assert multiply_int(4,8)==32"
+      ],
+      "prompt": "Write a function to multiply two integers.",
+      "plus_test_sha256": "a391bc987e878935c5ffe8d9bb3eb07adf6b45fb8584379e4051a9516bdb18a0"
+    },
+    {
+      "task_id": "631",
+      "entry_point": "replace_spaces",
+      "public_tests": [
+        "assert replace_spaces('Jumanji The Jungle') == 'Jumanji_The_Jungle'",
+        "assert replace_spaces('The_Avengers') == 'The Avengers'",
+        "assert replace_spaces('Fast and Furious') == 'Fast_and_Furious'"
+      ],
+      "prompt": "Write a function to replace whitespaces with an underscore and vice versa in a given string.",
+      "plus_test_sha256": "43f8ae125e0486cc227b261e2742ae082b2a75e12946f43a930448cd323351e8"
+    },
+    {
+      "task_id": "628",
+      "entry_point": "replace_spaces",
+      "public_tests": [
+        "assert replace_spaces(\"My Name is Dawood\") == 'My%20Name%20is%20Dawood'",
+        "assert replace_spaces(\"I am a Programmer\") == 'I%20am%20a%20Programmer'",
+        "assert replace_spaces(\"I love Coding\") == 'I%20love%20Coding'"
+      ],
+      "prompt": "Write a function to replace all spaces in the given string with '%20'.",
+      "plus_test_sha256": "aaffa0c35f9db6dde3a572070e6d624df47b303215ccabb445448ac60f27250a"
+    },
+    {
+      "task_id": "90",
+      "entry_point": "len_log",
+      "public_tests": [
+        "assert len_log([\"python\",\"PHP\",\"bigdata\"]) == 7",
+        "assert len_log([\"a\",\"ab\",\"abc\"]) == 3",
+        "assert len_log([\"small\",\"big\",\"tall\"]) == 5"
+      ],
+      "prompt": "Write a python function to find the length of the longest word.",
+      "plus_test_sha256": "f63682e2caa3bb747b84f7ab37de281695f6dde8d959b815065f31aa4a068a2c"
+    },
+    {
+      "task_id": "644",
+      "entry_point": "reverse_Array_Upto_K",
+      "public_tests": [
+        "assert reverse_Array_Upto_K([1, 2, 3, 4, 5, 6],4) == [4, 3, 2, 1, 5, 6]",
+        "assert reverse_Array_Upto_K([4, 5, 6, 7], 2) == [5, 4, 6, 7]",
+        "assert reverse_Array_Upto_K([9, 8, 7, 6, 5],3) == [7, 8, 9, 6, 5]"
+      ],
+      "prompt": "Write a python function to reverse an array upto a given position.",
+      "plus_test_sha256": "235138e3d34c5a3bd7fad35b9474b3cb220716efea2e7061f0ce2aa3056d0235"
+    },
+    {
+      "task_id": "753",
+      "entry_point": "min_k",
+      "public_tests": [
+        "assert min_k([('Manjeet', 10), ('Akshat', 4), ('Akash', 2), ('Nikhil', 8)], 2) == [('Akash', 2), ('Akshat', 4)]",
+        "assert min_k([('Sanjeev', 11), ('Angat', 5), ('Akash', 3), ('Nepin', 9)], 3) == [('Akash', 3), ('Angat', 5), ('Nepin', 9)]",
+        "assert min_k([('tanmay', 14), ('Amer', 11), ('Ayesha', 9), ('SKD', 16)], 1) == [('Ayesha', 9)]"
+      ],
+      "prompt": "Write a function to find minimum k records from tuple list. https://www.geeksforgeeks.org/python-find-minimum-k-records-from-tuple-list/ - in this case a verbatim copy of test cases",
+      "plus_test_sha256": "385ab277c6de053d69efd9b1582d19694018787d8f2c5fb9b0d82408123f2a61"
+    },
+    {
+      "task_id": "635",
+      "entry_point": "heap_sort",
+      "public_tests": [
+        "assert heap_sort([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])==[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]",
+        "assert heap_sort([25, 35, 22, 85, 14, 65, 75, 25, 58])==[14, 22, 25, 25, 35, 58, 65, 75, 85]",
+        "assert heap_sort( [7, 1, 9, 5])==[1,5,7,9]"
+      ],
+      "prompt": "Write a function to sort the given list.",
+      "plus_test_sha256": "ed9367c4c09836899c2c8c0a72c6ea80af93f51720ab5c5cee7582531ac8a17b"
+    },
+    {
+      "task_id": "476",
+      "entry_point": "big_sum",
+      "public_tests": [
+        "assert big_sum([1,2,3]) == 4",
+        "assert big_sum([-1,2,3,4]) == 3",
+        "assert big_sum([2,3,6]) == 8"
+      ],
+      "prompt": "Write a python function to find the sum of the largest and smallest value in a given array.",
+      "plus_test_sha256": "1f9e527ae39682489fb892ff8cfc199d35187be22a328446f76499b4038b368c"
+    },
+    {
+      "task_id": "306",
+      "entry_point": "max_sum_increasing_subseq",
+      "public_tests": [
+        "assert max_sum_increasing_subseq([1, 101, 2, 3, 100, 4, 5 ], 7, 4, 6) == 11",
+        "assert max_sum_increasing_subseq([1, 101, 2, 3, 100, 4, 5 ], 7, 2, 5) == 7",
+        "assert max_sum_increasing_subseq([11, 15, 19, 21, 26, 28, 31], 7, 2, 4) == 71"
+      ],
+      "prompt": "Write a function to find the maximum sum of increasing subsequence from prefix until ith index and also including a given kth element which is after i, i.e., k > i .",
+      "plus_test_sha256": "c3a87929898c330326282dac274a5f46b78720f7fce923f16332798f0662c654"
+    },
+    {
+      "task_id": "170",
+      "entry_point": "sum_range_list",
+      "public_tests": [
+        "assert sum_range_list([2,1,5,6,8,3,4,9,10,11,8,12], 8, 10) == 29",
+        "assert sum_range_list([2,1,5,6,8,3,4,9,10,11,8,12], 5, 7) == 16",
+        "assert sum_range_list([2,1,5,6,8,3,4,9,10,11,8,12], 7, 10) == 38"
+      ],
+      "prompt": "Write a function to find the sum of numbers in a list within a range specified by two indices.",
+      "plus_test_sha256": "7a8d99eef24f8854b773117ce25ff14756d4e98d3c995b9b6b57a8e23da15f4d"
+    },
+    {
+      "task_id": "410",
+      "entry_point": "min_val",
+      "public_tests": [
+        "assert min_val(['Python', 3, 2, 4, 5, 'version'])==2",
+        "assert min_val(['Python', 15, 20, 25])==15",
+        "assert min_val(['Python', 30, 20, 40, 50, 'version'])==20"
+      ],
+      "prompt": "Write a function to find the minimum value in a given heterogeneous list.",
+      "plus_test_sha256": "da1512906bcc430d4e736860537eb2a7964ba5df705ae508f8f57b6732ff66c9"
+    },
+    {
+      "task_id": "91",
+      "entry_point": "find_substring",
+      "public_tests": [
+        "assert find_substring([\"red\", \"black\", \"white\", \"green\", \"orange\"],\"ack\")==True",
+        "assert find_substring([\"red\", \"black\", \"white\", \"green\", \"orange\"],\"abc\")==False",
+        "assert find_substring([\"red\", \"black\", \"white\", \"green\", \"orange\"],\"ange\")==True"
+      ],
+      "prompt": "Write a function to check if a string is present as a substring in a given list of string values.",
+      "plus_test_sha256": "fb1c2a0bafa3aaa98b621b1f277e37991f2b322452321b2d62621d0cb46e49df"
+    },
+    {
+      "task_id": "567",
+      "entry_point": "issort_list",
+      "public_tests": [
+        "assert issort_list([1,2,4,6,8,10,12,14,16,17])==True",
+        "assert issort_list([1, 2, 4, 6, 8, 10, 12, 14, 20, 17])==False",
+        "assert issort_list([1, 2, 4, 6, 8, 10,15,14,20])==False"
+      ],
+      "prompt": "Write a function to check whether a specified list is sorted or not.",
+      "plus_test_sha256": "fb096ed270fc265461156f0ae523122e9b8e6d14d56cadfcaad0029007037127"
+    },
+    {
+      "task_id": "234",
+      "entry_point": "volume_cube",
+      "public_tests": [
+        "assert volume_cube(3)==27",
+        "assert volume_cube(2)==8",
+        "assert volume_cube(5)==125"
+      ],
+      "prompt": "Write a function to find the volume of a cube given its side length.",
+      "plus_test_sha256": "798708457eb107250697380aba484b1bc247d67f52f695d1bceb2182cc7b0bee"
+    },
+    {
+      "task_id": "439",
+      "entry_point": "multiple_to_single",
+      "public_tests": [
+        "assert multiple_to_single([11, 33, 50])==113350",
+        "assert multiple_to_single([-1,2,3,4,5,6])==-123456",
+        "assert multiple_to_single([10,15,20,25])==10152025"
+      ],
+      "prompt": "Write a function to join a list of multiple integers into a single integer.",
+      "plus_test_sha256": "775da06ebf3753b204415f6f0f27acadc2cd4d79b8dc0368f2660f0413b411d9"
+    }
+  ],
+  "versions": {
+    "torch": "2.6.0+cpu",
+    "transformers": "4.48.3",
+    "pyarrow": "21.0.0"
+  },
+  "generator_sha256": "fdc48fae808c372a2b1eafeca8363de2fe142a07f5cf86d0d50c893a6e9ffdeb",
+  "started_utc": "2026-10-05T23:42:53.366121+00:00",
+  "complete": true,
+  "rows": 512,
+  "elapsed_seconds": 5376.544038295746,
+  "bank_sha256": "e9396e0c899bdd5d2d883f9c29bd878ae408f575deb2c13e70773b8d6cd7b082"
+}

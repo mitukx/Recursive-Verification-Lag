@@ -1,0 +1,17 @@
+arm,control,requested_kl,tasks,matched_kl_gain_difference,descriptive_task_bootstrap_lo,descriptive_task_bootstrap_hi
+all_refreshed,all_frozen,0.02,16,-0.00015351856320807312,-0.0004119964024989957,0.00011296298328817966
+public_refreshed,public_frozen,0.02,16,0.0,0.0,0.0
+all_refreshed,public_score,0.02,16,-0.00022727909454348452,-0.0005904173625465454,0.00013688977140198893
+public_refreshed,public_score,0.02,16,0.0,0.0,0.0
+all_refreshed,all_frozen,0.1,16,-0.0003473422483263877,-0.0008235430532776589,8.462475641027752e-05
+public_refreshed,public_frozen,0.1,16,0.0,0.0,0.0
+all_refreshed,public_score,0.1,16,-0.0005084310428081946,-0.0011610563502590149,7.859070785029497e-05
+public_refreshed,public_score,0.1,16,0.0,0.0,0.0
+all_refreshed,all_frozen,0.3,16,-0.0006317274560379161,-0.0013898671334497742,-6.063198834113014e-05
+public_refreshed,public_frozen,0.3,16,0.0,0.0,0.0
+all_refreshed,public_score,0.3,16,-0.0008976042836813681,-0.0019703380075764615,-8.894234249463307e-05
+public_refreshed,public_score,0.3,16,0.0,0.0,0.0
+all_refreshed,all_frozen,0.6,16,-0.0008096241819971397,-0.0019068674980171631,-5.682555365190814e-05
+public_refreshed,public_frozen,0.6,16,0.0,0.0,0.0
+all_refreshed,public_score,0.6,16,-0.0011486949887022056,-0.002746459814637519,-5.1477262623814136e-05
+public_refreshed,public_score,0.6,16,0.0,0.0,0.0

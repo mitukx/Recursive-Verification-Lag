@@ -1,0 +1,39 @@
+{
+  "status": "exploratory development diagnostic locked after inspecting original transfer summaries",
+  "protocol_sha256": "a6c2ca2969f455e9f39bb09f3fea2343b4240eb90b91c64cd2a4cc0af1186db4",
+  "bank_sha256": "1aba49310cf5fd44bedabb9dd0ee25b70e5c0ef2e98b4a01611c450f35755d82",
+  "original_transfer_manifest_sha256": "e4853fd6d47126d36a0547b9ea8164e4fe61e0e42ae3c4c5c90332432dbd53c4",
+  "code_sha256": "dfb67b209e480517e2f1c5da365bb2e13c130534d9f666e3936dafb23762d2a9",
+  "decision_time_evaluation_task_trusted_queries": 0,
+  "new_physical_candidate_executions": 0,
+  "generator_parameter_updates": 0,
+  "training_source_count": 64,
+  "evaluation_tasks": [
+    "629",
+    "127",
+    "631",
+    "628",
+    "90",
+    "644",
+    "753",
+    "635",
+    "476",
+    "306",
+    "170",
+    "410",
+    "91",
+    "567",
+    "234",
+    "439"
+  ],
+  "policies_persisted_before_evaluation": true,
+  "shuffled_control_common_radius": false,
+  "output_sha256": {
+    "contrasts.csv": "c1d79262900d7106abd20be4576661e1e16c0ed280ded1c27bd5eb99f69cb836",
+    "evaluation.csv": "bee1b03068092ce0fbb70663e24609752c76ca09970e4c2c20894535d8adbc1a",
+    "models.json": "edcddadce073086fa60bbf59e8556d184937b50b7327af473e54995276cee1ca",
+    "policies.json": "7aef3f4e83c8af0cb59a6fbfd78dbf914e79f9ae7a664877b10540cd4a47f399",
+    "ranking_changes.csv": "7cc394378bdc0108d01f3cf97f6a57fd924526707a7fed9fecb0d74f93ae3bab",
+    "summary.csv": "beb3bacb28590d9881e63448bf7f1a410236f71bd029c7611e4b0643c9422cb3"
+  }
+}

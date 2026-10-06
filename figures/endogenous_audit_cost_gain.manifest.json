@@ -1,0 +1,9 @@
+{
+  "scope": "descriptive correlated-setting means; see paired task-bootstrap tables",
+  "summary_sha256": "e78cf2dee5b81a2d0b8e482654c694390ece59c24c27dd68a8d56b2b21e088d6",
+  "plot_code_sha256": "f6f77ce52567b3850aeb98b1b45676ba20aad5b3e1575071ce37f7ca6e85fe39",
+  "figures_sha256": {
+    "endogenous_audit_cost_gain.png": "e460ff3bab61e2acae651612ff1cd3327f5dd4f2cc316c60cabc7b99a02d0f21",
+    "endogenous_audit_cost_gain.svg": "08f7512dbd22572b6c961fb6211a32871a6bd512399483b3250f839231409576"
+  }
+}

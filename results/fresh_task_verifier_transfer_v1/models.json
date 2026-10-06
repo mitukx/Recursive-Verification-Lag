@@ -1,0 +1,386 @@
+[
+  {
+    "arm": "frozen",
+    "representation": "public",
+    "optimizer": "soft",
+    "rounds": 1,
+    "theta": [
+      5.078029786794546e-06,
+      0.8124898439086887
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "public",
+    "optimizer": "soft",
+    "rounds": 4,
+    "theta": [
+      5.078029786794546e-06,
+      0.8124898439086887
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "public",
+    "optimizer": "soft",
+    "rounds": 12,
+    "theta": [
+      5.078029786794546e-06,
+      0.8124898439086887
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "public",
+    "optimizer": "bon",
+    "rounds": 1,
+    "theta": [
+      5.078029786794546e-06,
+      0.8124898439086887
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "public",
+    "optimizer": "bon",
+    "rounds": 4,
+    "theta": [
+      5.078029786794546e-06,
+      0.8124898439086887
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "public",
+    "optimizer": "bon",
+    "rounds": 12,
+    "theta": [
+      5.078029786794546e-06,
+      0.8124898439086887
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "all",
+    "optimizer": "soft",
+    "rounds": 1,
+    "theta": [
+      0.12301354503453654,
+      -0.8395311640219778,
+      0.8015833783441403,
+      -0.08806994377733617
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "all",
+    "optimizer": "soft",
+    "rounds": 4,
+    "theta": [
+      0.12301354503453654,
+      -0.8395311640219778,
+      0.8015833783441403,
+      -0.08806994377733617
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "all",
+    "optimizer": "soft",
+    "rounds": 12,
+    "theta": [
+      0.12301354503453654,
+      -0.8395311640219778,
+      0.8015833783441403,
+      -0.08806994377733617
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "all",
+    "optimizer": "bon",
+    "rounds": 1,
+    "theta": [
+      0.12301354503453654,
+      -0.8395311640219778,
+      0.8015833783441403,
+      -0.08806994377733617
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "all",
+    "optimizer": "bon",
+    "rounds": 4,
+    "theta": [
+      0.12301354503453654,
+      -0.8395311640219778,
+      0.8015833783441403,
+      -0.08806994377733617
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "frozen",
+    "representation": "all",
+    "optimizer": "bon",
+    "rounds": 12,
+    "theta": [
+      0.12301354503453654,
+      -0.8395311640219778,
+      0.8015833783441403,
+      -0.08806994377733617
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 32
+  },
+  {
+    "arm": "refreshed",
+    "representation": "public",
+    "optimizer": "soft",
+    "rounds": 1,
+    "theta": [
+      -0.006192527182131805,
+      0.82707735025949
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "public",
+    "optimizer": "soft",
+    "rounds": 4,
+    "theta": [
+      -0.006192527182131805,
+      0.82707735025949
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "public",
+    "optimizer": "soft",
+    "rounds": 12,
+    "theta": [
+      -0.006192527182131805,
+      0.82707735025949
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "public",
+    "optimizer": "bon",
+    "rounds": 1,
+    "theta": [
+      -0.006192527182131805,
+      0.82707735025949
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "public",
+    "optimizer": "bon",
+    "rounds": 4,
+    "theta": [
+      -0.006192527182131805,
+      0.82707735025949
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "public",
+    "optimizer": "bon",
+    "rounds": 12,
+    "theta": [
+      -0.006192527182131805,
+      0.82707735025949
+    ],
+    "feature_columns": [
+      "f::public_score"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "all",
+    "optimizer": "soft",
+    "rounds": 1,
+    "theta": [
+      0.22214411322295866,
+      -1.5258880057311854,
+      0.831431551444414,
+      -0.18712705567112412
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "all",
+    "optimizer": "soft",
+    "rounds": 4,
+    "theta": [
+      0.22214411322295866,
+      -1.5258880057311854,
+      0.831431551444414,
+      -0.18712705567112412
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "all",
+    "optimizer": "soft",
+    "rounds": 12,
+    "theta": [
+      0.22214411322295866,
+      -1.5258880057311854,
+      0.831431551444414,
+      -0.18712705567112412
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "all",
+    "optimizer": "bon",
+    "rounds": 1,
+    "theta": [
+      0.22214411322295866,
+      -1.5258880057311854,
+      0.831431551444414,
+      -0.18712705567112412
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "all",
+    "optimizer": "bon",
+    "rounds": 4,
+    "theta": [
+      0.22214411322295866,
+      -1.5258880057311854,
+      0.831431551444414,
+      -0.18712705567112412
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 64
+  },
+  {
+    "arm": "refreshed",
+    "representation": "all",
+    "optimizer": "bon",
+    "rounds": 12,
+    "theta": [
+      0.22214411322295866,
+      -1.5258880057311854,
+      0.831431551444414,
+      -0.18712705567112412
+    ],
+    "feature_columns": [
+      "f::length_scaled",
+      "f::public_score",
+      "f::valid"
+    ],
+    "fit_source_count": 64
+  }
+]
