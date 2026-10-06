@@ -15,7 +15,7 @@ experiments that still require external hardware.
 |---|---|
 | Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update runs in GitHub Actions |
 | Distributed training primitives | real `torchrun --nproc-per-node=2` test with broadcast, all-reduce, DDP backward, optimizer step, and cross-rank parameter equality |
-| Rollout serving | bounded async rollout, EWMA latency-aware routing, per-worker in-flight limits, backpressure, end-to-end deadlines, optional hedged requests |
+| Rollout serving | bounded async rollout, EWMA latency-aware routing, weighted workload admission, fair multi-workload scheduling, overload shedding, end-to-end deadlines, optional hedged requests |
 | Failure handling | cross-worker failover, circuit-breaker quarantine, single half-open recovery probes, loser cancellation, stale policy-version rejection |
 | Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
 | Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
@@ -25,7 +25,8 @@ experiments that still require external hardware.
 
 Start with [the systems architecture](docs/rl_system_architecture.md), the
 [engineering runbook](docs/xai_rl_systems.md), the
-[SLO-aware scheduler design](docs/slo_scheduler.md), and the
+[SLO-aware scheduler design](docs/slo_scheduler.md),
+[workload admission design](docs/admission_control.md), and the
 [evidence/gap matrix](docs/xai_evidence_matrix.md).
 
 A local control-plane smoke run requires no GPU:
