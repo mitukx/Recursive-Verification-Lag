@@ -85,9 +85,9 @@ actual hiring evidence.
 | Mutation boundary | mode-specific H/F/V/theta allowlists; code patches disabled by default and path-gated when enabled | implemented + unit-tested |
 | Failure analysis | evidence-backed clusters for reasoning/tool/verifier/reward-hacking/context/staleness/infrastructure failures | implemented + unit-tested via controller integration |
 | Append-only research memory | SQLite facts protected by UPDATE/DELETE triggers; rollback changes pointer and appends event | integration-tested + CPU-demonstrated |
-| Evaluation separation | distinct evolution/development/promotion/sealed suites with sealed contents withheld and suite digests retained | integration-tested + CPU-demonstrated |
-| Champion/challenger promotion | trusted/sealed gains, agreement, regressions, latency, uncertainty, anti-gaming and RVL trust gates | integration-tested + CPU-demonstrated |
-| Reward-hacking / false-progress detection | proxy-reward gain with trusted/sealed regression is flagged and rejected | CPU-demonstrated |
+| Evaluation separation | distinct evolution/development/promotion suites plus a sealed vault that is unavailable during selection and opened once only after the final promotion decision | integration-tested; terminal-access invariant enforced |
+| Champion/challenger promotion | development + independent promotion trusted gains, agreement, regressions, latency, uncertainty, anti-gaming and RVL trust gates; no sealed metric is consumed | integration-tested |
+| Reward-hacking / false-progress detection | proxy-reward gain without independent promotion/trusted support is flagged and rejected | acceptance-tested |
 | Recursive Verification Lag intervention | high/uncertain/low trust policy with refresh/re-evaluation and freeze semantics | CPU-demonstrated on synthetic controller baseline |
 | Sandbox timeout/recovery | trusted-entrypoint child process, resource ceilings, output capture, kill switch, timeout and subsequent-run recovery | integration-tested; OS resource enforcement is platform-dependent |
 | Harness RSI | frozen-weight multi-generation loop with real promotion and rejection | CPU-demonstrated |
