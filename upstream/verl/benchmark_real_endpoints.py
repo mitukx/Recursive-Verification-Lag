@@ -29,6 +29,7 @@ class Request:
     max_tokens: int
     seed: int
     session_id: str | None = None
+    ignore_eos: bool = False
 
     @property
     def predicted_work(self) -> int:
@@ -63,6 +64,7 @@ def load_trace(path: Path) -> list[Request]:
                 None if raw.get("session_id") is None
                 else str(raw["session_id"])
             ),
+            ignore_eos=bool(raw.get("ignore_eos", False)),
         ))
     if not rows:
         raise ValueError("trace is empty")
@@ -130,6 +132,7 @@ def _post_completion(
         "seed": request.seed,
         "max_tokens": request.max_tokens,
         "logprobs": 1,
+        "ignore_eos": request.ignore_eos,
     }).encode("utf-8")
     http_request = urllib.request.Request(
         endpoint.rstrip("/") + "/v1/completions",
