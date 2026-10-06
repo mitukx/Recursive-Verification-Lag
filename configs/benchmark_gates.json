@@ -1,17 +1,89 @@
 {
   "scheduler-chaos": [
-    {"metric": "injected_failures", "op": "ge", "value": 1},
-    {"metric": "scheduler.failover_successes", "op": "ge", "value": 1},
-    {"metric": "recovered_worker_dispatches", "op": "ge", "value": 1}
+    {
+      "metric": "injected_failures",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "scheduler.failover_successes",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "recovered_worker_dispatches",
+      "op": "ge",
+      "value": 1
+    }
   ],
   "scheduler-slo-tail-latency": [
-    {"metric": "hedged_success_rate", "op": "ge", "value": 1},
-    {"metric": "hedged_success_rate", "op": "ge_metric", "other": "baseline_success_rate", "factor": 1},
-    {"metric": "hedged_latency_ms_p95", "op": "le_metric", "other": "baseline_latency_ms_p95", "factor": 0.75}
+    {
+      "metric": "hedged_success_rate",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "hedged_success_rate",
+      "op": "ge_metric",
+      "other": "baseline_success_rate",
+      "factor": 1
+    },
+    {
+      "metric": "hedged_latency_ms_p95",
+      "op": "le_metric",
+      "other": "baseline_latency_ms_p95",
+      "factor": 0.75
+    }
   ],
   "workload-admission": [
-    {"metric": "completed", "op": "ge", "value": 1},
-    {"metric": "max_in_use_units", "op": "le", "value": 4},
-    {"metric": "max_queued_units", "op": "le", "value": 8}
+    {
+      "metric": "completed",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "max_in_use_units",
+      "op": "le",
+      "value": 4
+    },
+    {
+      "metric": "max_queued_units",
+      "op": "le",
+      "value": 8
+    }
+  ],
+  "scheduler-failure-matrix": [
+    {
+      "metric": "recovered_error",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "recovered_oom",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "recovered_timeout",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "unexpected_failures",
+      "op": "le",
+      "value": 0
+    }
+  ],
+  "precision-parity-emulated": [
+    {
+      "metric": "fp16_max_relative_ratio_error",
+      "op": "le",
+      "value": 0.01
+    },
+    {
+      "metric": "bf16_max_relative_ratio_error",
+      "op": "le",
+      "value": 0.05
+    }
   ]
 }
