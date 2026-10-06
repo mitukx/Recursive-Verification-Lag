@@ -72,6 +72,24 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                     "fp16":{"success":True,"relative_loss_error":0.02},
                 },
             })
+            profile = self.write(tmp, "profile.json", {
+                "git_sha": sha,
+                "model": "Qwen/test",
+                "precision": "bf16",
+                "device_name": "Test GPU",
+                "tokens_per_s": 12.0,
+                "gpu_peak_memory_bytes": 2048,
+                "trace_bytes": 4096,
+                "named_stages": [
+                    {"name":"rvl.grpo.advantages","self_device_time_us":0.0},
+                    {"name":"rvl.grpo.model_forward","self_device_time_us":100.0},
+                    {"name":"rvl.grpo.backward","self_device_time_us":200.0},
+                    {"name":"rvl.grpo.optimizer_step","self_device_time_us":50.0},
+                ],
+                "top_self_device_time": [
+                    {"name":"aten::mm","self_device_time_us":500.0}
+                ],
+            })
             inventory = self.write(tmp, "gpu.json", {
                 "available": True,
                 "gpus": [
@@ -79,7 +97,7 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                     {"index":"1","name":"Test GPU","driver_version":"1","memory_total_mb":"24576","compute_capability":"9.0"},
                 ],
             })
-            report = summarize(qwen=qwen,fsdp=fsdp,fsdp_resume=resume,vllm=vllm,failover=failover,low_precision=precision,gpu_inventory=inventory)
+            report = summarize(qwen=qwen,fsdp=fsdp,fsdp_resume=resume,vllm=vllm,failover=failover,low_precision=precision,profile=profile,gpu_inventory=inventory)
             self.assertTrue(report["complete"])
             self.assertFalse(report["missing_checks"])
             self.assertFalse(report["failed_checks"])
@@ -89,6 +107,8 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
             self.assertIn("GPU Evidence Card",card)
             self.assertIn("Test GPU",card)
             self.assertIn("Scaling efficiency",card)
+            self.assertIn("GRPO profile",card)
+            self.assertIn("aten::mm",card)
 
     def test_missing_and_failed_evidence_are_explicit(self):
         with tempfile.TemporaryDirectory() as tmp:

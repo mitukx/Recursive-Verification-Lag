@@ -13,20 +13,24 @@ than disconnected implementation claims.
 2. **Low-precision GRPO parity.** The same FP32-generated behavior replay is
    consumed by FP32, BF16, and FP16 one-step GRPO runs. Loss, gradient norm,
    behavior-KL, tokens/s, peak GPU memory, and non-finite failures are recorded.
-3. **Transactional RLVR.** Held-out Qwen evaluation runs before/after candidate
+3. **Stage-aware GRPO profiling.** A warmed GRPO step is captured with PyTorch
+   CPU/CUDA profiling and named ranges for advantage computation, model forward,
+   backward, gradient clipping, and optimizer step. The workflow retains a Chrome
+   trace plus the top self-device/self-CPU operators, memory, and tokens/s.
+4. **Transactional RLVR.** Held-out Qwen evaluation runs before/after candidate
    updates. Rejected updates restore model, AdamW optimizer, and RNG state.
    Promotion decisions are retained in a hash-chained ledger.
-4. **1 -> 2 GPU FSDP scaling.** The same real-model replay is trained with one
+5. **1 -> 2 GPU FSDP scaling.** The same real-model replay is trained with one
    and two CUDA ranks, then a two-rank job resumes from the sharded checkpoint.
    Throughput, scaling efficiency, precision, peak memory, and per-rank GPU
    telemetry are retained.
-5. **vLLM serving sweep.** Streaming inference records requests/s, tokens/s,
+6. **vLLM serving sweep.** Streaming inference records requests/s, tokens/s,
    p50/p95/p99 latency, TTFT, TBT, Prometheus snapshots, KV-cache usage when
    available, server logs, and second-level GPU telemetry.
-6. **Real process failure.** Two vLLM workers are launched on separate GPUs,
+7. **Real process failure.** Two vLLM workers are launched on separate GPUs,
    one receives SIGTERM during load, and the scheduler must recover all requests
    through cross-worker failover.
-7. **Fail-closed aggregation.** `summarize_gpu_evidence.py` checks that all
+8. **Fail-closed aggregation.** `summarize_gpu_evidence.py` checks that all
    required evidence categories are present and mechanically valid, then writes
    one `gpu-evidence-summary.json` with SHA-256 lineage for each raw source.
 
@@ -69,6 +73,7 @@ bash scripts/run_vllm_failover_demo.sh
 A complete bundle requires all of the following:
 
 - FP32/BF16/FP16 GRPO runs all completed with finite measured metrics;
+- the GRPO profiler emitted named training stages and a non-empty Chrome trace;
 - transactional Qwen RLVR produced at least one promotion decision;
 - measured multi-rank FSDP throughput exists and has positive scaling efficiency;
 - the two-rank FSDP job successfully resumed from the distributed checkpoint;
