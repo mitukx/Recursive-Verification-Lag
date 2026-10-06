@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "upstream_repo": "openai/math",
+  "upstream_sha": "adc7f1241b42e322a6451854ab7e4b4c146bf78a",
+  "lean_toolchain": "leanprover/lean4:v4.34.1",
+  "tasks": [
+    {
+      "task_id": "oai116-formula-hitting",
+      "family": 116,
+      "title": "Uniform black-box noncommutative identity testing",
+      "comparator_path": "lean/ComparatorChallenges/FormulaHitting.lean",
+      "theorem_name": "universal_hitting",
+      "split": "development",
+      "mechanism": "universal-hitting-structural-coverage",
+      "blob_sha": "3c184de016d7f0265b9745e52a0b3540beb63da3"
+    },
+    {
+      "task_id": "oai119-courtade-kumar",
+      "family": 119,
+      "title": "Sharp binary information contraction",
+      "comparator_path": "lean/ComparatorChallenges/CourtadeKumar.lean",
+      "theorem_name": "courtadeKumarAndAttainment",
+      "split": "development",
+      "mechanism": "information-contraction",
+      "blob_sha": "587eb586d60c195a56fe10973ef2fcf9cf737591"
+    },
+    {
+      "task_id": "oai104-randomized-mean-payoff",
+      "family": 104,
+      "title": "Randomized quasipolynomial mean-payoff games",
+      "comparator_path": "lean/ComparatorChallenges/RandomizedMeanPayoff.lean",
+      "theorem_name": "randomized_quasipolynomial_mean_payoff",
+      "split": "development",
+      "mechanism": "stochastic-game-verification",
+      "blob_sha": "cc70577163b98c4489466ec919a6985ee03397f1"
+    },
+    {
+      "task_id": "oai111-matroid-prophet",
+      "family": 111,
+      "title": "One-sample matroid prophet inequalities",
+      "comparator_path": "lean/ComparatorChallenges/MatroidProphet.lean",
+      "theorem_name": "one_sample",
+      "split": "development",
+      "mechanism": "adversarial-online-selection",
+      "blob_sha": "412ad5b86840403f95d28ee4643fb2556aaa4deb"
+    },
+    {
+      "task_id": "oai102-unique-games",
+      "family": 102,
+      "title": "Unique Games gap reduction",
+      "comparator_path": "lean/ComparatorChallenges/UniqueGamesTheorem.lean",
+      "theorem_name": "theorem11",
+      "split": "development",
+      "mechanism": "robust-local-constraint-hardness",
+      "blob_sha": "5e0e18daac92b039a30dc500decc576b91fddb91"
+    },
+    {
+      "task_id": "oai140-memory-precision",
+      "family": 140,
+      "title": "Memory-sample lower bounds for noiseless Gaussian regression",
+      "comparator_path": "lean/ComparatorChallenges/MemoryPrecision.lean",
+      "theorem_name": "main",
+      "split": "heldout",
+      "mechanism": "memory-sample-information-lower-bound",
+      "blob_sha": "9cc787bf862637dcc784ce66cb1efd68f5a85ceb"
+    },
+    {
+      "task_id": "oai277-threshold-repetition",
+      "family": 277,
+      "title": "Threshold parallel repetition for entangled games",
+      "comparator_path": "lean/ComparatorChallenges/EntangledGames.lean",
+      "theorem_name": "threshold_parallel_repetition",
+      "split": "heldout",
+      "mechanism": "recursive-signal-threshold",
+      "blob_sha": "efc82ea59c1e011b618542c625432c56ae765c25"
+    },
+    {
+      "task_id": "oai238-coordinate-trace",
+      "family": 238,
+      "title": "Optimal logarithmic mixing of the Thorp shuffle",
+      "comparator_path": "lean/ComparatorChallenges/CoordinateTrace.lean",
+      "theorem_name": "regular_trace_smoothing",
+      "split": "heldout",
+      "mechanism": "mixing-information-decay",
+      "blob_sha": "01bca12a699b3a52e0558ffad13ccdc35c904c53"
+    }
+  ]
+}
