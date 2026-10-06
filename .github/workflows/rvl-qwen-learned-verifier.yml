@@ -1,6 +1,11 @@
 name: rvl-qwen-learned-verifier
 
 on:
+  push:
+    branches:
+      - 'gpu-evidence/qwen-learned-verifier-v1'
+    paths:
+      - 'gpu-evidence-trigger.json'
   workflow_dispatch:
     inputs:
       upstream_qwen_bridge_run_id:
@@ -25,6 +30,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Checkout trigger revision
+        if: github.event_name == 'push'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: trigger
+      - name: Resolve upstream Issue #38 run ID
+        id: upstream
+        env:
+          DISPATCH_RUN_ID: ${{ steps.upstream.outputs.run_id }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          if os.environ['GITHUB_EVENT_NAME'] == 'push':
+              data=json.loads(Path('trigger/gpu-evidence-trigger.json').read_text())
+              run_id=str(data.get('upstream_qwen_bridge_run_id','')).strip()
+          else:
+              run_id=os.environ.get('DISPATCH_RUN_ID','').strip()
+          if not run_id.isdigit() or int(run_id) <= 0:
+              raise SystemExit('positive upstream_qwen_bridge_run_id required')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as fh:
+              fh.write(f'run_id={run_id}\n')
+          PY
       - uses: actions/checkout@v4
         with:
           ref: 8602c0a94d246a25efea7079c2e65cd514995d48
@@ -36,11 +65,11 @@ jobs:
       - name: Download exact Issue #38 artifact
         uses: actions/download-artifact@v4
         with:
-          name: rvl-qwen-alignment-bridge-v1-${{ inputs.upstream_qwen_bridge_run_id }}
+          name: rvl-qwen-alignment-bridge-v1-${{ steps.upstream.outputs.run_id }}
           path: upstream/qwen_alignment_bridge
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.upstream_qwen_bridge_run_id }}
+          run-id: ${{ steps.upstream.outputs.run_id }}
       - name: Revalidate Issue #38 and create promotion receipt
         run: |
           test "$(git rev-parse HEAD)" = "$RESEARCH_SOURCE_SHA"
@@ -62,8 +91,8 @@ jobs:
           PY
           python scripts/research_evidence_promotion.py create \
             --stage qwen_alignment_to_learned_verifier \
-            --upstream-run-id "${{ inputs.upstream_qwen_bridge_run_id }}" \
-            --upstream-artifact-name "rvl-qwen-alignment-bridge-v1-${{ inputs.upstream_qwen_bridge_run_id }}" \
+            --upstream-run-id "${{ steps.upstream.outputs.run_id }}" \
+            --upstream-artifact-name "rvl-qwen-alignment-bridge-v1-${{ steps.upstream.outputs.run_id }}" \
             --upstream-manifest upstream/qwen_alignment_bridge/results/qwen_alignment_bridge_v1/manifest.json \
             --upstream-validation upstream/qwen_alignment_bridge/validation/qwen_alignment_bridge_v1.json \
             --downstream-run-id "${{ github.run_id }}" \
