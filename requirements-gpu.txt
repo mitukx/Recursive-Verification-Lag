@@ -1,2 +1,3 @@
 vllm
 triton
+datasets>=3.0
