@@ -1,11 +1,12 @@
 # Recursive Verification Lag
 
-**Latest continuation:** [decision-cost audit and development experiment](docs/frontier_research_upgrade.md).
-An eight-task retrospective comparison finds no resolution or gain advantage
-of exact current-decision planning over simple impact-order audits, with
-limited savings from early abstention; a separate CPU
-workflow executes the prelocked 32-task development extension. See its actual
-Actions status before treating that extension as completed evidence.
+**Latest continuation:** [endogenous auditing and fresh-task transfer lock](notes/progress/35_endogenous_auditing_and_fresh_task_lock.md).
+Current-only auditing can stop learning when every initial paid label is zero.
+An exact future-aware planner escapes this trap, but a single exploratory query
+reproduces almost all its mean benefit and direct selection of a paid known
+positive beats it. The completed eight-task study is retrospective. A pre-outcome
+16/16 fresh-task verifier-transfer analysis is locked on the separately generated
+development extension; check Actions status before treating it as evidence.
 
 **When must verification catch up with a self-improving policy?**
 

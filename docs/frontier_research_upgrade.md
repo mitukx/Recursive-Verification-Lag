@@ -5,6 +5,17 @@ the older `main` branch. It adds an exact decision-cost diagnostic and a
 development-only standard-code experiment. It does not claim a finished
 frontier-lab-quality result, adoption by a lab, or a hiring outcome.
 
+**Latest increment:** `notes/progress/35_endogenous_auditing_and_fresh_task_lock.md`
+and `notes/theory/endogenous_information_and_progress.md` add an endogenous
+learning-trap proof, an exact small future-aware control reference, and strong
+one-query-exploration / direct-known-positive baselines. On the full eight-task
+pilot, the single-query baseline reproduces 99.36% of the primary lookahead's
+mean gain increment, and direct selection wins at lower mean actual label cost.
+This negative comparison motivates a pre-outcome 16-training / 16-evaluation
+task verifier-transfer lock on the pending development bank. The older
+fixed-comparison results below remain valid; neither retrospective study is
+independent transfer or learned generator improvement.
+
 ## What would be a substantive contribution?
 
 The candidate research question is:
