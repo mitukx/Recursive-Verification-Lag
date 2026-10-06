@@ -20,13 +20,14 @@ experiments that still require external hardware.
 | Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
 | Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
 | Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, fp32/fp16/bf16 loading policy |
-| Observability | counters, tokens/s, p50/p95/max latency, Chrome trace export, machine-readable benchmark reports |
+| Observability | counters, tokens/s, p50/p95/max latency, Chrome traces, deterministic control-plane replay, machine-readable benchmark reports |
 | GPU serving integration | OpenAI-compatible vLLM/SGLang adapter and multi-endpoint benchmark harness |
 
 Start with [the systems architecture](docs/rl_system_architecture.md), the
 [engineering runbook](docs/xai_rl_systems.md), the
 [SLO-aware scheduler design](docs/slo_scheduler.md),
-[workload admission design](docs/admission_control.md), and the
+[workload admission design](docs/admission_control.md),
+[replay/regression design](docs/replay_and_regression.md), and the
 [evidence/gap matrix](docs/xai_evidence_matrix.md).
 
 A local control-plane smoke run requires no GPU:
