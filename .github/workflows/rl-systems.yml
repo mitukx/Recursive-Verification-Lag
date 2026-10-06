@@ -70,6 +70,7 @@ on:
       - 'src/benchmark_scheduler_slo.py'
       - 'src/benchmark_vllm_cluster.py'
       - 'src/benchmark_policy_weight_sync.py'
+      - 'src/benchmark_policy_deployment_recovery.py'
       - 'src/summarize_gpu_evidence.py'
       - 'src/generate_rlvr_replay.py'
       - 'scripts/run_fsdp_scaling_gpu.sh'
