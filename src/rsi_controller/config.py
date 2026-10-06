@@ -45,6 +45,7 @@ class VerifierTrustThresholds:
 class MathematicalRSIConfig:
     enabled: bool = False
     require_coded_verification: bool = True
+    coded_replaces_noncritical_checks: bool = False
     max_corrupt_fraction: float = 0.20
     local_slack: float = 0.01
     min_throughput_ratio: float = 0.80
@@ -79,6 +80,8 @@ class MathematicalRSIConfig:
             raise ValueError("reconstruction_branching_factor must be positive")
         if self.reconstruction_threshold < 0.0:
             raise ValueError("reconstruction_threshold must be nonnegative")
+        if self.require_reconstruction_supercritical and not self.reconstruction_assumptions_met:
+            raise ValueError("cannot enforce reconstruction threshold without declared assumptions")
 
 
 @dataclass(frozen=True)
