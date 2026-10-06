@@ -12,6 +12,7 @@ from statistics import fmean
 from src.rvl_systems.benchmark_report import BenchmarkReport
 from src.rvl_systems.hf_backend import HFLocalBackend
 from src.rvl_systems.hf_trainer import HFCausalLMGRPOTrainer, HFTTrainerConfig
+from src.rvl_systems.lab.promotion import EvalSample, PromotionLedger, PromotionPolicy, evaluate_promotion
 from src.rvl_systems.rlvr_benchmark import (
     RLVRTask,
     load_gsm8k_tasks,
@@ -98,6 +99,10 @@ async def main() -> None:
     parser.add_argument("--seed", type=int, default=20261006)
     parser.add_argument("--output-dir", default="artifacts/qwen-rlvr")
     parser.add_argument("--save-model-dir")
+    parser.add_argument("--transactional-promotion", action="store_true")
+    parser.add_argument("--promotion-min-delta", type=float, default=-0.02)
+    parser.add_argument("--promotion-max-regression", type=float, default=0.10)
+    parser.add_argument("--promotion-max-new-failures", type=int, default=2)
     args = parser.parse_args()
 
     if args.steps <= 0:
@@ -158,6 +163,14 @@ async def main() -> None:
         ),
     )
 
+    promotion_policy = PromotionPolicy(
+        min_samples=len(eval_tasks),
+        min_mean_delta=args.promotion_min_delta,
+        max_family_regression=args.promotion_max_regression,
+        max_uncompensated_new_failures=args.promotion_max_new_failures,
+    )
+    promotion_ledger = PromotionLedger(output_dir / "promotion-ledger.jsonl")
+
     started = time.perf_counter()
     before_accuracy, before_predictions = await evaluate(
         engine,
@@ -201,7 +214,58 @@ async def main() -> None:
                 *(verifier.verify(generation) for generation in generations)
             )
         )
+
+        incumbent_state = trainer.snapshot_training_state() if args.transactional_promotion else None
+        incumbent_accuracy = None
+        incumbent_predictions = None
+        if args.transactional_promotion:
+            incumbent_accuracy, incumbent_predictions = await evaluate(
+                engine,
+                eval_tasks,
+                seed=args.seed + 300_000 + step,
+            )
+
         train_metrics = trainer.train_step(verified)
+
+        promotion = None
+        if args.transactional_promotion:
+            candidate_accuracy, candidate_predictions = await evaluate(
+                engine,
+                eval_tasks,
+                seed=args.seed + 300_000 + step,
+            )
+            eval_samples = [
+                EvalSample(
+                    task_id=before_row["task_id"],
+                    family=0,
+                    incumbent_reward=float(before_row["correct"]),
+                    candidate_reward=float(after_row["correct"]),
+                )
+                for before_row, after_row in zip(incumbent_predictions, candidate_predictions)
+                if before_row["task_id"] == after_row["task_id"]
+            ]
+            if len(eval_samples) != len(eval_tasks):
+                raise RuntimeError("held-out evaluation identity mismatch")
+            promotion = evaluate_promotion(
+                eval_samples,
+                incumbent_version=step,
+                candidate_version=step + 1,
+                policy=promotion_policy,
+            )
+            promotion_ledger.append(promotion)
+            if not promotion.accepted:
+                trainer.restore_training_state(incumbent_state)
+                # HFLocalBackend serves trainer.model in this experiment, so
+                # restoring the trainer model also restores rollout weights.
+            train_metrics.update({
+                "promotion_accepted": int(promotion.accepted),
+                "promotion_incumbent_accuracy": incumbent_accuracy,
+                "promotion_candidate_accuracy": candidate_accuracy,
+                "promotion_delta": promotion.mean_delta,
+                "promotion_evidence_sha256": promotion.evidence_sha256,
+                "promotion_reasons": list(promotion.reasons),
+            })
+
         group_rewards: dict[str, list[float]] = {}
         for item in verified:
             group_rewards.setdefault(
@@ -255,6 +319,9 @@ async def main() -> None:
         "device": backend.resolved_device,
         "precision": backend.resolved_precision,
         "objective_backend": args.objective_backend,
+        "transactional_promotion": int(args.transactional_promotion),
+        "promotion_records": promotion_ledger.seq,
+        "promotion_head_sha256": promotion_ledger.head,
     }
     report = BenchmarkReport(
         name="heldout-qwen-rlvr",
@@ -268,6 +335,10 @@ async def main() -> None:
             "learning_rate": args.learning_rate,
             "train_temperature": args.train_temperature,
             "seed": args.seed,
+            "transactional_promotion": args.transactional_promotion,
+            "promotion_min_delta": args.promotion_min_delta,
+            "promotion_max_regression": args.promotion_max_regression,
+            "promotion_max_new_failures": args.promotion_max_new_failures,
         },
         git_sha=os.environ.get("GITHUB_SHA", "unknown"),
         model=args.model,
