@@ -1,0 +1,33 @@
+{
+  "status": "prospective active covariance audit locked before evaluation outcomes; finite-support controller study, not learned-LLM evidence",
+  "research_question": "Can trusted-label queries targeted by verifier-score geometry detect harmful verifier optimization more label-efficiently than passive policy sampling?",
+  "support_size": 32,
+  "development_seed_policy": "thresholds were chosen from separate exploratory seeds 0-399; evaluation uses disjoint seeds 20000-21023 and must not be changed after outcomes",
+  "evaluation_task_seeds": {
+    "start": 20000,
+    "count": 1024
+  },
+  "verifier_geometry": {
+    "sigma": 2.0,
+    "arms": {
+      "harmful": -0.75,
+      "benign": 0.75
+    },
+    "construction": "same fixed-norm verifier-error geometry used by the prospective equal-KL mechanism experiment"
+  },
+  "trusted_label_budgets": [16, 32, 64, 128, 256, 512],
+  "confidence_delta": 0.05,
+  "active_proposal": "r_i proportional to p_i * abs(v_i - E_p[v]); passive control uses r_i=p_i",
+  "estimator": "importance-weighted mean of y_i*(v_i-E_p[v]) with y in [0,1]; exact proxy scores and baseline policy are free, only y labels are counted",
+  "confidence_interval": "two-sided Hoeffding interval using the exact distribution-free range of the single-sample importance estimator",
+  "primary": {
+    "budget": 256,
+    "active_block_rate_min": 0.75,
+    "passive_block_rate_max": 0.10,
+    "wrong_sign_rate_max": 0.02,
+    "prediction": "on harmful rho=-0.75 tasks at n=256, active block rate >=0.75 while passive block rate <=0.10; active wrong-sign decisive rate <=0.02 and active mean estimator range is strictly smaller"
+  },
+  "secondary_reporting": "all budgets and both arms; decisive/block/allow rates, wrong-sign decisive rate, interval radius, estimator range width and importance coefficient",
+  "theory": "for a_i=v_i-E_p[v], minimizing max_i |p_i a_i/r_i| over proposal distributions yields r_i proportional to p_i|a_i|; this reduces worst-case concentration width without using trusted labels",
+  "scope": "finite-support active-auditing proof of concept with exact policy and proxy scores; no claim that this is optimal for learned LLM verifiers, correlated labels, or production traffic"
+}
