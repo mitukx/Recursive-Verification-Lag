@@ -28,9 +28,9 @@ flowchart LR
 ## Control plane
 
 - `rollout.py`: bounded-concurrency request execution.
-- `scheduler.py`: least-loaded worker selection, queue bounds, backpressure,
-  timeouts, and health-aware routing.
-- `worker_health.py`: failure streaks, quarantine, and recovery.
+- `scheduler.py`: EWMA predicted-completion routing, queue bounds, end-to-end
+  deadlines, backpressure, cross-worker retry, and optional hedged requests.
+- `worker_health.py`: circuit-breaker failure streaks, quarantine, optional cooldown, single half-open probe, and explicit recovery.
 - `worker_rpc.py`: real TCP worker transport with request IDs and explicit
   policy versions.
 - `worker_pool.py`: retry/backoff and stale-result validation.
@@ -67,6 +67,8 @@ CPU/Gloo; it is not a substitute for NCCL/FSDP GPU measurements.
   git revision, model, config, and metrics.
 - `benchmark_rollout_engine.py`: sync-vs-async reference benchmark.
 - `benchmark_scheduler.py`: multi-worker scheduler benchmark.
+- `benchmark_scheduler_chaos.py`: deterministic failover/quarantine/recovery benchmark.
+- `benchmark_scheduler_slo.py`: synthetic deadline and tail-latency hedging benchmark.
 - `benchmark_vllm_cluster.py`: real multi-endpoint serving benchmark harness.
 
 CI retains benchmark JSON as workflow artifacts. GPU experiments should use

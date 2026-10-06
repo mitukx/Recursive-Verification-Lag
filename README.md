@@ -15,8 +15,8 @@ experiments that still require external hardware.
 |---|---|
 | Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update runs in GitHub Actions |
 | Distributed training primitives | real `torchrun --nproc-per-node=2` test with broadcast, all-reduce, DDP backward, optimizer step, and cross-rank parameter equality |
-| Rollout serving | bounded async rollout, least-loaded scheduling, per-worker in-flight limits, backpressure and timeouts |
-| Failure handling | cross-worker failover retries, worker quarantine/recovery, fail-fast health logic, stale policy-version rejection |
+| Rollout serving | bounded async rollout, EWMA latency-aware routing, per-worker in-flight limits, backpressure, end-to-end deadlines, optional hedged requests |
+| Failure handling | cross-worker failover, circuit-breaker quarantine, single half-open recovery probes, loser cancellation, stale policy-version rejection |
 | Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
 | Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
 | Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, fp32/fp16/bf16 loading policy |
@@ -24,7 +24,8 @@ experiments that still require external hardware.
 | GPU serving integration | OpenAI-compatible vLLM/SGLang adapter and multi-endpoint benchmark harness |
 
 Start with [the systems architecture](docs/rl_system_architecture.md), the
-[engineering runbook](docs/xai_rl_systems.md), and the
+[engineering runbook](docs/xai_rl_systems.md), the
+[SLO-aware scheduler design](docs/slo_scheduler.md), and the
 [evidence/gap matrix](docs/xai_evidence_matrix.md).
 
 A local control-plane smoke run requires no GPU:
@@ -34,6 +35,7 @@ python -m unittest tests.test_rlvr_systems -v
 python -m src.run_rlvr_systems_demo --rounds 12 --samples 32
 python -m src.benchmark_rollout_engine --requests 16 --samples 8 --latency-ms 5 --concurrency 8
 python -m src.benchmark_scheduler_chaos --requests 32 --recovery-requests 12
+python -m src.benchmark_scheduler_slo --trials 12 --primary-ms 40 --backup-ms 2 --hedge-after-ms 5 --deadline-ms 20
 ```
 
 The repository does **not** yet claim production-scale GPU performance. Real
