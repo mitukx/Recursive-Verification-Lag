@@ -197,6 +197,35 @@ class TestGetRouterHandlePluginExtensionYaml:
         kwargs = ray.get(lb.get_router_kwargs.remote())
         assert kwargs == {"router_class": MOCK_PLUGIN_FQN, "extra_param": "hello"}
 
+    def test_builtin_workload_aware_router_loads_via_yaml(self, ray_session, tmp_path):
+        yaml_path = _write_router_yaml(
+            tmp_path,
+            "verl.workers.rollout.router.WorkloadAwareRequestLoadBalancer",
+            prefill_weight=1.0,
+            decode_weight=1.0,
+            default_decode_tokens=16,
+        )
+        lb = get_router_handle(
+            servers={"s0": None, "s1": None},
+            router_config_path=yaml_path,
+        )
+        assert ray.get(lb.require_acquire_fields.remote()) == [
+            "prompt_tokens",
+            "decode_budget",
+        ]
+        assert ray.get(lb.require_release_fields.remote()) == ["request_id"]
+        sid, _ = ray.get(
+            lb.acquire_server.remote(
+                request_id="r",
+                prompt_tokens=100,
+                decode_budget=50,
+            )
+        )
+        status = ray.get(lb.get_status.remote())
+        assert status["total_predicted_work"] == 150
+        ray.get(lb.release_server.remote(sid, request_id="r"))
+        assert ray.get(lb.get_status.remote())["total_predicted_work"] == 0
+
     def test_yaml_defaults_block_rejected(self, ray_session, tmp_path):
         """A Hydra 'defaults' block is not composed — reject it with guidance
         instead of silently passing it through as a plain field."""
@@ -334,6 +363,29 @@ class TestReleaseServerSignature:
         sid, _ = ray.get(lb.acquire_server.remote("req-1"))
         ray.get(lb.release_server.remote(sid, request_id="req-1"))
         assert ray.get(lb.get_total_inflight.remote()) == 0
+
+
+class TestRoutingWorkFields:
+    def test_sampling_budget_precedes_config_default(self):
+        assert _routing_work_fields(
+            [1, 2, 3],
+            {"max_tokens": 17},
+            default_decode_budget=99,
+        ) == {"prompt_tokens": 3, "decode_budget": 17}
+
+    def test_configured_response_length_is_fallback(self):
+        assert _routing_work_fields(
+            [1, 2],
+            {},
+            default_decode_budget=256,
+        ) == {"prompt_tokens": 2, "decode_budget": 256}
+
+    def test_invalid_sampling_budget_falls_back(self):
+        assert _routing_work_fields(
+            [1],
+            {"max_tokens": "bad"},
+            default_decode_budget=64,
+        ) == {"prompt_tokens": 1, "decode_budget": 64}
 
 
 class TestWorkloadAwareRequestLoadBalancer:
