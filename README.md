@@ -43,7 +43,7 @@ experiments that still require external hardware.
 | Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
 | Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, FP16/BF16 parity gates, real-GPU FP32/BF16/FP16 GRPO comparison, and INT8 weight-only numerical contracts |
 | Kernel optimization | optional fused Triton tokenwise GRPO surrogate with custom backward, PyTorch forward/gradient parity benchmark, GPU speed harness |
-| Observability | counters, tokens/s, p50/p95/max latency, Chrome traces, deterministic control-plane replay, machine-readable benchmark reports |
+| Observability | counters, tokens/s, p50/p95/max latency, Chrome traces, deterministic control-plane replay, machine-readable benchmark reports, and named real-GPU GRPO stage profiling |
 | GPU serving integration | OpenAI-compatible vLLM/SGLang adapter, streaming TTFT/TBT benchmark, Prometheus metrics capture, GPU telemetry, real process-failure harness, and one-shot two-GPU evidence workflow |
 
 Start with [the systems architecture](docs/rl_system_architecture.md), the
