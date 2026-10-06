@@ -46,6 +46,12 @@ A group in `pending_verification` or `verifying` is invisible to the learner. Ve
 
 When a learned verifier is refit, any ready group outside the configured verifier-version lag bound is returned to `pending_verification` and rescored from its original behavior trajectory. This preserves off-policy provenance while preventing stale reward admission.
 
+## Verifier fleet concurrency
+
+The runtime accepts `verification_workers=N`. Workers lease distinct replay groups concurrently and score them under a shared reader lease. Learned-verifier refit/audit intervention obtains an exclusive writer lease, so a version transition cannot occur in the middle of any in-flight group. The gate is writer-preferring to prevent an unbounded stream of scoring work from starving a pending refit.
+
+Tiny-model acceptance includes a slow verifier fixture and requires observed verification concurrency greater than one with two workers. This demonstrates scheduling semantics only; real verifier scaling efficiency remains part of Issue #66.
+
 ## Version consistency
 
 Verification and verifier refits share a runtime lock. A single replay group cannot contain scores from multiple verifier versions. Trusted audited rewards are treated as valid under the current verifier admission clock after refit because their reward is evaluator-owned rather than proxy-owned.
