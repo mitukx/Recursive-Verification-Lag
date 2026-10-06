@@ -17,12 +17,22 @@ class RolloutRequest:
     temperature: float = 1.0
     seed: int = 0
     deadline_s: float | None = None
+    estimated_tokens: int | None = None
+    workload_id: str = "default"
 
     def __post_init__(self) -> None:
         if self.samples <= 0:
             raise ValueError("samples must be positive")
         if self.deadline_s is not None and self.deadline_s <= 0:
             raise ValueError("deadline_s must be positive")
+        if self.estimated_tokens is not None and self.estimated_tokens <= 0:
+            raise ValueError("estimated_tokens must be positive")
+        if not self.workload_id:
+            raise ValueError("workload_id must be non-empty")
+
+    @property
+    def work_units(self) -> int:
+        return self.estimated_tokens or self.samples
 
 
 class AsyncRolloutEngine:

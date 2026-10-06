@@ -4,6 +4,7 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 
+from .admission import AdmissionLease, FairWorkloadAdmission, OverloadedError
 from .backends import InferenceBackend
 from .rollout import RolloutRequest
 from .telemetry import Telemetry
@@ -50,6 +51,9 @@ class LeastLoadedScheduler:
         max_attempts_per_request: int | None = None,
         latency_ewma_alpha: float = 0.2,
         hedge_after_s: float | None = None,
+        max_inflight_work_units: int | None = None,
+        max_queued_work_units: int | None = None,
+        per_workload_inflight_work_units: int | None = None,
         telemetry: Telemetry | None = None,
         health: WorkerHealth | None = None,
     ) -> None:
@@ -65,6 +69,15 @@ class LeastLoadedScheduler:
             raise ValueError("latency_ewma_alpha must be in (0, 1]")
         if hedge_after_s is not None and hedge_after_s <= 0:
             raise ValueError("hedge_after_s must be positive")
+        if max_inflight_work_units is not None and max_inflight_work_units <= 0:
+            raise ValueError("max_inflight_work_units must be positive")
+        if max_inflight_work_units is None and (
+            max_queued_work_units is not None
+            or per_workload_inflight_work_units is not None
+        ):
+            raise ValueError(
+                "max_inflight_work_units is required for workload admission"
+            )
         self.workers = workers
         self.queue_limit = queue_limit
         self.request_timeout_s = request_timeout_s
@@ -76,6 +89,16 @@ class LeastLoadedScheduler:
         self.hedge_after_s = hedge_after_s
         self.telemetry = telemetry or Telemetry()
         self.health = health or WorkerHealth()
+        self.admission = (
+            FairWorkloadAdmission(
+                max_inflight_work_units,
+                max_queued_units=max_queued_work_units,
+                per_workload_capacity_units=per_workload_inflight_work_units,
+                telemetry=self.telemetry,
+            )
+            if max_inflight_work_units is not None
+            else None
+        )
         self._queue_sem = asyncio.Semaphore(queue_limit)
         self._pick_lock = asyncio.Lock()
 
@@ -347,9 +370,27 @@ class LeastLoadedScheduler:
                 "primary unexpectedly succeeded after expired deadline"
             )
 
+        hedge_lease: AdmissionLease | None = None
+        if self.admission is not None:
+            hedge_lease = await self.admission.try_acquire(
+                request.workload_id,
+                request.work_units,
+            )
+            if hedge_lease is None:
+                self.telemetry.increment(
+                    "scheduler.hedge_budget_denied",
+                    1,
+                )
+                try:
+                    return await primary_task, 1, None, False
+                except Exception as exc:
+                    return None, 1, exc, True
+
         try:
             secondary = await self._pick_worker(attempted)
         except RuntimeError:
+            if hedge_lease is not None:
+                await hedge_lease.release()
             try:
                 return await primary_task, 1, None, False
             except Exception as exc:
@@ -357,13 +398,19 @@ class LeastLoadedScheduler:
 
         attempted.add(secondary.name)
         self.telemetry.increment("scheduler.hedge_launched", 1)
-        secondary_task = asyncio.create_task(
-            self._attempt(
-                request,
-                secondary,
-                deadline_at=deadline_at,
-            )
-        )
+
+        async def run_secondary() -> list[Generation]:
+            try:
+                return await self._attempt(
+                    request,
+                    secondary,
+                    deadline_at=deadline_at,
+                )
+            finally:
+                if hedge_lease is not None:
+                    await hedge_lease.release()
+
+        secondary_task = asyncio.create_task(run_secondary())
         pending: set[asyncio.Task[list[Generation]]] = {
             primary_task,
             secondary_task,
@@ -427,6 +474,7 @@ class LeastLoadedScheduler:
             )
 
         queue_acquired = False
+        admission_lease: AdmissionLease | None = None
         try:
             if deadline_at is None:
                 await self._queue_sem.acquire()
@@ -462,6 +510,39 @@ class LeastLoadedScheduler:
                 "scheduler.queue_wait_s",
                 time.perf_counter() - started,
             )
+
+            if self.admission is not None:
+                remaining = self._remaining(deadline_at)
+                try:
+                    admission_lease = await self.admission.acquire(
+                        request.workload_id,
+                        request.work_units,
+                        timeout_s=remaining,
+                    )
+                except OverloadedError:
+                    self.telemetry.increment(
+                        "scheduler.overload_rejections",
+                        1,
+                    )
+                    self.telemetry.increment(
+                        "scheduler.request_failures",
+                        1,
+                    )
+                    raise
+                except TimeoutError:
+                    self.telemetry.increment(
+                        "scheduler.admission_deadline_exceeded",
+                        1,
+                    )
+                    self.telemetry.increment(
+                        "scheduler.deadline_exceeded",
+                        1,
+                    )
+                    self.telemetry.increment(
+                        "scheduler.request_failures",
+                        1,
+                    )
+                    raise
 
             attempted: set[str] = set()
             last_error: Exception | None = None
@@ -581,6 +662,8 @@ class LeastLoadedScheduler:
                 )
             raise last_error
         finally:
+            if admission_lease is not None:
+                await admission_lease.release()
             if queue_acquired:
                 self._queue_sem.release()
 
