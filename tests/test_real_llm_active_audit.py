@@ -74,7 +74,14 @@ class RealLLMActiveAuditContractTest(unittest.TestCase):
             for path in root.rglob("*")
             if path.is_file() and path.name != "manifest.json"
         }
-        write_json(root / "manifest.json", {"status": "completed", "files": files})
+        write_json(
+            root / "manifest.json",
+            {
+                "status": "completed",
+                "protocol_sha256": "expected-protocol",
+                "files": files,
+            },
+        )
         return root
 
     def make_protocol(self, base: Path):
@@ -83,6 +90,13 @@ class RealLLMActiveAuditContractTest(unittest.TestCase):
             protocol,
             {
                 "status": "prospective real-LLM active-audit replay locked before learned-verifier GPU outcomes",
+                "input_requirements": {
+                    "manifest_status": "completed",
+                    "expected_input_protocol_sha256": "expected-protocol",
+                    "expected_input_research_source_sha": "source-sha",
+                    "expected_seed_values": [17],
+                    "expected_candidate_count_per_seed": 4,
+                },
                 "trusted_label_budgets": [2],
                 "audit_replicates": 4,
                 "confidence_delta": 0.05,
@@ -96,8 +110,10 @@ class RealLLMActiveAuditContractTest(unittest.TestCase):
 
     def test_real_candidate_loader_preserves_terminal_and_covariance_ground_truths(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = self.make_input(Path(tmp))
-            cells = load_real_candidate_cells(root)
+            base = Path(tmp)
+            root = self.make_input(base)
+            protocol = json.loads(self.make_protocol(base).read_text())
+            cells = load_real_candidate_cells(root, protocol["input_requirements"])
             self.assertEqual(len(cells), 4)
             by_arm = {cell["arm"]: cell for cell in cells}
             self.assertTrue(by_arm["stale"]["harmful_update"])
@@ -130,6 +146,40 @@ class RealLLMActiveAuditContractTest(unittest.TestCase):
             root = self.make_input(base)
             protocol = self.make_protocol(base)
             (root / "environment.json").write_text('{"research_source_sha":"tampered"}\n')
+            with self.assertRaises(ValueError):
+                run(protocol, root, base / "out")
+
+
+    def test_wrong_source_lineage_is_rejected_even_when_rehashed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = self.make_input(base)
+            protocol = self.make_protocol(base)
+            write_json(root / "environment.json", {"research_source_sha": "wrong-source"})
+            files = {
+                str(path.relative_to(root)): sha256(path)
+                for path in root.rglob("*")
+                if path.is_file() and path.name != "manifest.json"
+            }
+            write_json(
+                root / "manifest.json",
+                {
+                    "status": "completed",
+                    "protocol_sha256": "expected-protocol",
+                    "files": files,
+                },
+            )
+            with self.assertRaises(ValueError):
+                run(protocol, root, base / "out")
+
+    def test_wrong_input_protocol_lineage_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = self.make_input(base)
+            protocol = self.make_protocol(base)
+            manifest = json.loads((root / "manifest.json").read_text())
+            manifest["protocol_sha256"] = "wrong-protocol"
+            write_json(root / "manifest.json", manifest)
             with self.assertRaises(ValueError):
                 run(protocol, root, base / "out")
 

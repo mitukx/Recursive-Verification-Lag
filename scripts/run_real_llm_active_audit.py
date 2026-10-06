@@ -40,10 +40,17 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
-def validate_input_manifest(root: Path) -> dict[str, Any]:
+def validate_input_manifest(
+    root: Path,
+    requirements: dict[str, Any],
+) -> dict[str, Any]:
     manifest = load_json(root / "manifest.json")
-    if manifest.get("status") != "completed":
-        raise ValueError("real-LLM audit requires a completed learned-verifier artifact")
+    expected_status = str(requirements["manifest_status"])
+    if manifest.get("status") != expected_status:
+        raise ValueError("real-LLM audit requires the declared completed learned-verifier artifact")
+    expected_protocol = str(requirements["expected_input_protocol_sha256"])
+    if manifest.get("protocol_sha256") != expected_protocol:
+        raise ValueError("input artifact protocol SHA does not match the locked learned-verifier protocol")
     files = manifest.get("files")
     if not isinstance(files, dict) or not files:
         raise ValueError("input manifest lacks file hashes")
@@ -57,10 +64,17 @@ def validate_input_manifest(root: Path) -> dict[str, Any]:
     for rel, digest in files.items():
         if actual[rel] != digest:
             raise ValueError(f"input artifact SHA mismatch: {rel}")
+    environment = load_json(root / "environment.json")
+    expected_source = str(requirements["expected_input_research_source_sha"])
+    if environment.get("research_source_sha") != expected_source:
+        raise ValueError("input artifact research source SHA does not match the locked GPU source")
     return manifest
 
 
-def load_real_candidate_cells(root: Path) -> list[dict[str, Any]]:
+def load_real_candidate_cells(
+    root: Path,
+    requirements: dict[str, Any],
+) -> list[dict[str, Any]]:
     cells = []
     for seed_root in sorted(root.glob("seed-*")):
         summary_path = seed_root / "seed_summary.json"
@@ -70,7 +84,19 @@ def load_real_candidate_cells(root: Path) -> list[dict[str, Any]]:
         summary = load_json(summary_path)
         if "arms" not in summary or "mean_preference_shift" not in summary:
             continue
+        seed_value = int(summary["seed"])
+        expected_seeds = {int(value) for value in requirements["expected_seed_values"]}
+        if seed_value not in expected_seeds:
+            raise ValueError(f"unexpected learned-verifier seed: {seed_value}")
+        if set(summary["arms"]) != set(ARMS):
+            raise ValueError(f"unexpected verifier arms in {seed_root.name}")
         score_rows = load_jsonl(scores_path)
+        expected_count = int(requirements["expected_candidate_count_per_seed"])
+        if len(score_rows) != expected_count:
+            raise ValueError(
+                f"unexpected candidate count in {seed_root.name}: "
+                f"{len(score_rows)} != {expected_count}"
+            )
         ids = [str(row["candidate_id"]) for row in score_rows]
         if len(ids) != len(set(ids)):
             raise ValueError(f"duplicate candidate identity in {seed_root.name}")
@@ -97,7 +123,7 @@ def load_real_candidate_cells(root: Path) -> list[dict[str, Any]]:
             progress = float(summary["mean_preference_shift"][arm])
             cells.append(
                 {
-                    "seed": int(summary["seed"]),
+                    "seed": seed_value,
                     "arm": arm,
                     "candidate_ids": ids,
                     "p": p,
@@ -267,8 +293,9 @@ def run(protocol_path: Path, input_root: Path, output: Path) -> dict[str, Any]:
         "prospective real-LLM active-audit replay locked before learned-verifier GPU outcomes"
     ):
         raise ValueError("locked real-LLM active-audit protocol required")
-    input_manifest = validate_input_manifest(input_root)
-    cells = load_real_candidate_cells(input_root)
+    requirements = lock["input_requirements"]
+    input_manifest = validate_input_manifest(input_root, requirements)
+    cells = load_real_candidate_cells(input_root, requirements)
     budgets = [int(x) for x in lock["trusted_label_budgets"]]
     replicates = int(lock["audit_replicates"])
     delta = float(lock["confidence_delta"])
