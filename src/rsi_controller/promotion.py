@@ -61,6 +61,14 @@ class PromotionGate:
             "verifier_trust_not_low": lag.trust_level != "low",
             "confidence_interval": ci_lower >= -self.t.min_promotion_gain,
         }
+        coded_owns_noncritical = bool(
+            mathematical_rsi is not None
+            and getattr(mathematical_rsi, "enabled", False)
+            and getattr(mathematical_rsi, "owns_noncritical_promotion_checks", False)
+        )
+        if coded_owns_noncritical:
+            for key in ("verification_gap", "failure_rate", "latency", "verifier_agreement"):
+                checks[key] = True
         if mathematical_rsi is not None and getattr(mathematical_rsi, "enabled", False):
             checks["mathematical_rsi"] = bool(mathematical_rsi.accepted)
         reasons = []
