@@ -73,18 +73,23 @@ def percentile(values, q):
     return xs[lo] * (hi - x) + xs[hi] * (x - lo)
 
 
-def make_trace(n, seed):
+def make_trace(n, seed, mode="heterogeneous"):
     rng = random.Random(seed)
     trace = []
     for i in range(n):
-        # Heterogeneous agent/RL-like traffic: most requests are moderate,
-        # with a long-tail of large prompt/response budgets.
-        if rng.random() < 0.15:
-            prompt = rng.randint(8_000, 32_000)
-            decode = rng.randint(1_024, 4_096)
+        if mode == "homogeneous":
+            prompt, decode = 1024, 256
+        elif mode == "heterogeneous":
+            # Agent/RL-like traffic: most requests are moderate, with a
+            # long-tail of large prompt/response budgets.
+            if rng.random() < 0.15:
+                prompt = rng.randint(8_000, 32_000)
+                decode = rng.randint(1_024, 4_096)
+            else:
+                prompt = rng.randint(128, 2_048)
+                decode = rng.randint(64, 768)
         else:
-            prompt = rng.randint(128, 2_048)
-            decode = rng.randint(64, 768)
+            raise ValueError(mode)
         trace.append(Request(f"r{i}", prompt, decode))
     return trace
 
@@ -120,8 +125,8 @@ def simulate(policy, trace, servers, token_service_s):
     }
 
 
-def run(n=512, servers=8, seed=17, token_service_us=10.0):
-    trace = make_trace(n, seed)
+def run(n=512, servers=8, seed=17, token_service_us=10.0, mode="heterogeneous"):
+    trace = make_trace(n, seed, mode)
     ids = [f"s{i}" for i in range(servers)]
     least = simulate(
         LeastInflight(ids), trace, ids, token_service_us / 1_000_000
@@ -135,6 +140,7 @@ def run(n=512, servers=8, seed=17, token_service_us=10.0):
             "servers": servers,
             "seed": seed,
             "token_service_us": token_service_us,
+            "mode": mode,
         },
         "least_inflight": least,
         "workload_aware": aware,
@@ -164,7 +170,7 @@ def main():
     p.add_argument("--servers", type=int, default=8)
     p.add_argument("--seed", type=int, default=17)
     args = p.parse_args()
-    report = run(args.requests, args.servers, args.seed)
+    report = run(args.requests, args.servers, args.seed, mode=args.mode)
     text = json.dumps(report, indent=2, sort_keys=True)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
