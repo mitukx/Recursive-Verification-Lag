@@ -11,6 +11,7 @@ from pathlib import Path
 from .agent import Snapshot, TabularLearner, WeightRegistry, rollout, trusted_reward
 from .contracts import Task, digest
 from .control import ControlConfig, Curriculum, RVLControlPlane
+from .promotion import EvalSample, PromotionLedger, PromotionPolicy, evaluate_promotion
 from .store import ReplayStore
 from .verification import VerifierEnsemble
 
@@ -30,6 +31,10 @@ class LabConfig:
     attack_every: int = 4
     distill: bool = True
     deterministic: bool = False
+    promotion_eval_episodes: int = 48
+    promotion_min_mean_delta: float = -0.02
+    promotion_max_family_regression: float = 0.10
+    promotion_max_uncompensated_new_failures: int = 2
 
     def __post_init__(self):
         if min(self.episodes,self.actors,self.batch_size,self.capacity,self.max_steps,self.attack_every) <= 0:
@@ -40,6 +45,12 @@ class LabConfig:
             raise ValueError("invalid runtime configuration")
         if self.deterministic and self.actors != 1:
             raise ValueError("deterministic execution requires one actor")
+        if self.promotion_eval_episodes <= 0 or self.promotion_max_uncompensated_new_failures < 0:
+            raise ValueError("invalid promotion evaluation configuration")
+        if not -1 <= self.promotion_min_mean_delta <= 1:
+            raise ValueError("invalid promotion mean threshold")
+        if not 0 <= self.promotion_max_family_regression <= 1:
+            raise ValueError("invalid promotion family threshold")
 
 
 def percentile(values, q):
@@ -76,6 +87,13 @@ class MiniLab:
         self.controller = RVLControlPlane(control or ControlConfig())
         self.curriculum = Curriculum()
         self.registry = WeightRegistry(self.root/"weights")
+        self.promotion_policy = PromotionPolicy(
+            min_samples=self.cfg.promotion_eval_episodes,
+            min_mean_delta=self.cfg.promotion_min_mean_delta,
+            max_family_regression=self.cfg.promotion_max_family_regression,
+            max_uncompensated_new_failures=self.cfg.promotion_max_uncompensated_new_failures,
+        )
+        self.promotion_ledger = PromotionLedger(self.root/"promotion-ledger.jsonl")
         self.next_index = self.batches = self.tokens = 0
         self.latencies, self.metrics = [], []
         self.backpressure = self.done_actors = 0
@@ -180,11 +198,11 @@ class MiniLab:
             self.done_actors += 1
             self.wakeup.set()
 
-    def evaluate(self, episodes=48):
+    def _evaluate_snapshot(self, snapshot, episodes=None):
         from .agent import AffineToolEnvironment
         import random
-        snapshot = self.learner.snapshot()
-        values = []
+        episodes = self.cfg.promotion_eval_episodes if episodes is None else episodes
+        rows = []
         for i in range(episodes):
             task = Task(f"eval-{i}",i%3,(i%3+1)*(-1 if i%2 else 1),10+i,split="eval")
             env,rng = AffineToolEnvironment(task),random.Random(100000+i)
@@ -193,11 +211,39 @@ class MiniLab:
                 env.step(a)
                 if env.done:
                     break
-            values.append(trusted_reward(task,env.program,env.done))
-        return sum(values)/len(values)
+            rows.append((task, trusted_reward(task,env.program,env.done)))
+        return rows
+
+    def evaluate(self, episodes=None):
+        rows = self._evaluate_snapshot(self.learner.snapshot(), episodes)
+        return sum(value for _,value in rows)/len(rows)
+
+    def _promotion_decision(self, incumbent, candidate):
+        incumbent_rows = self._evaluate_snapshot(incumbent)
+        candidate_rows = self._evaluate_snapshot(candidate)
+        samples = [
+            EvalSample(
+                task_id=left.task_id,
+                family=left.family,
+                incumbent_reward=incumbent_reward,
+                candidate_reward=candidate_reward,
+            )
+            for (left,incumbent_reward),(right,candidate_reward)
+            in zip(incumbent_rows,candidate_rows)
+            if left.task_id == right.task_id
+        ]
+        if len(samples) != self.cfg.promotion_eval_episodes:
+            raise RuntimeError("held-out promotion suite identity mismatch")
+        return evaluate_promotion(
+            samples,
+            incumbent_version=incumbent.version,
+            candidate_version=candidate.version,
+            policy=self.promotion_policy,
+        )
 
     def _train_batch(self, claimed):
         snapshot = self.learner.snapshot()
+        incumbent_state = json.loads(json.dumps(self.learner.state()))
         rows = [(t,self.verifier.score(t) if not v.trusted else v) for _,t,v in claimed]
         audited = {}
         for t in self.controller.select_audits(rows,self.verifier,snapshot,self.batches):
@@ -239,16 +285,29 @@ class MiniLab:
             self.learner.distill([t for t,y in labels if y == 1][-8:])
         self.batches += 1
         self.tokens += sum(len(t.steps) for _,t,_ in claimed)
-        evaluation = self.evaluate()
-        previous = self.store.load_state("best")
-        accepted = previous is None or evaluation >= previous["reward"]-0.15
-        if accepted and (previous is None or evaluation > previous["reward"]):
-            # Deep JSON copy is persisted before further parameter updates.
-            self.store.save_state("best",{"reward":evaluation,"learner":self.learner.state()})
+        candidate = self.learner.snapshot()
+        decision = self._promotion_decision(snapshot, candidate)
+        accepted = decision.accepted
+        self.promotion_ledger.append(decision)
         if accepted:
-            self.serving = self.learner.snapshot()
-        self.metrics.append({"batch":self.batches,"version":self.learner.version,
-            "eval_reward":evaluation,"mean_training_reward":statistics.fmean(y for _,y in batch),
+            self.serving = candidate
+            self.store.save_state("best",{
+                "reward":decision.candidate_mean,
+                "learner":json.loads(json.dumps(self.learner.state())),
+                "promotion_evidence_sha256":decision.evidence_sha256,
+            })
+        else:
+            # Transactional candidate training: a rejected candidate must not
+            # become the parent of the next update.
+            self.learner.restore(incumbent_state)
+        evaluation = decision.candidate_mean
+        self.metrics.append({"batch":self.batches,"version":candidate.version,
+            "served_version":self.serving.version,
+            "eval_reward":evaluation,"eval_incumbent_reward":decision.incumbent_mean,
+            "eval_delta":decision.mean_delta,
+            "promotion_reasons":list(decision.reasons),
+            "promotion_evidence_sha256":decision.evidence_sha256,
+            "mean_training_reward":statistics.fmean(y for _,y in batch),
             "audits":self.controller.spent,"verifier_version":self.verifier.version,
             "refit":refit,"checkpoint_accepted":accepted,
             "max_policy_lag":max(snapshot.version-t.policy_version for _,t,_ in claimed),**train})
@@ -316,6 +375,8 @@ class MiniLab:
                                "p95":percentile(self.latencies,.95),"p99":percentile(self.latencies,.99)},
                   "semantic_sha256":digest(normalize(semantic)),
                   "semantic_float_precision":10,"history":self.metrics,
+                  "promotion_ledger":{"records":self.promotion_ledger.seq,
+                                      "head_sha256":self.promotion_ledger.head},
                   "hardware":{"platform":platform.platform(),"python":platform.python_version(),
                               "gpu_utilization":None,"mfu":None},
                   "limitations":["restricted DSL and tabular policy","single-machine SQLite",
