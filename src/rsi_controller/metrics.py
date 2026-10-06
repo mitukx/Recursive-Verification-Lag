@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Iterable
 from .models import GenerationRecord
 
-FIELDS=["generation","champion_id","candidate_id","development_score","promotion_score","sealed_score","reward","trusted_score","verification_gap","verifier_version","policy_version","policy_verifier_age","latency_p50","latency_p95","throughput","failure_rate","compute_cost","promotion_decision"]
+FIELDS=["generation","champion_id","candidate_id","development_score","promotion_score","reward","trusted_score","verification_gap","verifier_version","policy_version","policy_verifier_age","latency_p50","latency_p95","throughput","failure_rate","compute_cost","promotion_decision"]
 
 class MetricsWriter:
     def __init__(self,root):
@@ -25,7 +25,7 @@ class MetricsWriter:
     def render_plots(self,records):
         rows=list(records)
         specs=[
-          ("capability_vs_generation.svg",[("development_score","development"),("promotion_score","promotion"),("sealed_score","sealed")],"Capability vs generation"),
+          ("capability_vs_generation.svg",[("development_score","development"),("promotion_score","promotion")],"Capability vs generation"),
           ("reward_vs_trusted.svg",[("reward","reward"),("trusted_score","trusted")],"Reward vs trusted score"),
           ("verification_gap_vs_generation.svg",[("verification_gap","verification gap")],"Verification gap vs generation"),
           ("verifier_age_vs_failure_rate.svg",[("policy_verifier_age","verifier age"),("failure_rate","failure rate")],"Verifier age and failure rate"),
