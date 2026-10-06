@@ -9,6 +9,7 @@ from pathlib import Path
 
 from src.rvl_systems.backends import ToyTabularBackend
 from src.rvl_systems.benchmark_report import BenchmarkReport
+from src.rvl_systems.event_log import ControlPlaneEventLog
 from src.rvl_systems.rollout import RolloutRequest
 from src.rvl_systems.scheduler import LeastLoadedScheduler, WorkerSlot
 from src.rvl_systems.telemetry import Telemetry
@@ -42,12 +43,14 @@ async def main() -> None:
     parser.add_argument("--latency-ms", type=float, default=2.0)
     parser.add_argument("--queue-limit", type=int, default=16)
     parser.add_argument("--output")
+    parser.add_argument("--event-log")
     args = parser.parse_args()
 
     if args.requests <= 0 or args.recovery_requests <= 0:
         raise ValueError("request counts must be positive")
 
     telemetry = Telemetry()
+    event_log = ControlPlaneEventLog()
     health = WorkerHealth(failure_threshold=1)
     flaky = FailFirstBackend(1, latency_s=args.latency_ms / 1000.0)
     workers = [
@@ -69,6 +72,7 @@ async def main() -> None:
         max_attempts_per_request=len(workers),
         telemetry=telemetry,
         health=health,
+        event_log=event_log,
     )
 
     first = [
@@ -139,6 +143,9 @@ async def main() -> None:
         },
         git_sha=os.environ.get("GITHUB_SHA", "unknown"),
     )
+    event_log.validate()
+    if args.event_log:
+        event_log.write_jsonl(args.event_log)
     if args.output:
         Path(args.output).parent.mkdir(parents=True, exist_ok=True)
         report.write_json(args.output)

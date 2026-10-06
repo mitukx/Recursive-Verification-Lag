@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from .admission import AdmissionLease, FairWorkloadAdmission, OverloadedError
 from .backends import InferenceBackend
+from .event_log import ControlPlaneEventLog
 from .rollout import RolloutRequest
 from .telemetry import Telemetry
 from .types import Generation
@@ -56,6 +57,7 @@ class LeastLoadedScheduler:
         per_workload_inflight_work_units: int | None = None,
         telemetry: Telemetry | None = None,
         health: WorkerHealth | None = None,
+        event_log: ControlPlaneEventLog | None = None,
     ) -> None:
         if not workers:
             raise ValueError("at least one worker is required")
@@ -89,6 +91,7 @@ class LeastLoadedScheduler:
         self.hedge_after_s = hedge_after_s
         self.telemetry = telemetry or Telemetry()
         self.health = health or WorkerHealth()
+        self.event_log = event_log
         self.admission = (
             FairWorkloadAdmission(
                 max_inflight_work_units,
@@ -101,6 +104,26 @@ class LeastLoadedScheduler:
         )
         self._queue_sem = asyncio.Semaphore(queue_limit)
         self._pick_lock = asyncio.Lock()
+
+    def _event(
+        self,
+        kind: str,
+        request: RolloutRequest,
+        *,
+        worker: str | None = None,
+        attempt: int | None = None,
+        **data: object,
+    ) -> None:
+        if self.event_log is None:
+            return
+        self.event_log.append(
+            kind,
+            request_id=request.prompt_id,
+            workload_id=request.workload_id,
+            worker=worker,
+            attempt=attempt,
+            **data,
+        )
 
     def _fallback_latency_s(self) -> float:
         known = [
@@ -397,6 +420,13 @@ class LeastLoadedScheduler:
                 return None, 1, exc, True
 
         attempted.add(secondary.name)
+        self._event(
+            "worker_selected",
+            request,
+            worker=secondary.name,
+            attempt=2,
+            hedged=True,
+        )
         self.telemetry.increment("scheduler.hedge_launched", 1)
 
         async def run_secondary() -> list[Generation]:
@@ -462,6 +492,7 @@ class LeastLoadedScheduler:
         request: RolloutRequest,
     ) -> list[Generation]:
         started = time.perf_counter()
+        self._event("request_started", request)
         deadline_at = (
             started + request.deadline_s
             if request.deadline_s is not None
@@ -551,6 +582,12 @@ class LeastLoadedScheduler:
 
             primary = await self._pick_worker(attempted)
             attempted.add(primary.name)
+            self._event(
+                "worker_selected",
+                request,
+                worker=primary.name,
+                attempt=1,
+            )
             if (
                 self.hedge_after_s is not None
                 and self.max_attempts_per_request >= 2
@@ -576,6 +613,11 @@ class LeastLoadedScheduler:
                         "scheduler.end_to_end_latency_s",
                         time.perf_counter() - started,
                     )
+                    self._event(
+                        "request_completed",
+                        request,
+                        attempts=attempts,
+                    )
                     return await self._finish_success(
                         result,
                         attempts=attempts,
@@ -592,6 +634,11 @@ class LeastLoadedScheduler:
                     self.telemetry.observe(
                         "scheduler.end_to_end_latency_s",
                         time.perf_counter() - started,
+                    )
+                    self._event(
+                        "request_completed",
+                        request,
+                        attempts=attempts,
                     )
                     return await self._finish_success(
                         result,
@@ -625,6 +672,13 @@ class LeastLoadedScheduler:
                     break
                 attempted.add(worker.name)
                 attempts += 1
+                self._event(
+                    "worker_selected",
+                    request,
+                    worker=worker.name,
+                    attempt=attempts,
+                    failover=True,
+                )
                 try:
                     result = await self._attempt(
                         request,
@@ -634,6 +688,11 @@ class LeastLoadedScheduler:
                     self.telemetry.observe(
                         "scheduler.end_to_end_latency_s",
                         time.perf_counter() - started,
+                    )
+                    self._event(
+                        "request_completed",
+                        request,
+                        attempts=attempts,
                     )
                     return await self._finish_success(
                         result,
@@ -655,6 +714,12 @@ class LeastLoadedScheduler:
             self.telemetry.observe(
                 "scheduler.end_to_end_latency_s",
                 time.perf_counter() - started,
+            )
+            self._event(
+                "request_failed",
+                request,
+                attempts=attempts,
+                error=type(last_error).__name__ if last_error else "RuntimeError",
             )
             if last_error is None:
                 raise RuntimeError(

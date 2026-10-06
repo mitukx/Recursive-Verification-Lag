@@ -1,0 +1,17 @@
+{
+  "scheduler-chaos": [
+    {"metric": "injected_failures", "op": "ge", "value": 1},
+    {"metric": "scheduler.failover_successes", "op": "ge", "value": 1},
+    {"metric": "recovered_worker_dispatches", "op": "ge", "value": 1}
+  ],
+  "scheduler-slo-tail-latency": [
+    {"metric": "hedged_success_rate", "op": "ge", "value": 1},
+    {"metric": "hedged_success_rate", "op": "ge_metric", "other": "baseline_success_rate", "factor": 1},
+    {"metric": "hedged_latency_ms_p95", "op": "le_metric", "other": "baseline_latency_ms_p95", "factor": 0.75}
+  ],
+  "workload-admission": [
+    {"metric": "completed", "op": "ge", "value": 1},
+    {"metric": "max_in_use_units", "op": "le", "value": 4},
+    {"metric": "max_queued_units", "op": "le", "value": 8}
+  ]
+}
