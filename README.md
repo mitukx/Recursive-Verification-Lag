@@ -10,8 +10,11 @@ confirmation and real generator improvement remain open.
 
 **Calibration diagnosis:** [equal-KL controls and theory](notes/progress/37_kl_matched_transfer_diagnostic.md)
 show that the secondary public-only refresh benefit vanishes after removing
-score-scale changes. Both verifier representations preserve candidate rankings.
-This is an explicitly exploratory development analysis.
+score-scale changes. The public-only fit preserves rankings exactly; the
+all-feature fit has 20 strict pairwise reversals across 3/16 tasks. More
+importantly, matched-KL policy differences occur on 14/16 tasks, including
+12 tasks with no reversal, implicating within-ranking score geometry rather
+than rank change alone. This is an explicitly exploratory development analysis.
 
 **When must verification catch up with a self-improving policy?**
 
