@@ -26,6 +26,9 @@ require real GPU measurements.
 | Recovery | atomic reference checkpoint save/restore; remote retries | implemented + CI |
 | Observability | counters, p50/p95/max latency, tokens/s | implemented + CI |
 | Profiling | Chrome trace recorder and benchmark reports | implemented + CI |
+| Deterministic failure replay | semantic scheduler event log, invariant validation, concurrency-stable SHA-256 trace digest | implemented + CI artifact |
+| Regression / deploy gates | machine-readable absolute and relative benchmark rules fail CI on regressions | implemented + CI |
+| Artifact lineage | benchmark/replay manifest with path, size, SHA-256 and immediate verification | implemented + CI artifact |
 | Cluster throughput benchmark | `benchmark_vllm_cluster.py` | runnable; GPU endpoints required |
 | FSDP / NCCL multi-GPU | not yet validated | gap |
 | Custom CUDA/Triton kernels | not yet implemented | gap |
