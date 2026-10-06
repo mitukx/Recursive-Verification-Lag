@@ -11,6 +11,7 @@ from pathlib import Path
 
 from ..hf_trainer import HFCausalLMGRPOTrainer, HFTTrainerConfig
 from .token_replay import TokenReplay
+from .verification_debt import VerificationDebtConfig, VerificationDebtController
 
 
 class AsyncHFLab:
@@ -28,7 +29,8 @@ class AsyncHFLab:
 
     def __init__(self, root, backend, verifier, *, learning_rate=1e-5,
                  max_policy_lag=4, max_verifier_lag=0, capacity=4, control=None,
-                 verification_lease_s=30, max_verification_attempts=3):
+                 verification_lease_s=30, max_verification_attempts=3,
+                 verification_debt=None):
         import fcntl
         if min(max_policy_lag,max_verifier_lag) < 0:
             raise ValueError("lag bounds must be non-negative")
@@ -61,6 +63,10 @@ class AsyncHFLab:
         self.max_verification_attempts = max_verification_attempts
         self.metrics = []
         self.verification_metrics = []
+        self.verification_debt_controller = VerificationDebtController(
+            verification_debt or VerificationDebtConfig()
+        )
+        self.verification_debt_history = []
         from .control import ControlConfig, RVLControlPlane
         self.controller = RVLControlPlane(
             control or ControlConfig(audit_budget=32,refit_labels=4,risk_threshold=.3)
@@ -88,6 +94,7 @@ class AsyncHFLab:
         self.actor_done = False
         self.verifier_done = False
         self.verifier_lock = asyncio.Lock()
+        self.verification_progress = asyncio.Event()
 
     def _weights(self):
         return {
@@ -101,9 +108,35 @@ class AsyncHFLab:
         fcntl.flock(self.lock,fcntl.LOCK_UN)
         self.lock.close()
 
+    def _verification_debt_assessment(self):
+        signals = self.replay.verification_debt_signals(
+            self.version,self.verifier.version
+        )
+        return self.verification_debt_controller.assess(signals)
+
+    async def _await_generation_admission(self):
+        while True:
+            assessment = self._verification_debt_assessment()
+            self.verification_debt_history.append({
+                "policy_version":self.version,
+                "verifier_version":self.verifier.version,
+                "score":assessment.score,
+                "level":assessment.level,
+                "action":assessment.action,
+                "signals":vars(assessment.signals),
+            })
+            if assessment.action == "admit_generation":
+                return
+            self.verification_progress.clear()
+            assessment = self._verification_debt_assessment()
+            if assessment.action == "admit_generation":
+                continue
+            await self.verification_progress.wait()
+
     async def _actor(self,prompts,samples,seed):
         try:
             for i,(pid,prompt) in enumerate(prompts.items()):
+                await self._await_generation_admission()
                 rid = f"group-{i:08d}"
                 if self.replay.db.execute(
                     "SELECT 1 FROM groups WHERE id=?",(rid,)
@@ -176,6 +209,7 @@ class AsyncHFLab:
                     "verification_attempts":meta["verification_attempts"],
                 })
                 self.ready.set()
+                self.verification_progress.set()
             except BaseException:
                 status = self.replay.fail_verification(
                     rid,token,max_attempts=self.max_verification_attempts
@@ -188,6 +222,7 @@ class AsyncHFLab:
                     "status":status,
                 })
                 self.ready.set()
+                self.verification_progress.set()
             await asyncio.sleep(0)
 
     def _save_checkpoint(self,rid):
@@ -270,6 +305,7 @@ class AsyncHFLab:
             self.metrics.append(metrics)
             self.space.set()
             self.ready.set()
+            self.verification_progress.set()
             await asyncio.sleep(0)
 
     def _rescore_current(self,sample):
@@ -354,6 +390,7 @@ class AsyncHFLab:
         })
         self.replay.bind_verification({
             "max_verifier_lag":self.max_verifier_lag,
+            "verification_debt_config":vars(self.verification_debt_controller.config),
             "verification_lease_s":self.verification_lease_s,
             "max_verification_attempts":self.max_verification_attempts,
             "verifier_type":type(self.verifier).__name__,
@@ -373,6 +410,7 @@ class AsyncHFLab:
             "parameter_l1_change":delta,
             "history":self.metrics,
             "verification_history":self.verification_metrics,
+            "verification_debt_history":self.verification_debt_history,
             "trusted_audits":len(self.labels),
             "verifier_version":self.verifier.version,
             "rvl_enabled":self.rvl_enabled,
