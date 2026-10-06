@@ -33,6 +33,7 @@ require real GPU measurements.
 | FSDP / NCCL multi-GPU | FSDP/NCCL learner, BF16/FP16 selection, DCP save/resume, 1-to-2 GPU scaling summary and self-hosted acceptance workflow | implemented harness; real GPU artifact pending |
 | Custom CUDA/Triton kernels | fused tokenwise GRPO surrogate + custom autograd backward, PyTorch parity benchmark and GPU microbenchmark harness | implemented; real CUDA speedup evidence pending |
 | BF16/FP16 empirical stability study | harness supported | measurement gap |
+| Full GPU evidence bundle | one workflow runs transactional Qwen RLVR, real-model 1→2 GPU FSDP + resume, vLLM concurrency sweep, injected worker failure, and fail-closed SHA-linked aggregation | implementation + CPU contract CI; real two-GPU artifact pending |
 
 ## Persistent asynchronous training and RVL integration
 
@@ -49,7 +50,8 @@ explicit acceptance boundaries.
 | Executable reward security | evaluator-owned I/O comparisons outside candidate Python, isolated Docker, attack tests | broad adversarial robustness |
 | Verifier ensembles | executable public tests, trained residual critic, JSON remote judge adapter | real stronger-model calibration |
 | Distributed token-level RL | actual two-rank DDP optimizer update; FSDP/DCP entry point | NCCL/FSDP GPU validation |
-| Deployment | health-probed blue/green serving, drain old episode leases | real GPU reload/uptime evidence |\n| Transactional candidate promotion | paired held-out incumbent/candidate gate, family-slice regression caps, rollback of rejected learner state, hash-chained decision ledger | statistical power analysis and real GPU canary deployment |
+| Deployment | health-probed blue/green serving, drain old episode leases | real GPU reload/uptime evidence |
+| Transactional candidate promotion | paired held-out incumbent/candidate gate, family-slice regression caps, rollback of rejected learner state, hash-chained decision ledger | statistical power analysis and real GPU canary deployment |
 | Token-exact serving data | server-owned token IDs/logprobs, strict schema/model checks | real vLLM/SGLang GPU acceptance |
 | Metrics | p50/p95/p99, LM tokens/s, utilization sampler, explicit-input MFU estimator | measured sustained GPU scaling |
 

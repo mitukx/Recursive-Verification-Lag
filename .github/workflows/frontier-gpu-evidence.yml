@@ -1,0 +1,93 @@
+name: frontier-gpu-evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Small Hugging Face model used across RLVR/FSDP/vLLM evidence
+        required: true
+        default: Qwen/Qwen2.5-0.5B-Instruct
+      rlvr_steps:
+        description: Transactional RLVR update steps
+        required: true
+        default: '8'
+      serving_requests:
+        description: Requests per vLLM concurrency point
+        required: true
+        default: '32'
+
+permissions:
+  contents: read
+
+jobs:
+  full-evidence:
+    runs-on: [self-hosted, linux, gpu]
+    timeout-minutes: 360
+    env:
+      MODEL: ${{ inputs.model }}
+      RLVR_STEPS: ${{ inputs.rlvr_steps }}
+      SERVING_REQUESTS: ${{ inputs.serving_requests }}
+      ROOT: artifacts/frontier-gpu-evidence
+      TOKENIZERS_PARALLELISM: 'false'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pinned experiment surfaces
+        run: |
+          python -m pip install -U pip
+          python -m pip install -r requirements-systems.txt -r requirements-gpu.txt
+
+      - name: Assert two CUDA GPUs and record environment
+        run: |
+          mkdir -p "$ROOT"
+          python - <<'PY'
+          import torch
+          assert torch.cuda.is_available(), "CUDA required"
+          assert torch.cuda.device_count() >= 2, "full evidence workflow requires >=2 GPUs"
+          print("torch", torch.__version__, "cuda", torch.version.cuda, "gpus", torch.cuda.device_count())
+          PY
+          nvidia-smi > "$ROOT/nvidia-smi.txt"
+          python -m pip freeze > "$ROOT/dependencies.txt"
+
+      - name: Generate real-model token-exact RLVR replay
+        run: |
+          python -m src.generate_rlvr_replay             --model "$MODEL"             --tasks 4             --samples 4             --max-new-tokens 96             --output "$ROOT/replay.jsonl"
+
+      - name: Transactional held-out Qwen RLVR
+        run: |
+          MODEL="$MODEL"           TRAIN_LIMIT=32           EVAL_LIMIT=32           STEPS="$RLVR_STEPS"           OUT="$ROOT/qwen"           bash scripts/run_qwen_rlvr_gpu.sh
+
+      - name: Real-model 1-to-2 GPU FSDP scaling and resume
+        run: |
+          MODEL="$MODEL"           REPLAY="$ROOT/replay.jsonl"           OUT="$ROOT/fsdp"           bash scripts/run_fsdp_scaling_gpu.sh
+
+      - name: Real vLLM TTFT TBT throughput sweep
+        run: |
+          MODEL="$MODEL"           REQUESTS="$SERVING_REQUESTS"           CONCURRENCY=1,2,4,8           OUT="$ROOT/vllm"           bash scripts/run_vllm_free_gpu.sh
+
+      - name: Kill-one-worker vLLM failover acceptance
+        run: |
+          MODEL="$MODEL"           GPU0=0           GPU1=1           GPU_MEMORY_UTILIZATION=0.60           OUT="$ROOT/failover"           bash scripts/run_vllm_failover_demo.sh
+
+      - name: Build fail-closed GPU evidence summary
+        run: |
+          python -m src.summarize_gpu_evidence             --qwen "$ROOT/qwen/run/benchmark.json"             --fsdp "$ROOT/fsdp/scaling-summary.json"             --fsdp-resume "$ROOT/fsdp/resumed-two-gpu/distributed-report.json"             --vllm "$ROOT/vllm/benchmark/summary.json"             --failover "$ROOT/failover/failover.json"             --output "$ROOT/gpu-evidence-summary.json"             --require-all
+
+      - name: Manifest top-level evidence lineage
+        run: |
+          python -m src.manifest_artifacts             --output "$ROOT/manifest.json"             "$ROOT/nvidia-smi.txt"             "$ROOT/dependencies.txt"             "$ROOT/replay.jsonl"             "$ROOT/replay.jsonl.meta.json"             "$ROOT/qwen/manifest.json"             "$ROOT/fsdp/manifest.json"             "$ROOT/vllm/manifest.json"             "$ROOT/failover/manifest.json"             "$ROOT/gpu-evidence-summary.json"
+          python -m src.manifest_artifacts --verify "$ROOT/manifest.json"
+
+      - name: Upload immutable raw evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontier-gpu-evidence-${{ github.run_id }}
+          path: artifacts/frontier-gpu-evidence/
+          if-no-files-found: error
+          retention-days: 90

@@ -16,6 +16,10 @@ def main() -> None:
 
     single = json.loads(Path(args.single).read_text(encoding="utf-8"))
     multi = json.loads(Path(args.multi).read_text(encoding="utf-8"))
+    single_sha = str(single.get("git_sha", "unknown"))
+    multi_sha = str(multi.get("git_sha", "unknown"))
+    if single_sha != multi_sha:
+        raise ValueError("single and multi reports must come from the same git SHA")
     single_world = int(single["world_size"])
     multi_world = int(multi["world_size"])
     if single_world <= 0 or multi_world <= single_world:
@@ -28,6 +32,7 @@ def main() -> None:
     ideal_scale = multi_world / single_world
     efficiency = speedup / ideal_scale
     summary = {
+        "git_sha": single_sha,
         "single_world_size": single_world,
         "multi_world_size": multi_world,
         "single_tokens_per_s": single_tps,

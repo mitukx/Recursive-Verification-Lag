@@ -18,7 +18,9 @@ python -m src.run_mini_lab --output artifacts/async-lab --episodes 256 --actors 
 python -m src.benchmark_mini_lab --output artifacts/ablation --seeds 17,29,43 --episodes 256 --learning-rates 0.08,0.2 --cadences 2,8
 ~~~
 
-Candidate updates are now transactional: the active policy and candidate are compared on the same held-out suite, promotion fails closed on configured regression criteria, rejected learner state is rolled back, and every decision is recorded in a tamper-evident hash chain.\n\nCI runs Linux/macOS replay, recovery, numerical and integration tests; real
+Candidate updates are now transactional: the active policy and candidate are compared on the same held-out suite, promotion fails closed on configured regression criteria, rejected learner state is rolled back, and every decision is recorded in a tamper-evident hash chain.
+
+CI runs Linux/macOS replay, recovery, numerical and integration tests; real
 Transformers gradients; two-rank DDP RL; executable Docker rewards; and paired
 adaptive/fixed/no-refresh comparisons. No 7B/30B capability or GPU scaling result
 is claimed. The code supports configurable long-episode budgets; multi-hour
@@ -42,7 +44,7 @@ experiments that still require external hardware.
 | Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, FP16/BF16 parity gates, fp32/fp16/bf16 loading policy |
 | Kernel optimization | optional fused Triton tokenwise GRPO surrogate with custom backward, PyTorch forward/gradient parity benchmark, GPU speed harness |
 | Observability | counters, tokens/s, p50/p95/max latency, Chrome traces, deterministic control-plane replay, machine-readable benchmark reports |
-| GPU serving integration | OpenAI-compatible vLLM/SGLang adapter, streaming TTFT/TBT benchmark, Prometheus metrics capture, GPU telemetry, and real process-failure harness |
+| GPU serving integration | OpenAI-compatible vLLM/SGLang adapter, streaming TTFT/TBT benchmark, Prometheus metrics capture, GPU telemetry, real process-failure harness, and one-shot two-GPU evidence workflow |
 
 Start with [the systems architecture](docs/rl_system_architecture.md), the
 [engineering runbook](docs/xai_rl_systems.md), the
@@ -52,7 +54,8 @@ Start with [the systems architecture](docs/rl_system_architecture.md), the
 [free-GPU runbook](docs/free_gpu_runbook.md),
 [Triton GRPO kernel note](docs/triton_grpo.md),
 [Qwen RLVR experiment](docs/qwen_rlvr_experiment.md),
-[FSDP/NCCL acceptance](docs/fsdp_nccl_acceptance.md), and the
+[FSDP/NCCL acceptance](docs/fsdp_nccl_acceptance.md),
+[one-shot GPU evidence bundle](docs/gpu_evidence_bundle.md), and the
 [evidence/gap matrix](docs/xai_evidence_matrix.md).
 
 A local control-plane smoke run requires no GPU:
