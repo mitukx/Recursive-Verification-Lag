@@ -17,6 +17,8 @@ on:
       - 'src/benchmark_triton_grpo.py'
       - 'src/run_qwen_rlvr_experiment.py'
       - 'src/summarize_distributed_scaling.py'
+      - 'src/summarize_gpu_evidence.py'
+      - 'src/generate_rlvr_replay.py'
       - 'src/benchmark_admission_control.py'
       - 'src/replay_control_plane.py'
       - 'src/check_benchmark_regressions.py'
@@ -47,6 +49,7 @@ on:
       - 'docs/numerical_parity.md'
       - 'docs/replay_and_regression.md'
       - '.github/workflows/rl-systems.yml'
+      - '.github/workflows/frontier-gpu-evidence.yml'
   push:
     branches:
       - 'systems/**'
@@ -76,9 +79,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Unit tests
-        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_scheduler_health tests.test_telemetry tests.test_weight_sync tests.test_profiling tests.test_worker_health tests.test_precision_numerics tests.test_worker_rpc tests.test_torch_distributed_config tests.test_dynamic_batching tests.test_vllm_batch tests.test_policy_deployment tests.test_scheduler_slo tests.test_admission_control tests.test_scheduler_admission tests.test_event_log tests.test_regression_gate tests.test_artifact_manifest tests.test_vllm_metrics tests.test_kv_serving_scheduler tests.test_precision_parity tests.test_triton_grpo_contract tests.test_rlvr_benchmark tests.test_distributed_scaling_summary -v
+        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_scheduler_health tests.test_telemetry tests.test_weight_sync tests.test_profiling tests.test_worker_health tests.test_precision_numerics tests.test_worker_rpc tests.test_torch_distributed_config tests.test_dynamic_batching tests.test_vllm_batch tests.test_policy_deployment tests.test_scheduler_slo tests.test_admission_control tests.test_scheduler_admission tests.test_event_log tests.test_regression_gate tests.test_artifact_manifest tests.test_vllm_metrics tests.test_kv_serving_scheduler tests.test_precision_parity tests.test_triton_grpo_contract tests.test_rlvr_benchmark tests.test_distributed_scaling_summary tests.test_gpu_evidence_summary -v
       - name: Optional-backend syntax check
-        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/rvl_systems/torch_distributed.py src/rvl_systems/dynamic_batch.py src/rvl_systems/vllm_batch.py src/run_hf_grpo_smoke.py src/run_torch_distributed_smoke.py src/benchmark_vllm_cluster.py src/benchmark_scheduler_chaos.py src/benchmark_scheduler_slo.py src/benchmark_admission_control.py src/benchmark_failure_matrix.py src/benchmark_precision_parity.py src/rvl_systems/triton_grpo.py src/benchmark_triton_grpo.py src/run_qwen_rlvr_experiment.py src/summarize_distributed_scaling.py
+        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/rvl_systems/torch_distributed.py src/rvl_systems/dynamic_batch.py src/rvl_systems/vllm_batch.py src/run_hf_grpo_smoke.py src/run_torch_distributed_smoke.py src/benchmark_vllm_cluster.py src/benchmark_scheduler_chaos.py src/benchmark_scheduler_slo.py src/benchmark_admission_control.py src/benchmark_failure_matrix.py src/benchmark_precision_parity.py src/rvl_systems/triton_grpo.py src/benchmark_triton_grpo.py src/run_qwen_rlvr_experiment.py src/summarize_distributed_scaling.py src/summarize_gpu_evidence.py src/generate_rlvr_replay.py
       - name: End-to-end CPU smoke test
         run: python -m src.run_rlvr_systems_demo --rounds 3 --samples 8
       - name: Generate async rollout benchmark report
