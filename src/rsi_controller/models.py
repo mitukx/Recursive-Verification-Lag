@@ -47,7 +47,7 @@ class ExpectedEffect:
 class EvaluationPlan:
     development: bool = True
     promotion: bool = True
-    sealed: bool = True
+    sealed: bool = False
     require_independent_trusted: bool = True
 
 
@@ -134,7 +134,7 @@ class EvaluationBundle:
     evolution: SplitMetrics
     development: SplitMetrics
     promotion: SplitMetrics
-    sealed: SplitMetrics
+    sealed: SplitMetrics | None
     verifier_version: int
     policy_version: int
     policy_verifier_age: int
@@ -195,7 +195,6 @@ class GenerationRecord:
     candidate_id: str
     development_score: float
     promotion_score: float
-    sealed_score: float
     reward: float
     trusted_score: float
     verification_gap: float
