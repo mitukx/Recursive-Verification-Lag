@@ -18,6 +18,8 @@ class RolloutRequest:
     seed: int = 0
     deadline_s: float | None = None
     estimated_tokens: int | None = None
+    prompt_tokens_estimate: int | None = None
+    decode_tokens_estimate: int | None = None
     workload_id: str = "default"
 
     def __post_init__(self) -> None:
@@ -27,6 +29,16 @@ class RolloutRequest:
             raise ValueError("deadline_s must be positive")
         if self.estimated_tokens is not None and self.estimated_tokens <= 0:
             raise ValueError("estimated_tokens must be positive")
+        if (
+            self.prompt_tokens_estimate is not None
+            and self.prompt_tokens_estimate <= 0
+        ):
+            raise ValueError("prompt_tokens_estimate must be positive")
+        if (
+            self.decode_tokens_estimate is not None
+            and self.decode_tokens_estimate <= 0
+        ):
+            raise ValueError("decode_tokens_estimate must be positive")
         if not self.workload_id:
             raise ValueError("workload_id must be non-empty")
 
