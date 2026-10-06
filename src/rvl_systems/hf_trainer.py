@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from statistics import fmean
 from typing import Any
@@ -18,12 +19,7 @@ class HFTTrainerConfig:
 
 
 class HFCausalLMGRPOTrainer:
-    """Minimal token-level clipped GRPO trainer for a local causal LM.
-
-    It consumes token ids and old token log-probabilities captured by
-    HFLocalBackend. This is intentionally single-device and small-scale; the
-    interface is designed to be replaced by FSDP/DeepSpeed for larger runs.
-    """
+    """Minimal token-level clipped GRPO trainer for a local causal LM."""
 
     def __init__(self, model: Any, *, config: HFTTrainerConfig | None = None) -> None:
         try:
@@ -55,6 +51,8 @@ class HFCausalLMGRPOTrainer:
             raise ValueError("prompt and response token sequences must be non-empty")
         if len(response_ids) != len(old_logps):
             raise ValueError("response token ids/logprobs length mismatch")
+        if not all(math.isfinite(x) for x in old_logps):
+            raise FloatingPointError("old token log-probabilities contain non-finite values")
         return prompt_ids, response_ids, old_logps
 
     def _sample_objective(
@@ -75,11 +73,14 @@ class HFCausalLMGRPOTrainer:
         end = start + len(response_ids)
         response_logits = logits[start:end]
         targets = torch.tensor(response_ids, dtype=torch.long, device=device)
-        current_logps = torch.log_softmax(response_logits, dim=-1).gather(
+        current_logps = torch.log_softmax(response_logits.float(), dim=-1).gather(
             1, targets.unsqueeze(1)
         ).squeeze(1)
+        if not torch.isfinite(current_logps).all():
+            raise FloatingPointError("current token log-probabilities contain non-finite values")
         old = torch.tensor(old_logps, dtype=current_logps.dtype, device=device)
-        ratio = torch.exp(torch.clamp(current_logps - old, min=-20.0, max=20.0))
+        log_ratio = torch.clamp(current_logps - old, min=-20.0, max=20.0)
+        ratio = torch.exp(log_ratio)
         clipped = torch.clamp(
             ratio,
             1.0 - self.config.clip_eps,
@@ -87,7 +88,8 @@ class HFCausalLMGRPOTrainer:
         )
         adv = torch.tensor(float(advantage), dtype=current_logps.dtype, device=device)
         surrogate = torch.minimum(ratio * adv, clipped * adv)
-        return surrogate.mean()
+        clip_fraction = ((ratio < 1.0 - self.config.clip_eps) | (ratio > 1.0 + self.config.clip_eps)).float().mean()
+        return surrogate.mean(), clip_fraction, log_ratio.abs().max()
 
     def train_step(self, samples: list[VerifiedGeneration]) -> dict[str, float]:
         if not samples:
@@ -102,15 +104,21 @@ class HFCausalLMGRPOTrainer:
 
         self.model.train()
         self.optimizer.zero_grad(set_to_none=True)
-        objectives = [
+        rows = [
             self._sample_objective(sample, record.advantage)
             for sample, record in zip(samples, records)
         ]
+        objectives = [row[0] for row in rows]
+        clip_fractions = [row[1] for row in rows]
+        max_log_ratios = [row[2] for row in rows]
         loss = -self.torch.stack(objectives).mean()
+        if not self.torch.isfinite(loss):
+            raise FloatingPointError("GRPO loss is non-finite")
         loss.backward()
         grad_norm = self.torch.nn.utils.clip_grad_norm_(
             self.model.parameters(),
             self.config.max_grad_norm,
+            error_if_nonfinite=True,
         )
         self.optimizer.step()
         return {
@@ -120,4 +128,6 @@ class HFCausalLMGRPOTrainer:
             "grad_norm": float(grad_norm.detach().cpu())
             if hasattr(grad_norm, "detach")
             else float(grad_norm),
+            "clip_fraction": float(self.torch.stack(clip_fractions).mean().detach().cpu()),
+            "max_abs_log_ratio": float(self.torch.stack(max_log_ratios).max().detach().cpu()),
         }
