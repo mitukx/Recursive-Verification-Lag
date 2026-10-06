@@ -12,6 +12,7 @@ def main():
     p.add_argument("--model")
     p.add_argument("--replay")
     p.add_argument("--output",default="artifacts/distributed-lab")
+    p.add_argument("--resume-from")
     a = p.parse_args()
     import torch
     from transformers import AutoModelForCausalLM, GPT2Config, GPT2LMHeadModel
@@ -48,7 +49,14 @@ def main():
         profiler = GPUProfiler()
         sampling = asyncio.create_task(profiler.run())
         try:
-            await asyncio.to_thread(distributed_step,model,samples,a.output,mode=a.mode)
+            await asyncio.to_thread(
+                distributed_step,
+                model,
+                samples,
+                a.output,
+                mode=a.mode,
+                resume_from=a.resume_from,
+            )
         finally:
             profiler.stop.set()
             await sampling
