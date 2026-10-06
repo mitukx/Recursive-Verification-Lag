@@ -121,7 +121,11 @@ class AsyncHFLab:
             start = time.perf_counter()
             if self.rvl_enabled:
                 samples = await self._intervene(rid,behavior_version,samples)
-            metrics = await asyncio.to_thread(self.trainer.train_step,samples)
+            if all("episode_id" in s.metadata for s in samples):
+                from .coding_lm import episode_advantages
+                metrics = await asyncio.to_thread(self.trainer.train_step,samples,advantages=episode_advantages(samples))
+            else:
+                metrics = await asyncio.to_thread(self.trainer.train_step,samples)
             self.version += 1
             self.estimated_shift += metrics.get("behavior_kl_estimate",0.0)
             self._save_checkpoint(rid)
@@ -141,13 +145,25 @@ class AsyncHFLab:
         samples = [self.verifier.rescore(s) for s in samples]
         records = [SimpleNamespace(trajectory_id=f"{rid}:{i}",policy_version=behavior_version,generation=s.generation,index=i)
                    for i,s in enumerate(samples)]
-        rows = [(record,self.verifier.verdict(sample)) for record,sample in zip(records,samples)]
+        rows = []
+        seen_episodes = set()
+        for record,sample in zip(records,samples):
+            episode = sample.metadata.get("episode_id")
+            if episode is not None and episode in seen_episodes:
+                continue
+            seen_episodes.add(episode) if episode is not None else None
+            rows.append((record,self.verifier.verdict(sample)))
         selected = self.controller.select_audits(rows,self.verifier,snapshot,self.version)
         for record in selected:
             sample = samples[record.index]
             y = await self.verifier.audit(record.generation)
             self.labels.append({"generation":asdict(record.generation),"reward":y,"proxy":sample.reward})
-            samples[record.index] = replace(sample,reward=y,metadata={**sample.metadata,"trusted":True})
+            episode = sample.metadata.get("episode_id")
+            targets = [record.index] if episode is None else [
+                i for i,s in enumerate(samples) if s.metadata.get("episode_id")==episode]
+            for index in targets:
+                samples[index] = replace(samples[index],reward=y,
+                    metadata={**samples[index].metadata,"trusted":True})
         if self.controller.should_refit(len(self.labels)):
             self.verifier.fit(self.labels)
             self.controller.refitted(len(self.labels),snapshot)
@@ -162,7 +178,12 @@ class AsyncHFLab:
                 from .contracts import canonical
                 self.replay.db.execute("UPDATE groups SET payload=? WHERE id=?",
                                        (canonical([asdict(s) for s in old]),pending_id))
-        return [self.verifier.rescore(s) for s in samples]
+        samples = [self.verifier.rescore(s) for s in samples]
+        from dataclasses import asdict
+        from .contracts import canonical
+        self.replay.db.execute("UPDATE groups SET payload=? WHERE id=?",
+                               (canonical([asdict(s) for s in samples]),rid))
+        return samples
 
     async def run(self,prompts,*,samples=4,seed=17):
         self.replay.bind({"model":self.backend.model_name,"prompts":list(prompts.items()),

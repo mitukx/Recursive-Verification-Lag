@@ -17,6 +17,7 @@ class HFTTrainerConfig:
     max_grad_norm: float = 1.0
     advantage_eps: float = 1e-6
     clip_advantage: float = 5.0
+    disable_dropout: bool = True
 
 
 class HFCausalLMGRPOTrainer:
@@ -32,6 +33,12 @@ class HFCausalLMGRPOTrainer:
         self.torch = torch
         self.model = model
         self.config = config or HFTTrainerConfig()
+        if self.config.disable_dropout:
+            for module in self.model.modules():
+                if isinstance(module,torch.nn.Dropout):
+                    module.p = 0.0
+                if isinstance(getattr(module,"attention_dropout",None),(float,int)):
+                    module.attention_dropout = 0.0
         self.optimizer = torch.optim.AdamW(
             self.model.parameters(),
             lr=self.config.learning_rate,
@@ -103,8 +110,9 @@ class HFCausalLMGRPOTrainer:
         if len(records) != len(samples):
             raise RuntimeError("advantage/sample cardinality mismatch")
 
-        # Disable stochastic dropout while retaining autograd for policy ratios.
-        self.model.eval()
+        # Training mode permits activation checkpointing; dropout was disabled
+        # explicitly so behavior ratios do not include random dropout masks.
+        self.model.train()
         self.optimizer.zero_grad(set_to_none=True)
         if advantages is None:
             advantages = [record.advantage for record in records]

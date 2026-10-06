@@ -4,6 +4,26 @@
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.
 
+## Executable asynchronous RVL lab
+
+The new [mini-lab runbook](docs/mini_frontier_lab.md) connects persistent replay,
+asynchronous actors/learner, real policy gradients, trusted verification,
+learned residual critics, adversarial task search and reward re-evaluation.
+It includes a dependency-free CPU/Mac reference, a real causal-LM path,
+model-driven Python tool agents with external Docker grading, and a torchrun
+token-replay learner. Features and GPU evidence boundaries are listed explicitly.
+
+~~~bash
+python -m src.run_mini_lab --output artifacts/async-lab --episodes 256 --actors 4
+python -m src.benchmark_mini_lab --output artifacts/ablation --seeds 17,29,43 --episodes 256 --learning-rates 0.08,0.2 --cadences 2,8
+~~~
+
+CI runs Linux/macOS replay, recovery, numerical and integration tests; real
+Transformers gradients; two-rank DDP RL; executable Docker rewards; and paired
+adaptive/fixed/no-refresh comparisons. No 7B/30B capability or GPU scaling result
+is claimed. The code supports configurable long-episode budgets; multi-hour
+successful trajectories remain an unvalidated acceptance criterion.
+
 ## Verified RL systems engineering track
 
 Alongside the RVL research, this repository contains a tested post-training

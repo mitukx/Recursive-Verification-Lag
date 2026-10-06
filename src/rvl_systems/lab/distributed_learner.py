@@ -58,6 +58,16 @@ def distributed_step(model,samples,output,*,mode="ddp",learning_rate=1e-5):
         local = [samples[i] for i in indices]
         start = time.perf_counter()
         metrics = trainer.train_step(local,advantages=[advantages[i] for i in indices])
+        keys = ("loss","mean_reward","clip_fraction","behavior_kl_estimate")
+        aggregate = torch.tensor([metrics[k] for k in keys],device=device)
+        dist.all_reduce(aggregate)
+        aggregate /= world
+        for key,value in zip(keys,aggregate.tolist()):
+            metrics[key] = value
+        ratio = torch.tensor(metrics["max_abs_log_ratio"],device=device)
+        dist.all_reduce(ratio,op=dist.ReduceOp.MAX)
+        metrics["max_abs_log_ratio"] = float(ratio)
+        metrics["samples"] = len(samples)
         if device.type == "cuda":
             torch.cuda.synchronize()
         elapsed = time.perf_counter()-start

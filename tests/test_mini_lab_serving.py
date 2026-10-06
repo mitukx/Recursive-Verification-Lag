@@ -138,6 +138,19 @@ class ToolAgentTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(all(s.generation.response.startswith("{") for s in turns))
 
 
+class EpisodeCreditTests(unittest.TestCase):
+    def test_terminal_credit_is_balanced_across_variable_length_episodes(self):
+        from src.rvl_systems.lab.coding_lm import episode_advantages
+        from src.rvl_systems.types import VerifiedGeneration
+        g = Generation("p","prompt","action",-.1,1,0)
+        samples = [VerifiedGeneration(g,1,0,0,{"episode_id":"good"}) for _ in range(3)]
+        samples += [VerifiedGeneration(g,0,0,0,{"episode_id":"bad"})]
+        advantages = episode_advantages(samples)
+        self.assertAlmostEqual(sum(advantages[:3]),-advantages[3])
+        self.assertGreater(advantages[0],0)
+        self.assertLess(advantages[3],0)
+
+
 class GPUMeasurementTests(unittest.TestCase):
     def test_mfu_requires_explicit_flop_model_and_peak(self):
         from src.rvl_systems.lab.measurement import mfu_estimate,parse_gpu_csv

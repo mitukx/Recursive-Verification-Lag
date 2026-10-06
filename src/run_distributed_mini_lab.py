@@ -20,6 +20,8 @@ def main():
         if not a.replay:
             p.error("--model requires --replay with behavior token IDs/logprobs")
         model = AutoModelForCausalLM.from_pretrained(a.model)
+        model.config.use_cache = False
+        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant":False})
         samples = read_samples(a.replay)
     else:
         model = GPT2LMHeadModel(GPT2Config(vocab_size=32,n_positions=32,
