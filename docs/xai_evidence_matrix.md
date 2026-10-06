@@ -7,6 +7,7 @@ require real GPU measurements.
 |---|---|---|
 | Async rollout orchestration | `AsyncRolloutEngine` | implemented + CI |
 | High-throughput multi-worker scheduling | `LeastLoadedScheduler`, bounded queue, per-worker inflight limits | implemented + CI |
+| Dynamic micro-batching | compatibility-keyed `DynamicBatcher` + vLLM batch-chat adapter | implemented + contract CI; GPU throughput pending |
 | Backpressure / timeout handling | scheduler counters and timeout paths | implemented + CI |
 | Worker failure handling | health streaks, quarantine, fail-fast when no healthy worker exists | implemented + CI |
 | Remote worker transport | asyncio TCP RPC server/client with request IDs and policy-version checks | implemented + integration CI |
