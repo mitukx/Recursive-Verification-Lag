@@ -49,7 +49,7 @@ explicit acceptance boundaries.
 | Executable reward security | evaluator-owned I/O comparisons outside candidate Python, isolated Docker, attack tests | broad adversarial robustness |
 | Verifier ensembles | executable public tests, trained residual critic, JSON remote judge adapter | real stronger-model calibration |
 | Distributed token-level RL | actual two-rank DDP optimizer update; FSDP/DCP entry point | NCCL/FSDP GPU validation |
-| Deployment | health-probed blue/green serving, drain old episode leases | real GPU reload/uptime evidence |
+| Deployment | health-probed blue/green serving, drain old episode leases | real GPU reload/uptime evidence |\n| Transactional candidate promotion | paired held-out incumbent/candidate gate, family-slice regression caps, rollback of rejected learner state, hash-chained decision ledger | statistical power analysis and real GPU canary deployment |
 | Token-exact serving data | server-owned token IDs/logprobs, strict schema/model checks | real vLLM/SGLang GPU acceptance |
 | Metrics | p50/p95/p99, LM tokens/s, utilization sampler, explicit-input MFU estimator | measured sustained GPU scaling |
 

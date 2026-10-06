@@ -18,7 +18,7 @@ python -m src.run_mini_lab --output artifacts/async-lab --episodes 256 --actors 
 python -m src.benchmark_mini_lab --output artifacts/ablation --seeds 17,29,43 --episodes 256 --learning-rates 0.08,0.2 --cadences 2,8
 ~~~
 
-CI runs Linux/macOS replay, recovery, numerical and integration tests; real
+Candidate updates are now transactional: the active policy and candidate are compared on the same held-out suite, promotion fails closed on configured regression criteria, rejected learner state is rolled back, and every decision is recorded in a tamper-evident hash chain.\n\nCI runs Linux/macOS replay, recovery, numerical and integration tests; real
 Transformers gradients; two-rank DDP RL; executable Docker rewards; and paired
 adaptive/fixed/no-refresh comparisons. No 7B/30B capability or GPU scaling result
 is claimed. The code supports configurable long-episode budgets; multi-hour

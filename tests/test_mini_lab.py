@@ -10,6 +10,7 @@ from src.rvl_systems.lab.agent import (
     Snapshot, TabularLearner, WeightRegistry, public_reward, rollout, trusted_reward)
 from src.rvl_systems.lab.contracts import Step, Task, Trajectory, Verdict
 from src.rvl_systems.lab.control import ControlConfig, RVLControlPlane, Curriculum
+from src.rvl_systems.lab.promotion import PromotionDecision
 from src.rvl_systems.lab.runtime import LabConfig, MiniLab, percentile
 from src.rvl_systems.lab.store import LeaseLost, ReplayStore
 from src.rvl_systems.lab.verification import VerifierEnsemble
@@ -271,28 +272,36 @@ class AgentTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 lab.close()
 
-    async def test_regression_gate_preserves_serving_snapshot_on_restart(self):
+    async def test_regression_gate_rolls_back_rejected_learner_and_serving(self):
         with tempfile.TemporaryDirectory() as tmp:
             cfg = LabConfig(episodes=8,actors=1,batch_size=4,deterministic=True,tool_latency_s=0)
             lab = MiniLab(tmp,cfg)
             try:
                 for i in range(4):
                     lab.store.put(trajectory(str(i),program=(1,2),action=1),verdict())
-                lab.evaluate = lambda:1.0
+                lab._promotion_decision = lambda incumbent,candidate: PromotionDecision(
+                    True,incumbent.version,candidate.version,0.5,0.75,0.25,{"0":0.25},
+                    4,0,44,0,(),"a"*64)
                 accepted = lab._train_batch(lab.store.claim(4,0,16))
                 self.assertTrue(accepted)
                 served_version = lab.serving.version
+                served_state = json.loads(json.dumps(lab.learner.state()))
                 for i in range(4,8):
                     lab.store.put(trajectory(str(i),program=(1,2),action=1),verdict())
-                lab.evaluate = lambda:0.0
-                self.assertFalse(lab._train_batch(lab.store.claim(4,1,16)))
+                lab._promotion_decision = lambda incumbent,candidate: PromotionDecision(
+                    False,incumbent.version,candidate.version,0.75,0.0,-0.75,{"0":-0.75},
+                    0,4,44,4,("mean_reward_regression",),"b"*64)
+                self.assertFalse(lab._train_batch(lab.store.claim(4,served_version,16)))
                 self.assertEqual(lab.serving.version,served_version)
-                self.assertGreater(lab.learner.version,lab.serving.version)
+                self.assertEqual(lab.learner.state(),served_state)
+                self.assertEqual(lab.promotion_ledger.seq,2)
             finally:
                 lab.close()
             restarted = MiniLab(tmp,cfg)
             try:
                 self.assertEqual(restarted.registry.active.version,served_version)
+                self.assertEqual(restarted.learner.version,served_version)
+                self.assertEqual(restarted.promotion_ledger.seq,2)
             finally:
                 restarted.close()
 
