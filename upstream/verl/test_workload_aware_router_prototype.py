@@ -76,6 +76,19 @@ class WorkloadAwareRouterTests(unittest.TestCase):
         self.assertNotIn(sid, lb.get_status()["server_work"])
         lb.release_server(sid, request_id="r")
 
+    def test_homogeneous_control_is_neutral(self):
+        report = run(n=256, servers=8, seed=17, mode="homogeneous")
+        self.assertAlmostEqual(
+            report["workload_aware"]["makespan_s"],
+            report["least_inflight"]["makespan_s"],
+            places=12,
+        )
+        self.assertAlmostEqual(
+            report["workload_aware"]["work_imbalance_ratio"],
+            report["least_inflight"]["work_imbalance_ratio"],
+            places=12,
+        )
+
     def test_trace_benchmark_improves_heterogeneous_balance(self):
         report = run(n=256, servers=8, seed=17)
         self.assertLess(
