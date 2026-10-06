@@ -1,6 +1,8 @@
 """Minimal RLVR systems stack for Recursive Verification Lag experiments."""
 
 from .grpo import GRPOConfig, compute_group_advantages
+from .hf_backend import HFLocalBackend
+from .hf_trainer import HFCausalLMGRPOTrainer, HFTTrainerConfig
 from .pipeline import RLVRPipeline, PipelineConfig
 from .refresh import AdaptiveRefreshController
 from .rollout import AsyncRolloutEngine, RolloutRequest
@@ -14,6 +16,9 @@ __all__ = [
     "ExactMatchVerifier",
     "GRPOConfig",
     "Generation",
+    "HFLocalBackend",
+    "HFCausalLMGRPOTrainer",
+    "HFTTrainerConfig",
     "PipelineConfig",
     "RLVRPipeline",
     "RolloutRequest",

@@ -21,28 +21,31 @@ def compute_group_advantages(
     eps: float = 1e-6,
     clip: float = 5.0,
 ) -> list[TrainRecord]:
-    """Normalize rewards independently for each prompt group."""
-    by_prompt: dict[str, list[VerifiedGeneration]] = {}
+    """Normalize rewards per prompt while preserving the original sample order."""
+    by_prompt: dict[str, list[float]] = {}
     for sample in samples:
-        by_prompt.setdefault(sample.generation.prompt_id, []).append(sample)
+        by_prompt.setdefault(sample.generation.prompt_id, []).append(sample.reward)
+
+    stats: dict[str, tuple[float, float]] = {}
+    for prompt_id, rewards in by_prompt.items():
+        mean = fmean(rewards)
+        variance = fmean((reward - mean) ** 2 for reward in rewards)
+        stats[prompt_id] = (mean, math.sqrt(variance + eps))
 
     records: list[TrainRecord] = []
-    for prompt_id, group in by_prompt.items():
-        rewards = [x.reward for x in group]
-        mean = fmean(rewards)
-        variance = fmean((r - mean) ** 2 for r in rewards)
-        scale = math.sqrt(variance + eps)
-        for item in group:
-            advantage = max(-clip, min(clip, (item.reward - mean) / scale))
-            records.append(
-                TrainRecord(
-                    prompt_id=prompt_id,
-                    response=item.generation.response,
-                    reward=item.reward,
-                    advantage=advantage,
-                    old_logprob=item.generation.logprob,
-                )
+    for item in samples:
+        prompt_id = item.generation.prompt_id
+        mean, scale = stats[prompt_id]
+        advantage = max(-clip, min(clip, (item.reward - mean) / scale))
+        records.append(
+            TrainRecord(
+                prompt_id=prompt_id,
+                response=item.generation.response,
+                reward=item.reward,
+                advantage=advantage,
+                old_logprob=item.generation.logprob,
             )
+        )
     return records
 
 

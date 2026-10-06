@@ -160,8 +160,10 @@ class VLLMHTTPBackend:
         out = []
         for choice in choices:
             text = str(choice.get("text", ""))
-            token_logprobs = (choice.get("logprobs") or {}).get("token_logprobs") or []
+            logprobs = choice.get("logprobs") or {}
+            token_logprobs = logprobs.get("token_logprobs") or []
             finite = [float(x) for x in token_logprobs if x is not None]
+            tokens = [str(x) for x in (logprobs.get("tokens") or [])]
             out.append(
                 Generation(
                     prompt_id=prompt_id,
@@ -170,7 +172,12 @@ class VLLMHTTPBackend:
                     logprob=sum(finite),
                     token_count=max(1, len(finite)),
                     latency_s=latency,
-                    metadata={"backend": "vllm-http", "model": self.model},
+                    metadata={
+                        "backend": "vllm-http",
+                        "model": self.model,
+                        "response_tokens": tokens,
+                        "response_token_logprobs": finite,
+                    },
                 )
             )
         return out

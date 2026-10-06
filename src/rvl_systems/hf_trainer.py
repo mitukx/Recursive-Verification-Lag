@@ -1,0 +1,123 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from statistics import fmean
+from typing import Any
+
+from .grpo import compute_group_advantages
+from .types import VerifiedGeneration
+
+
+@dataclass(frozen=True)
+class HFTTrainerConfig:
+    learning_rate: float = 1e-6
+    clip_eps: float = 0.2
+    max_grad_norm: float = 1.0
+    advantage_eps: float = 1e-6
+    clip_advantage: float = 5.0
+
+
+class HFCausalLMGRPOTrainer:
+    """Minimal token-level clipped GRPO trainer for a local causal LM.
+
+    It consumes token ids and old token log-probabilities captured by
+    HFLocalBackend. This is intentionally single-device and small-scale; the
+    interface is designed to be replaced by FSDP/DeepSpeed for larger runs.
+    """
+
+    def __init__(self, model: Any, *, config: HFTTrainerConfig | None = None) -> None:
+        try:
+            import torch
+        except ImportError as exc:
+            raise RuntimeError(
+                "HFCausalLMGRPOTrainer requires optional systems dependencies"
+            ) from exc
+        self.torch = torch
+        self.model = model
+        self.config = config or HFTTrainerConfig()
+        self.optimizer = torch.optim.AdamW(
+            self.model.parameters(),
+            lr=self.config.learning_rate,
+        )
+
+    @staticmethod
+    def _metadata(sample: VerifiedGeneration) -> tuple[list[int], list[int], list[float]]:
+        meta = sample.generation.metadata
+        try:
+            prompt_ids = [int(x) for x in meta["prompt_token_ids"]]
+            response_ids = [int(x) for x in meta["response_token_ids"]]
+            old_logps = [float(x) for x in meta["response_token_logprobs"]]
+        except KeyError as exc:
+            raise ValueError(
+                "generation lacks token metadata; use HFLocalBackend for local training"
+            ) from exc
+        if not prompt_ids or not response_ids:
+            raise ValueError("prompt and response token sequences must be non-empty")
+        if len(response_ids) != len(old_logps):
+            raise ValueError("response token ids/logprobs length mismatch")
+        return prompt_ids, response_ids, old_logps
+
+    def _sample_objective(
+        self,
+        sample: VerifiedGeneration,
+        advantage: float,
+    ):
+        torch = self.torch
+        prompt_ids, response_ids, old_logps = self._metadata(sample)
+        device = next(self.model.parameters()).device
+        sequence = torch.tensor(
+            [prompt_ids + response_ids],
+            dtype=torch.long,
+            device=device,
+        )
+        logits = self.model(input_ids=sequence).logits[0]
+        start = len(prompt_ids) - 1
+        end = start + len(response_ids)
+        response_logits = logits[start:end]
+        targets = torch.tensor(response_ids, dtype=torch.long, device=device)
+        current_logps = torch.log_softmax(response_logits, dim=-1).gather(
+            1, targets.unsqueeze(1)
+        ).squeeze(1)
+        old = torch.tensor(old_logps, dtype=current_logps.dtype, device=device)
+        ratio = torch.exp(torch.clamp(current_logps - old, min=-20.0, max=20.0))
+        clipped = torch.clamp(
+            ratio,
+            1.0 - self.config.clip_eps,
+            1.0 + self.config.clip_eps,
+        )
+        adv = torch.tensor(float(advantage), dtype=current_logps.dtype, device=device)
+        surrogate = torch.minimum(ratio * adv, clipped * adv)
+        return surrogate.mean()
+
+    def train_step(self, samples: list[VerifiedGeneration]) -> dict[str, float]:
+        if not samples:
+            return {"loss": 0.0, "mean_reward": 0.0, "samples": 0.0}
+        records = compute_group_advantages(
+            samples,
+            eps=self.config.advantage_eps,
+            clip=self.config.clip_advantage,
+        )
+        if len(records) != len(samples):
+            raise RuntimeError("advantage/sample cardinality mismatch")
+
+        self.model.train()
+        self.optimizer.zero_grad(set_to_none=True)
+        objectives = [
+            self._sample_objective(sample, record.advantage)
+            for sample, record in zip(samples, records)
+        ]
+        loss = -self.torch.stack(objectives).mean()
+        loss.backward()
+        grad_norm = self.torch.nn.utils.clip_grad_norm_(
+            self.model.parameters(),
+            self.config.max_grad_norm,
+        )
+        self.optimizer.step()
+        return {
+            "loss": float(loss.detach().cpu()),
+            "mean_reward": fmean(sample.reward for sample in samples),
+            "samples": float(len(samples)),
+            "grad_norm": float(grad_norm.detach().cpu())
+            if hasattr(grad_norm, "detach")
+            else float(grad_norm),
+        }
