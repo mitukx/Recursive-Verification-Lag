@@ -435,6 +435,26 @@ class LearnedVerifierEvidenceValidatorTest(unittest.TestCase):
                     root, protocol, expected_research_sha="research-sha"
                 )
 
+    def test_rehashed_top_level_primary_tamper_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, protocol = self.make_completed_fixture(Path(tmp))
+            path = root / "summary.json"
+            summary = json.loads(path.read_text())
+            summary["seed_results"][0]["geometry_spearman"] = -1.0
+            write_json(path, summary)
+            files = {
+                str(file.relative_to(root)): sha256(file)
+                for file in root.rglob("*")
+                if file.is_file() and file.name != "manifest.json"
+            }
+            manifest = json.loads((root / "manifest.json").read_text())
+            manifest["files"] = files
+            write_json(root / "manifest.json", manifest)
+            with self.assertRaises(AssertionError):
+                validate_evidence(
+                    root, protocol, expected_research_sha="research-sha"
+                )
+
     def test_failed_execution_is_valid_retained_evidence(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
