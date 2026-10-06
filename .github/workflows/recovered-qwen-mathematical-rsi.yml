@@ -35,14 +35,14 @@ jobs:
       - name: Execute locked exploratory replay
         run: |
           rm -rf artifacts/recovered-qwen-math-rsi
-          python scripts/run_recovered_qwen_mathematical_rsi.py \
+          python -m scripts.run_recovered_qwen_mathematical_rsi \
             --protocol configs/recovered_qwen_mathematical_rsi_v1.json \
             --bank data/recovered_qwen05b_bank.jsonl \
             --output artifacts/recovered-qwen-math-rsi
       - name: Independent semantic validation
         run: |
           mkdir -p artifacts/validation
-          python scripts/validate_recovered_qwen_mathematical_rsi.py \
+          python -m scripts.validate_recovered_qwen_mathematical_rsi \
             artifacts/recovered-qwen-math-rsi \
             --protocol configs/recovered_qwen_mathematical_rsi_v1.json \
             --bank data/recovered_qwen05b_bank.jsonl \
