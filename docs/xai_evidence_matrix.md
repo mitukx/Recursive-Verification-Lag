@@ -20,6 +20,7 @@ require real GPU measurements.
 | Verifier integration | exact and functional verifier interfaces | implemented + CI |
 | Weight-version correctness | stale rollout rejection | implemented + CI |
 | Trainer-to-worker synchronization control plane | immutable manifests + checksums + worker acknowledgements | implemented + CI |
+| Two-phase policy deployment | publish -> all-worker ack -> activate; real TCP-worker version transition test | implemented + integration CI |
 | Recovery | atomic reference checkpoint save/restore; remote retries | implemented + CI |
 | Observability | counters, p50/p95/max latency, tokens/s | implemented + CI |
 | Profiling | Chrome trace recorder and benchmark reports | implemented + CI |
