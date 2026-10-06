@@ -27,14 +27,22 @@ external validity and real GPU evidence remain the main unresolved gates.
    proxy progress remains positive. The declared KL=0.005 phase prediction has
    accuracy 1.0; harmful-cell false-progress rate is 1.0 versus 0.0 in benign
    cells. The mean-sign phase boundary remains correct through KL 0.3.
-4. The local theory explains the phase: d E_q[y] / d beta at beta=0 equals
-   Cov_p(y,v), and the intervention makes its sign equal sign(1+sigma*rho).
-   This is a direct mechanism showing why policy KL alone cannot determine safe
-   verifier reuse.
-5. A real-model T4 learning pilot is independently locked with true versus
-   shuffled reward, fixed train/test identities, no-update reproducibility and
-   terminal evaluation that never chooses updates. Its GPU outcome is still a
-   separate evidence gate.
+4. The theory now extends beyond the local derivative. Along the exact
+   exponential path, true progress is the path integral of Cov_q(y,v), while
+   proxy progress integrates Var_q(v) and KL integrates beta*Var_q(v). This
+   makes endpoint-KL insufficiency exact at finite update size.
+5. A second prospective experiment turns the mechanism into a bounded trusted-
+   label controller. Across 1,024 tasks, a Hoeffding gate on Cov_p(y,v) reaches
+   harmful/benign decisive rates 0.8408/0.8213 at 16 labels and
+   0.9775/0.9775 at 32 labels, with zero observed wrong-sign decisive decisions.
+   The statistical contract explicitly rejects adaptive-priority samples as
+   i.i.d. evidence.
+6. A real-model Qwen/GSM8K matched-drift bridge is locked with paired harmful
+   and benign proxy interventions, calibration-only LR selection, exact
+   model/optimizer/RNG reset, post-update token-k3 drift measurement, and
+   evaluation labels withheld until both updates are fixed. Its immutable-source
+   self-hosted GPU workflow has been triggered; the outcome is still a separate
+   evidence gate.
 
 ## Prior-art implications
 
@@ -61,8 +69,10 @@ algebra as a major new theorem.
 | Proposed claim | Evidence required | Current decision |
 |---|---|---|
 | Verifier-error geometry can cause false progress at fixed policy KL | Pre-registered intervention varying alignment while fixing KL/error norm; complete raw grid | Established in synthetic mechanism test; 512 tasks, primary phase accuracy 1.0 |
+| Trusted labels can detect harmful local alignment | Pre-registered iid-policy covariance audit with confidence bound and no KL input | Established synthetically; 1,024 tasks, 97.75% harmful/benign decisive rate by 32 labels, zero observed wrong-sign decisions |
 | Refresh improves new-task verification | Independent task/sample split, strong public baseline, matched optimization strength, paid-label curve | Original development primary negative; scalar secondary explained |
-| Geometry transfers to a learned LLM verifier | Real sampled rollouts, learned/proxy verifier, matched realized KL, untouched terminal evaluation, multiple seeds | Not established; highest-priority external-validity gap |
+| Geometry transfers to a neural-policy update | Real sampled rollouts, proxy intervention, matched realized drift, untouched terminal evaluation, multiple seeds | Locked Qwen bridge and immutable GPU workflow exist; result pending |
+| Geometry transfers to a learned verifier rather than artificial proxy intervention | Learned reward/verifier model, prospective alignment measurement/intervention, sealed evaluation | Not established; next external-validity layer after Qwen bridge |
 | An observable controller predicts stale-verifier harm | Development-only fitting, pre-update features, five-task heldout identification gate, report false interventions and missed harm | Five development onset tasks; heldout unopened |
 | Learned capability improves | Actual parameter updates, independent terminal evaluation, no-update and shuffled-label controls, multiple seeds, raw predictions | T4 pilot locked; GPU result pending |
 | Practical verification efficiency | All physical scoring, distinct labels, wall time, compute and rejected proposals reported together | Development costs archived; full tradeoff not established |
@@ -88,10 +98,13 @@ that maps to current frontier-RL work. It should still not be described as
 "xAI-level" in the sense of proven production-scale model training. The two
 highest-value missing pieces are:
 
-1. reproduce the verifier-error-geometry effect with an actual learned/proxy
-   verifier on real LLM rollouts while matching realized policy KL;
+1. execute the locked Qwen matched-drift bridge and retain the result even if
+   negative or underpowered; then repeat with a genuinely learned verifier if
+   the neural-policy effect survives;
 2. execute and retain the real-GPU RL systems evidence (serving, RL update,
-   synchronization, profiling and multi-GPU scaling) already scaffolded on main.
+   synchronization, profiling and multi-GPU scaling) already scaffolded on main;
+3. add a separate randomized iid audit stream or propensity-aware estimator
+   before enabling the statistical covariance gate inside the adaptive runtime.
 
 Those two results would be substantially more valuable for hiring evidence than
 adding additional orchestration abstractions or README claims.
