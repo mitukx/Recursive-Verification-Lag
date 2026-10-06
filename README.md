@@ -25,6 +25,14 @@ progress rate 1.0 and benign cells 0.0 at KL 0.005. The boundary remains correct
 in mean sign through KL 0.3. This is synthetic mechanism identification, not
 heldout LLM evidence.
 
+**Geometry-aware audit controller:** [trusted-label covariance gate](notes/progress/40_geometry_aware_trusted_label_gate.md)
+was also locked before execution and run on 1,024 independent tasks. Using only
+trusted audit labels plus free proxy scores, the fail-closed gate blocks harmful
+alignment and allows benign alignment with 84.1% / 82.1% decisive rates at 16
+labels and 97.75% / 97.75% at 32 labels; no wrong-sign decisive decision was
+observed at any reported budget. The bound is valid only for explicit i.i.d.
+single-policy audits; adaptive priority sampling is not treated as certified.
+
 **When must verification catch up with a self-improving policy?**
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.
@@ -111,6 +119,20 @@ This leads to the working interpretation:
 
 > **Verification lag is policy shift relative to verifier-error geometry, not elapsed time.**
 
+### 5. Finite-KL progress is a path integral of verifier/truth alignment
+
+For the exponential path (q_\beta \propto p e^{\beta v}),
+
+\[
+\mathbb E_{q_\beta}[y]-\mathbb E_p[y]
+=\int_0^\beta \operatorname{Cov}_{q_t}(y,v)\,dt,
+\]
+
+while proxy progress is (int_0^\beta \operatorname{Var}_{q_t}(v)dt\ge0)
+and endpoint KL is (int_0^\beta t\operatorname{Var}_{q_t}(v)dt).
+Thus equal endpoint KL does not determine true progress unless extra assumptions
+couple verifier/truth covariance to proxy variance.
+
 ## Representative empirical results
 
 | Experiment | Main result |
@@ -124,6 +146,7 @@ This leads to the working interpretation:
 | 2D recursive phase | failure approximately collapses under stale exposure within a fixed score calibration |
 | Invariance test | max log-density ratio transfers well across optimizer families, but no shift-only scalar works across verifier classes |
 | Prospective equal-KL alignment stress | same KL + same error norm can flip true progress by rotating verifier-error alignment; primary phase accuracy 1.0 |
+| Geometry-aware covariance audit | 1,024 tasks; harmful/benign decisive rates 84.1%/82.1% at 16 trusted labels and 97.75%/97.75% at 32; zero observed wrong-sign decisions |
 
 ## Key figures
 
@@ -205,7 +228,7 @@ The central mechanism is now prospective in a controlled environment. The highes
 5. evaluate only on an untouched terminal split across multiple seeds,
 6. retain raw generations, verifier outputs, parameter-update diagnostics, compute and failures.
 
-A separately pinned Qwen/GSM8K T4 pilot already implements the real-update and independent-terminal-evaluation scaffold; GPU execution remains a separate evidence gate.
+A separately pinned Qwen/GSM8K matched-drift bridge now implements the real-update contract: paired harmful/benign proxy geometry, calibration-only learning-rate selection, realized token-KL matching, and evaluation labels withheld until both updates are fixed. Its immutable-source self-hosted GPU workflow has been triggered; real GPU outcomes remain a separate evidence gate.
 
 ---
 
