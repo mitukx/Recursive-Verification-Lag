@@ -11,13 +11,13 @@ require real GPU measurements.
 | Workload admission / overload control | weighted in-flight work budget, bounded queued work, immediate shedding, per-workload caps, round-robin fairness, cancellation-safe leases | implemented + CI artifact |
 | Dynamic micro-batching | compatibility-keyed `DynamicBatcher` + vLLM batch-chat adapter | implemented + contract CI; GPU throughput pending |
 | Backpressure / timeout handling | scheduler counters and timeout paths | implemented + CI |
-| Worker failure handling | cross-worker failover retries, circuit breaker, cooldown, single half-open probe, explicit recovery, deterministic chaos benchmark | implemented + CI artifact |
+| Worker failure handling | cross-worker failover retries, circuit breaker, cooldown, single half-open probe, explicit recovery, deterministic chaos + error/OOM/timeout failure matrix | implemented + CI artifact |
 | Remote worker transport | asyncio TCP RPC server/client with request IDs and policy-version checks | implemented + integration CI |
 | Remote inference integration | OpenAI-compatible `VLLMHTTPBackend` | implemented; real GPU benchmark pending |
 | Local real-model rollout | `HFLocalBackend` with CUDA/MPS/CPU selection | real Transformers smoke CI |
 | RLVR / GRPO update | grouped advantages + clipped token-level causal-LM trainer | real Transformers update smoke CI; quality benchmark pending |
 | PyTorch distributed execution | 2-process torchrun, broadcast, all-reduce, DDP gradient sync + optimizer step | real CI |
-| RL numerics safety | fp32 log-softmax, finite checks, clipped ratios, grad non-finite guard, clip diagnostics | implemented + CI |
+| RL numerics safety | fp32 log-softmax, finite checks, clipped ratios, grad non-finite guard, clip diagnostics, FP16/BF16 parity gates | implemented + CI; real GPU kernel parity pending |
 | Low-precision policy | auto/fp32/fp16/bf16 model-load policy with CUDA bf16 capability guard | implemented; GPU numerical comparison pending |
 | Verifier integration | exact and functional verifier interfaces | implemented + CI |
 | Weight-version correctness | stale rollout rejection | implemented + CI |
