@@ -7,5 +7,6 @@
   "issue": 38,
   "purpose": "execute locked matched-drift Qwen GRPO verifier-error alignment bridge; retain negative/underpowered outcomes",
   "execution_source_sha": "9b539907da02e4832d3fa5186940a72803a0e2c7",
-  "trigger_revision": 2
+  "trigger_revision": 3,
+  "concurrency_policy": "cancel older duplicate bridge runs; keep latest immutable-source execution"
 }
