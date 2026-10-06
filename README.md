@@ -338,6 +338,7 @@ imperfect. See [transfer evidence and limitations](notes/progress/26_prospective
 ## Verification-aware asynchronous RL
 
 The causal-LM systems path now separates **generation, verification, and learning** into independently scheduled stages. Behavior tokens/logprobs are inserted into durable replay before reward computation; a separate verifier worker leases pending groups, attaches a versioned verifier result, and only then makes them learner-eligible. Learner admission enforces independent policy-lag and verifier-lag bounds. Learned-verifier refreshes requeue stale ready groups for re-verification without regenerating behavior trajectories, and repeated verifier failure is quarantined rather than converted into a training reward.
+A bounded **verification-debt controller** now applies rollout backpressure using pending/verifying work, stale verifier rewards, policy/verifier lag, and unverified age. A deterministic sync-vs-naive-async-vs-verification-aware queue benchmark is retained as control-plane evidence before the real-GPU phase diagram in Issue #66.
 
 This is currently contract-level CPU/tiny-model evidence, not a GPU throughput claim. See [the verification-aware async RL design](docs/verification_aware_async_rl.md).
 
