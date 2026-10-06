@@ -28,6 +28,14 @@ class WorkerHealthTest(unittest.TestCase):
             health.is_available("w0")
         )
 
+    def test_stale_success_cannot_reopen_quarantined_worker(self):
+        health = WorkerHealth(failure_threshold=1)
+        self.assertTrue(health.record_failure("w0"))
+        self.assertFalse(health.is_available("w0"))
+        health.record_success("w0")
+        self.assertFalse(health.is_available("w0"))
+        self.assertIn("w0", health.quarantined)
+
     def test_half_open_reservation_is_single_probe(self):
         health = WorkerHealth(
             failure_threshold=1,

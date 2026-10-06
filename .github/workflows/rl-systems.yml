@@ -29,6 +29,7 @@ on:
       - 'src/benchmark_rollout_engine.py'
       - 'src/benchmark_scheduler.py'
       - 'src/benchmark_scheduler_chaos.py'
+      - 'src/benchmark_scheduler_slo.py'
       - 'src/benchmark_vllm_cluster.py'
       - 'tests/**'
       - '.github/workflows/rl-systems.yml'

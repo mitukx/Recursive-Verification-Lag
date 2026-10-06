@@ -11,6 +11,10 @@ from .types import Generation
 from .worker_health import WorkerHealth
 
 
+class WorkerUnavailableError(RuntimeError):
+    """A previously admitted worker became unavailable before execution."""
+
+
 @dataclass
 class WorkerSlot:
     name: str
@@ -199,6 +203,15 @@ class LeastLoadedScheduler:
                     ),
                 )
                 semaphore_acquired = True
+                if not self.health.can_execute(worker.name):
+                    self.telemetry.increment(
+                        "scheduler.stale_reservations",
+                        1,
+                    )
+                    self.health.cancel_reservation(worker.name)
+                    raise WorkerUnavailableError(
+                        f"rollout worker {worker.name} became unavailable"
+                    )
             except TimeoutError:
                 self.telemetry.increment(
                     "scheduler.capacity_wait_timeouts",
@@ -255,6 +268,8 @@ class LeastLoadedScheduler:
                         1,
                     )
                 self._record_failure(worker)
+            raise
+        except WorkerUnavailableError:
             raise
         except Exception:
             self.telemetry.increment("scheduler.failures", 1)

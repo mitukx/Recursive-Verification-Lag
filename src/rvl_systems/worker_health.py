@@ -32,6 +32,12 @@ class WorkerHealth:
 
     def record_success(self, worker: str) -> None:
         self.consecutive_failures[worker] = 0
+        if worker not in self.quarantined:
+            return
+        if worker not in self.half_open:
+            # A success from work admitted before a later failure quarantined
+            # this worker is stale evidence and must not close the circuit.
+            return
         self.quarantined.discard(worker)
         self.quarantined_at.pop(worker, None)
         self.half_open.discard(worker)
@@ -65,6 +71,10 @@ class WorkerHealth:
             return False
         self.half_open.add(worker)
         return True
+
+    def can_execute(self, worker: str) -> bool:
+        """Whether an admitted request may start backend execution now."""
+        return worker not in self.quarantined or worker in self.half_open
 
     def cancel_reservation(self, worker: str) -> None:
         """Release a half-open reservation without changing health state."""
