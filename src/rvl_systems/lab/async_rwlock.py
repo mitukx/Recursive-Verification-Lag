@@ -30,14 +30,18 @@ class AsyncRWLock:
 
     @asynccontextmanager
     async def write(self):
+        acquired = False
         async with self._condition:
             self._waiting_writers += 1
             try:
                 while self._writer or self._readers:
                     await self._condition.wait()
                 self._writer = True
+                acquired = True
             finally:
                 self._waiting_writers -= 1
+                if not acquired:
+                    self._condition.notify_all()
         try:
             yield
         finally:
