@@ -1,0 +1,37 @@
+name: qwen-learned-verifier-contract
+
+on:
+  pull_request:
+    paths:
+      - 'configs/qwen_learned_verifier_bridge_v1.json'
+      - 'scripts/run_qwen_learned_verifier_bridge.py'
+      - 'scripts/validate_qwen_learned_verifier_evidence.py'
+      - 'scripts/validate_qwen_alignment_bridge_evidence.py'
+      - 'tests/test_qwen_learned_verifier_bridge.py'
+      - 'tests/test_qwen_learned_verifier_evidence.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU contract dependencies
+        run: python -m pip install 'numpy>=1.26'
+      - name: Compile learned-verifier runner and validator
+        run: |
+          python -m py_compile \
+            scripts/run_qwen_learned_verifier_bridge.py \
+            scripts/validate_qwen_learned_verifier_evidence.py
+      - name: Run learned-verifier CPU contracts
+        run: |
+          python -m unittest \
+            tests.test_qwen_learned_verifier_bridge \
+            tests.test_qwen_learned_verifier_evidence -v
