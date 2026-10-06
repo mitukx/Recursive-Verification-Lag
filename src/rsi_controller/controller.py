@@ -34,10 +34,13 @@ class RSIController:
 
     def close(self): self.memory.close()
 
-    def _evaluate(self,state,policy_version,verifier_version,age,seed):
+    def _evaluate(self,state,policy_version,verifier_version,age,*,include_sealed=False):
+        # Candidate/champion comparisons use the same fixed evaluation seed.
+        # Proposal seeds govern candidate construction, never evaluator randomness.
         result=self.sandbox.run("src.rsi_controller.evaluation:synthetic_experiment_entrypoint",{
             "suite_seed":self.cfg.seed,"candidate_seed":self.cfg.seed,"candidate_state":state,
-            "policy_version":policy_version,"verifier_version":verifier_version,"policy_verifier_age":age},self.cfg.resources)
+            "policy_version":policy_version,"verifier_version":verifier_version,
+            "policy_verifier_age":age,"include_sealed":include_sealed},self.cfg.resources)
         if not result.ok or result.payload is None: raise RuntimeError(result.error or "sandbox experiment failed")
         return bundle_from_payload(result.payload),result
 
@@ -45,8 +48,8 @@ class RSIController:
         try: return self.memory.current_champion()
         except RuntimeError:
             state=json.loads(json.dumps(DEFAULT_STATE)); c0=ChampionSnapshot("champion-0000",0,state,0,0,None); self.memory.add_champion(c0)
-            baseline,_=self._evaluate(state,0,0,0,self.cfg.seed)
-            record=GenerationRecord(0,c0.champion_id,"baseline",baseline.development.trusted_score,baseline.promotion.trusted_score,baseline.sealed.trusted_score,baseline.development.reward,baseline.promotion.trusted_score,abs(baseline.development.reward-baseline.development.trusted_score),0,0,0,baseline.promotion.latency_p50,baseline.promotion.latency_p95,baseline.promotion.throughput,baseline.promotion.failure_rate,baseline.promotion.compute_cost,"BASELINE")
+            baseline,_=self._evaluate(state,0,0,0)
+            record=GenerationRecord(0,c0.champion_id,"baseline",baseline.development.trusted_score,baseline.promotion.trusted_score,baseline.development.reward,baseline.promotion.trusted_score,abs(baseline.development.reward-baseline.development.trusted_score),0,0,0,baseline.promotion.latency_p50,baseline.promotion.latency_p95,baseline.promotion.throughput,baseline.promotion.failure_rate,baseline.promotion.compute_cost,"BASELINE")
             self.metrics.append(record); self.memory.event("baseline_evaluated",suite_digests=baseline.suite_digests,metrics=asdict(record)); return c0
 
     def _development_failures(self,champion_eval):
@@ -59,18 +62,22 @@ class RSIController:
         target=generations if generations is not None else self.cfg.generations
         if target<=0: raise ValueError("generations must be positive")
         champion=self._ensure_initial_champion()
-        existing=len([e for e in self.memory.recent_events(100000) if e["kind"]=="promotion_decision"]); start_generation=existing+1
+        events=self.memory.recent_events(100000)
+        existing=len([e for e in events if e["kind"]=="promotion_decision"])
+        if any(e["kind"]=="sealed_final_audit" for e in events):
+            raise RuntimeError("sealed final audit already opened; this experiment directory is terminal")
+        start_generation=existing+1
         attempted=promoted=rejected=0
         for generation in range(start_generation,target+1):
             champion=self.memory.current_champion(); champ_age=max(0,champion.policy_version-champion.verifier_version)
-            champion_eval,_=self._evaluate(dict(champion.state),champion.policy_version,champion.verifier_version,champ_age,self.cfg.seed)
-            ctx=PlannerContext(generation,champion.champion_id,dict(champion.state),self._development_failures(champion_eval),{"promotion":champion_eval.promotion.trusted_score,"sealed":champion_eval.sealed.trusted_score},self.cfg.seed)
+            champion_eval,_=self._evaluate(dict(champion.state),champion.policy_version,champion.verifier_version,champ_age)
+            ctx=PlannerContext(generation,champion.champion_id,dict(champion.state),self._development_failures(champion_eval),{"promotion":champion_eval.promotion.trusted_score},self.cfg.seed)
             proposal=self.planner.propose(ctx); self.memory.record_proposal(generation,proposal)
             candidate=self.generator.generate(proposal,champion.state); self.memory.record_candidate(candidate); attempted+=1
             candidate_policy_version=champion.policy_version+1; candidate_verifier_version=champion.verifier_version
             age=max(0,candidate_policy_version-candidate_verifier_version)
-            candidate_eval,sandbox_result=self._evaluate(dict(candidate.full_state),candidate_policy_version,candidate_verifier_version,age,candidate.seed)
-            for split in ("evolution","development","promotion","sealed"):
+            candidate_eval,sandbox_result=self._evaluate(dict(candidate.full_state),candidate_policy_version,candidate_verifier_version,age)
+            for split in ("evolution","development","promotion"):
                 self.memory.record_evaluation(candidate.candidate_id,split,candidate_eval.suite_digests[split],asdict(getattr(candidate_eval,split)))
             self.memory.event("sandbox_completed",candidate_id=candidate.candidate_id,elapsed_s=sandbox_result.elapsed_s,stdout=sandbox_result.stdout,stderr=sandbox_result.stderr)
             hacking=detect_false_progress(candidate_eval,champion_eval); lag=self.lag.assess(candidate_eval,champion_eval)
@@ -78,7 +85,7 @@ class RSIController:
             decision=self.promotion.decide(candidate.candidate_id,candidate_eval,champion_eval,hacking,lag)
             if lag.trust_level=="uncertain" and decision.accepted:
                 refreshed_version=candidate_policy_version; refreshed_state=json.loads(json.dumps(candidate.full_state)); refreshed_state.setdefault("V",{})["version"]=refreshed_version
-                refreshed_eval,refresh_run=self._evaluate(refreshed_state,candidate_policy_version,refreshed_version,0,candidate.seed)
+                refreshed_eval,refresh_run=self._evaluate(refreshed_state,candidate_policy_version,refreshed_version,0)
                 refreshed_lag=self.lag.assess(refreshed_eval,champion_eval); refreshed_hacking=detect_false_progress(refreshed_eval,champion_eval)
                 decision=self.promotion.decide(candidate.candidate_id,refreshed_eval,champion_eval,refreshed_hacking,refreshed_lag)
                 candidate_eval,lag,hacking=refreshed_eval,refreshed_lag,refreshed_hacking
@@ -93,8 +100,29 @@ class RSIController:
             else:
                 rejected+=1; status="REJECTED"; lesson="Rejected: "+"; ".join(decision.reasons)
             self.memory.add_lesson(generation,candidate.candidate_id,lesson)
-            record=GenerationRecord(generation,champion.champion_id,candidate.candidate_id,candidate_eval.development.trusted_score,candidate_eval.promotion.trusted_score,candidate_eval.sealed.trusted_score,candidate_eval.development.reward,candidate_eval.promotion.trusted_score,hacking.verification_gap,candidate_eval.verifier_version,candidate_eval.policy_version,candidate_eval.policy_verifier_age,candidate_eval.promotion.latency_p50,candidate_eval.promotion.latency_p95,candidate_eval.promotion.throughput,candidate_eval.promotion.failure_rate,candidate_eval.promotion.compute_cost,status)
-            self.metrics.append(record); print(f"Generation {generation} | {candidate.candidate_id} | {status} | promotion={record.promotion_score:.4f} sealed={record.sealed_score:.4f} gap={record.verification_gap:.4f}")
+            record=GenerationRecord(generation,champion.champion_id,candidate.candidate_id,candidate_eval.development.trusted_score,candidate_eval.promotion.trusted_score,candidate_eval.development.reward,candidate_eval.promotion.trusted_score,hacking.verification_gap,candidate_eval.verifier_version,candidate_eval.policy_version,candidate_eval.policy_verifier_age,candidate_eval.promotion.latency_p50,candidate_eval.promotion.latency_p95,candidate_eval.promotion.throughput,candidate_eval.promotion.failure_rate,candidate_eval.promotion.compute_cost,status)
+            self.metrics.append(record); print(f"Generation {generation} | {candidate.candidate_id} | {status} | promotion={record.promotion_score:.4f} gap={record.verification_gap:.4f}")
+
+        # The sealed suite is opened exactly once, after all promotion decisions.
+        # Once opened, this experiment directory is terminal: continuing would
+        # make subsequent candidate choices adaptive to the sealed result.
+        baseline_champion=self.memory.get_champion("champion-0000")
+        final_champion=self.memory.current_champion()
+        baseline_final,_=self._evaluate(dict(baseline_champion.state),baseline_champion.policy_version,baseline_champion.verifier_version,0,include_sealed=True)
+        final_age=max(0,final_champion.policy_version-final_champion.verifier_version)
+        champion_final,_=self._evaluate(dict(final_champion.state),final_champion.policy_version,final_champion.verifier_version,final_age,include_sealed=True)
+        if baseline_final.sealed is None or champion_final.sealed is None:
+            raise RuntimeError("sealed final audit was not produced")
+        sealed_audit={
+            "baseline_champion":baseline_champion.champion_id,
+            "final_champion":final_champion.champion_id,
+            "baseline_trusted_score":baseline_final.sealed.trusted_score,
+            "final_trusted_score":champion_final.sealed.trusted_score,
+            "trusted_score_delta":champion_final.sealed.trusted_score-baseline_final.sealed.trusted_score,
+            "suite_digest":champion_final.suite_digests["sealed"],
+            "access_policy":"opened only after the final promotion decision; never used by planner or promotion gate",
+        }
+        self.memory.event("sealed_final_audit",**sealed_audit)
         rows=self.metrics.read(); plots=self.metrics.render_plots(rows)
-        summary={"mode":self.cfg.mode.value,"attempted":attempted,"promoted":promoted,"rejected":rejected,"current_champion":self.memory.current_champion().champion_id,"research_memory_integrity":self.memory.integrity_check(),"evaluation":self.evaluation.public_description(),"plots":[str(p) for p in plots],"bounded_claim":"This is a bounded experimental self-improvement system. It is not evidence of unrestricted or generally recursive intelligence improvement."}
+        summary={"mode":self.cfg.mode.value,"attempted":attempted,"promoted":promoted,"rejected":rejected,"current_champion":final_champion.champion_id,"research_memory_integrity":self.memory.integrity_check(),"evaluation":self.evaluation.public_description(),"final_sealed_audit":sealed_audit,"plots":[str(p) for p in plots],"bounded_claim":"This is a bounded experimental self-improvement system. It is not evidence of unrestricted or generally recursive intelligence improvement."}
         self.metrics.write_summary(summary); return summary
