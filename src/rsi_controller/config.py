@@ -20,7 +20,7 @@ def digest(value: Any) -> str:
 @dataclass(frozen=True)
 class PromotionThresholds:
     min_promotion_gain: float = 0.005
-    min_sealed_gain: float = 0.0
+    min_development_gain: float = 0.0
     min_trusted_gain: float = 0.0
     max_verification_gap: float = 0.08
     max_failure_rate_increase: float = 0.03
