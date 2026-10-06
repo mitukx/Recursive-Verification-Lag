@@ -1,0 +1,53 @@
+{
+  "status": "locked retrospective real-LLM mathematical-RSI replay; no downstream outcome tuning",
+  "source_parent_sha": "468f7a5968f438b0aa585f08146d636f43d844d0",
+  "input_experiment": "qwen_learned_verifier_bridge_v1",
+  "input_requirements": {
+    "manifest_status": "completed",
+    "expected_input_protocol_sha256": "80fdf4973a849f208aae01fcae9a7cf28d2b0b57cbf5807cf4e2cd39bc4b215f",
+    "expected_input_research_source_sha": "8602c0a94d246a25efea7079c2e65cd514995d48",
+    "expected_seed_values": [17, 29, 43],
+    "expected_candidate_count_per_seed": 64
+  },
+  "methods": [
+    "passive_fixed",
+    "active_minimax",
+    "coded_random",
+    "coded_fixed_probe",
+    "coded_fixed_probe_info"
+  ],
+  "trusted_label_budgets": [8, 16, 32, 64],
+  "audit_replicates": 512,
+  "confidence_delta": 0.05,
+  "seed_offset": 91000000,
+  "coded_verification": {
+    "probe_strata": 4,
+    "max_corrupt_fraction": 0.25,
+    "strata_definition": "candidate identities sorted lexicographically then assigned round-robin; independent of trusted labels and verifier scores",
+    "local_obligation": "positive covariance contribution y*(v-E[v]) within each fixed stratum",
+    "critical_global_obligation": "global covariance confidence interval"
+  },
+  "information_budget": {
+    "target_error": 0.1,
+    "multiplier": 2.0,
+    "rule": "ceil(multiplier * probe_strata * log(1/target_error)); requested budget is charged even when the gate refuses to decide"
+  },
+  "reconstruction_diagnostic": {
+    "branching_factors": [2, 4, 8, 16],
+    "lambda_proxy": "2 * thresholded verifier agreement - 1",
+    "hard_gate": false,
+    "reason": "the retained candidate bank does not instantiate an independent homogeneous broadcast tree"
+  },
+  "primary_budget": 32,
+  "primary_comparison": "compare all five controllers at exactly 32 charged trusted-label calls per cell/replicate; do not retune after replay",
+  "interpretation_rule": "primary success requires lower harmful-update allow rate on stale/shuffled arms without a larger wrong-sign decisive rate; report increased inconclusive/refresh rate and beneficial blocking as costs, not hidden failures",
+  "no_success_only_substitution": "Do not change budgets, strata, corruption fraction, confidence delta, information multiplier, included arms, or terminal harmful-update definition after inspecting output.",
+  "limitations": [
+    "retrospective downstream replay on an already-designed real-model candidate bank, not a prospectively generated new model experiment",
+    "coded local obligations are an engineering construction inspired by PCP robustness, not a reduction from PCP-for-PPAD",
+    "fixed probe strata are not proved universal hitting sets",
+    "d*log(1/epsilon) is a research budget proxy, not a proved LLM verifier lower bound",
+    "d*lambda^2 is diagnostic only; broadcast-tree assumptions are not established",
+    "terminal preference shift is measured from the original learned-verifier update and is not rerun under each replay controller"
+  ]
+}
