@@ -336,6 +336,8 @@ def run(protocol_path: Path, bank_path: Path, output: Path) -> dict[str, Any]:
     for cell_index, cell in enumerate(cells):
         for budget_index, budget in enumerate(budgets):
             for method_index, method in enumerate(METHODS):
+                if method == "proxy_only" and budget_index > 0:
+                    continue
                 method_reps = 1 if method in {"proxy_only", "global_impact", "coded_fixed_probe", "coded_fixed_probe_info"} else reps
                 for rep in range(method_reps):
                     seed = (
