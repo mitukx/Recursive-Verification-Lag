@@ -242,6 +242,34 @@ class VerificationDebtTests(unittest.TestCase):
                 store.close()
 
 
+    def test_verified_rewrite_rejects_mixed_versions_and_behavior_mutation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            from src.rvl_systems.lab.token_replay import TokenReplay
+            from src.rvl_systems.types import Generation, VerifiedGeneration
+            store = TokenReplay(Path(tmp)/"replay.sqlite",capacity=4)
+            try:
+                g1 = Generation("p","prompt","a",0.0,1,0.0,{})
+                g2 = Generation("p","prompt","b",0.0,1,0.0,{})
+                store.put_pending("g",0,[g1,g2],now=1)
+                token,rid,_,rows = store.claim_verification(0,1,0,0,now=2)
+                samples = [
+                    VerifiedGeneration(rows[0],1.0,0.0,0),
+                    VerifiedGeneration(rows[1],0.0,0.0,0),
+                ]
+                store.complete_verification(rid,token,samples,now=3)
+                with self.assertRaises(ValueError):
+                    store.rewrite_verified("g",[
+                        replace(samples[0],verifier_version=0),
+                        replace(samples[1],verifier_version=1),
+                    ],now=4)
+                mutated = replace(g1,response="tampered")
+                with self.assertRaises(ValueError):
+                    store.rewrite_verified("g",[
+                        replace(samples[0],generation=mutated),samples[1]
+                    ],now=4)
+            finally:
+                store.close()
+
     def test_synthetic_phase_benchmark_bounds_slow_verifier_debt(self):
         from src.benchmark_verification_debt import SimulationConfig, benchmark
         report = benchmark(SimulationConfig(
