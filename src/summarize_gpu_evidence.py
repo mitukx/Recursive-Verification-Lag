@@ -32,6 +32,7 @@ def summarize(
     fsdp_resume: str | Path | None = None,
     vllm: str | Path | None = None,
     failover: str | Path | None = None,
+    gpu_inventory: str | Path | None = None,
 ) -> dict[str, Any]:
     checks: dict[str, bool] = {}
     evidence: dict[str, Any] = {}
@@ -154,6 +155,11 @@ def summarize(
         and len(set(known_git_shas)) == 1
     )
 
+    hardware = None
+    if gpu_inventory is not None:
+        hardware = _load(gpu_inventory)
+        sources["gpu_inventory"] = _source(gpu_inventory)
+
     required = {
         "qwen_transactional_rlvr",
         "fsdp_scaling_measured",
@@ -173,12 +179,92 @@ def summarize(
         "failed_checks": failed,
         "evidence": evidence,
         "sources": sources,
+        "hardware": hardware,
         "git_sha": known_git_shas[0] if checks["consistent_git_sha"] else None,
         "claim_boundary": (
             "Complete means the required raw evidence files satisfy mechanical "
             "acceptance checks; it is not a claim of frontier-scale performance."
         ),
     }
+
+
+def render_markdown(report: dict[str, Any]) -> str:
+    status = "PASS" if report["complete"] else "INCOMPLETE"
+    lines = [
+        "# GPU Evidence Card",
+        "",
+        f"**Status:** {status}  ",
+        f"**Git SHA:** {report.get('git_sha') or 'unverified'}",
+        "",
+    ]
+    hardware = report.get("hardware") or {}
+    gpus = hardware.get("gpus") or []
+    if gpus:
+        lines += [
+            "## Hardware",
+            "",
+            " / ".join(
+                f"{gpu.get('name','unknown')} ({gpu.get('memory_total_mb','?')} MiB)"
+                for gpu in gpus
+            ),
+            "",
+        ]
+    evidence = report.get("evidence", {})
+    qwen = evidence.get("qwen_rlvr")
+    if qwen:
+        lines += [
+            "## RLVR",
+            "",
+            f"- Model: {qwen.get('model')}",
+            f"- Held-out accuracy: {qwen.get('before_accuracy')} -> {qwen.get('after_accuracy')} "
+            f"(delta {qwen.get('accuracy_delta')})",
+            f"- Transactional promotion records: {qwen.get('promotion_records')}",
+            "",
+        ]
+    fsdp = evidence.get("fsdp_scaling")
+    if fsdp:
+        lines += [
+            "## Distributed training",
+            "",
+            f"- Throughput: {fsdp.get('single_tokens_per_s')} -> {fsdp.get('multi_tokens_per_s')} tokens/s",
+            f"- 1->2 GPU speedup: {fsdp.get('speedup')}",
+            f"- Scaling efficiency: {fsdp.get('scaling_efficiency')}",
+            f"- Resume verified: {bool(evidence.get('fsdp_resume',{}).get('resumed_from_checkpoint'))}",
+            "",
+        ]
+    serving = evidence.get("vllm_serving")
+    if serving:
+        lines += [
+            "## Serving",
+            "",
+            f"- Peak measured tokens/s: {serving.get('max_tokens_per_s')}",
+            f"- Peak measured requests/s: {serving.get('max_requests_per_s')}",
+            "",
+        ]
+    failover = evidence.get("vllm_failover")
+    if failover:
+        lines += [
+            "## Failure recovery",
+            "",
+            f"- Completion rate: {failover.get('completion_rate')}",
+            f"- Successful failovers: {failover.get('failover_successes')}",
+            "",
+        ]
+    if report.get("failed_checks") or report.get("missing_checks"):
+        lines += [
+            "## Unmet checks",
+            "",
+            f"- Failed: {', '.join(report.get('failed_checks') or []) or 'none'}",
+            f"- Missing: {', '.join(report.get('missing_checks') or []) or 'none'}",
+            "",
+        ]
+    lines += [
+        "## Claim boundary",
+        "",
+        report["claim_boundary"],
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def main() -> None:
@@ -190,7 +276,9 @@ def main() -> None:
     parser.add_argument("--fsdp-resume")
     parser.add_argument("--vllm")
     parser.add_argument("--failover")
+    parser.add_argument("--gpu-inventory")
     parser.add_argument("--output", required=True)
+    parser.add_argument("--markdown")
     parser.add_argument("--require-all", action="store_true")
     args = parser.parse_args()
 
@@ -200,12 +288,15 @@ def main() -> None:
         fsdp_resume=args.fsdp_resume,
         vllm=args.vllm,
         failover=args.failover,
+        gpu_inventory=args.gpu_inventory,
     )
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     Path(args.output).write_text(
         json.dumps(report, indent=2, sort_keys=True),
         encoding="utf-8",
     )
+    if args.markdown:
+        Path(args.markdown).write_text(render_markdown(report), encoding="utf-8")
     print(json.dumps(report, indent=2, sort_keys=True))
     if args.require_all and not report["complete"]:
         raise SystemExit(2)
