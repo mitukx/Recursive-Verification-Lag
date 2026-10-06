@@ -1,0 +1,35 @@
+name: validate-rlvr-systems
+
+on:
+  pull_request:
+    paths:
+      - 'src/rvl_systems/**'
+      - 'src/run_rlvr_systems_demo.py'
+      - 'tests/test_rlvr_systems.py'
+      - 'docs/xai_rl_systems.md'
+      - '.github/workflows/rl-systems.yml'
+  push:
+    branches:
+      - systems/xai-rl-stack-v1
+    paths:
+      - 'src/rvl_systems/**'
+      - 'src/run_rlvr_systems_demo.py'
+      - 'tests/test_rlvr_systems.py'
+      - '.github/workflows/rl-systems.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Unit tests
+        run: python -m unittest tests.test_rlvr_systems -v
+      - name: End-to-end CPU smoke test
+        run: python -m src.run_rlvr_systems_demo --rounds 3 --samples 8

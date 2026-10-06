@@ -197,3 +197,23 @@ it does not update the code LM weights. See [the runbook](docs/pretrained_pilot_
 The prospective two-bank transfer study preserves both the favorable 32-draw result
 and a reversed six-source safety comparison. All 512 transfer candidates are
 imperfect. See [transfer evidence and limitations](notes/progress/26_prospective_transfer.md).
+
+
+## RLVR systems engineering track
+
+This repository now also includes a small end-to-end post-training systems
+stack designed to make the implementation path from the RVL research question
+explicit. It includes bounded-concurrency asynchronous rollouts, verifier
+execution, grouped reward normalization with a GRPO-style policy update,
+movement/staleness-triggered verifier refresh, telemetry, and an
+OpenAI-compatible HTTP backend for remote vLLM/SGLang serving.
+
+The CPU path is intentionally runnable on a Mac and in CI:
+
+```bash
+python -m unittest tests.test_rlvr_systems -v
+python -m src.run_rlvr_systems_demo --rounds 12 --samples 32
+```
+
+See [docs/xai_rl_systems.md](docs/xai_rl_systems.md) for the architecture,
+GPU-serving integration point, and systems benchmark plan.
