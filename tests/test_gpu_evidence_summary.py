@@ -14,7 +14,9 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
 
     def test_complete_bundle_requires_all_measured_contracts(self):
         with tempfile.TemporaryDirectory() as tmp:
+            sha = "f" * 40
             qwen = self.write(tmp, "qwen.json", {
+                "git_sha": sha,
                 "model": "Qwen/test",
                 "metrics": {
                     "before_accuracy": 0.5,
@@ -26,6 +28,7 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                 },
             })
             fsdp = self.write(tmp, "fsdp.json", {
+                "git_sha": sha,
                 "single_world_size": 1,
                 "multi_world_size": 2,
                 "single_tokens_per_s": 100,
@@ -34,16 +37,18 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                 "scaling_efficiency": 0.9,
             })
             resume = self.write(tmp, "resume.json", {
+                "git_sha": sha,
                 "world_size": 2,
                 "resumed_from_checkpoint": True,
                 "tokens_per_s": 175,
             })
             vllm = self.write(tmp, "vllm.json", [
-                {"config":{"concurrency":1},"metrics":{"tokens_per_s":10,"requests_per_s":1,"ttft_ms_p95":10,"tbt_ms_p95":2,"latency_ms_p95":20}},
-                {"config":{"concurrency":2},"metrics":{"tokens_per_s":18,"requests_per_s":1.8,"ttft_ms_p95":11,"tbt_ms_p95":2.2,"latency_ms_p95":21}},
-                {"config":{"concurrency":4},"metrics":{"tokens_per_s":30,"requests_per_s":3,"ttft_ms_p95":15,"tbt_ms_p95":2.5,"latency_ms_p95":25}},
+                {"git_sha":sha,"config":{"concurrency":1},"metrics":{"tokens_per_s":10,"requests_per_s":1,"ttft_ms_p95":10,"tbt_ms_p95":2,"latency_ms_p95":20}},
+                {"git_sha":sha,"config":{"concurrency":2},"metrics":{"tokens_per_s":18,"requests_per_s":1.8,"ttft_ms_p95":11,"tbt_ms_p95":2.2,"latency_ms_p95":21}},
+                {"git_sha":sha,"config":{"concurrency":4},"metrics":{"tokens_per_s":30,"requests_per_s":3,"ttft_ms_p95":15,"tbt_ms_p95":2.5,"latency_ms_p95":25}},
             ])
             failover = self.write(tmp, "failover.json", {
+                "git_sha": sha,
                 "metrics": {
                     "completion_rate": 1.0,
                     "scheduler.failover_successes": 3,
@@ -61,6 +66,7 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
     def test_missing_and_failed_evidence_are_explicit(self):
         with tempfile.TemporaryDirectory() as tmp:
             qwen = self.write(tmp, "qwen.json", {
+                "git_sha": "a" * 40,
                 "metrics": {
                     "transactional_promotion": 0,
                     "promotion_records": 0,
