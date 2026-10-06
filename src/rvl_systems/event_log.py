@@ -46,7 +46,16 @@ class ControlPlaneEventLog:
         )
 
     def semantic_digest(self) -> str:
-        payload = [asdict(event) for event in self.events]
+        """Hash semantics independent of cross-request interleaving."""
+        grouped: dict[str, list[dict]] = {}
+        for event in self.events:
+            raw = asdict(event)
+            raw.pop("seq", None)
+            grouped.setdefault(event.request_id, []).append(raw)
+        payload = [
+            {"request_id": request_id, "events": grouped[request_id]}
+            for request_id in sorted(grouped)
+        ]
         encoded = json.dumps(
             payload,
             sort_keys=True,
