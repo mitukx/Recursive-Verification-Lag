@@ -33,12 +33,15 @@ class CandidateGenerator:
         return set()
 
     def validate_patch_path(self, path: str) -> None:
-        normalized = str(PurePosixPath(path))
-        if normalized.startswith("../") or normalized.startswith("/"):
+        if "\\" in path:
+            raise MutationRejected("code patch path must use repository-relative POSIX separators")
+        candidate = PurePosixPath(path)
+        if candidate.is_absolute() or any(part in {"..", ""} for part in candidate.parts):
             raise MutationRejected("code patch escapes repository")
         if not self.policy.allow_code_patches:
             raise MutationRejected("code patches are disabled")
-        if not any(normalized.startswith(prefix) for prefix in self.policy.code_patch_allowlist):
+        roots = [PurePosixPath(prefix.rstrip("/")) for prefix in self.policy.code_patch_allowlist]
+        if not any(root in candidate.parents for root in roots):
             raise MutationRejected(f"path is outside code-patch allowlist: {path}")
 
     def generate(self, proposal: ImprovementProposal, champion_state: Mapping[str, Any]) -> Candidate:
