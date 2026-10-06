@@ -203,20 +203,68 @@ def validate_seed(seed_root: Path, seed_summary: dict[str, Any]) -> dict[str, An
     for cid in bank:
         task_id = cid.rsplit(":candidate-", 1)[0]
         grouped.setdefault(task_id, []).append(cid)
+
+    recorded_preference_rows = load_jsonl(seed_root / "evaluation_preference.jsonl")
+    recorded_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in recorded_preference_rows:
+        key = (str(row["task_id"]), str(row["arm"]))
+        _require(key not in recorded_by_key, f"duplicate evaluation preference row {key}")
+        _require(key[1] in ARMS, f"unknown evaluation preference arm {key[1]}")
+        recorded_by_key[key] = row
+    expected_keys = {(task_id, arm) for task_id in grouped for arm in ARMS}
+    _require(set(recorded_by_key) == expected_keys, "evaluation preference row coverage mismatch")
+
     shifts: dict[str, list[float]] = {arm: [] for arm in ARMS}
     informative = 0
     for task_id, ids in grouped.items():
+        ids = sorted(ids, key=lambda cid: int(cid.rsplit(":candidate-", 1)[1]))
         y = np.asarray([label_by_id[cid] for cid in ids], float)
-        if not (np.any(y > 0.5) and np.any(y <= 0.5)):
-            continue
-        informative += 1
+        informative_task = bool(np.any(y > 0.5) and np.any(y <= 0.5))
+        informative += int(informative_task)
         positive = y > 0.5
         for arm in ARMS:
-            base = np.asarray([eval_rows[arm][cid]["baseline_sequence_logprob"] for cid in ids], float)
-            post = np.asarray([eval_rows[arm][cid]["post_update_sequence_logprob"] for cid in ids], float)
+            recorded = recorded_by_key[(task_id, arm)]
+            np.testing.assert_allclose(
+                np.asarray(recorded["trusted_rewards"], float),
+                y,
+                atol=0,
+                rtol=0,
+            )
+            _require(
+                bool(recorded["informative"]) == informative_task,
+                f"evaluation informative flag mismatch for {task_id}/{arm}",
+            )
+            if not informative_task:
+                for field in ("baseline_margin", "post_margin", "preference_shift"):
+                    _require(
+                        recorded.get(field) is None,
+                        f"uninformative evaluation row has {field} for {task_id}/{arm}",
+                    )
+                continue
+            base = np.asarray(
+                [eval_rows[arm][cid]["baseline_sequence_logprob"] for cid in ids],
+                float,
+            )
+            post = np.asarray(
+                [eval_rows[arm][cid]["post_update_sequence_logprob"] for cid in ids],
+                float,
+            )
             base_margin = float(base[positive].mean() - base[~positive].mean())
             post_margin = float(post[positive].mean() - post[~positive].mean())
-            shifts[arm].append(post_margin - base_margin)
+            shift = post_margin - base_margin
+            _require(
+                _close(recorded["baseline_margin"], base_margin),
+                f"evaluation baseline margin mismatch for {task_id}/{arm}",
+            )
+            _require(
+                _close(recorded["post_margin"], post_margin),
+                f"evaluation post margin mismatch for {task_id}/{arm}",
+            )
+            _require(
+                _close(recorded["preference_shift"], shift),
+                f"evaluation preference shift mismatch for {task_id}/{arm}",
+            )
+            shifts[arm].append(shift)
 
     _require(
         int(seed_summary["informative_evaluation_prompts"]) == informative,
