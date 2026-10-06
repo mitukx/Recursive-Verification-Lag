@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -35,11 +36,13 @@ def summarize(
     checks: dict[str, bool] = {}
     evidence: dict[str, Any] = {}
     sources: dict[str, Any] = {}
+    git_shas: list[str] = []
 
     if qwen is not None:
         payload = _load(qwen)
         metrics = payload.get("metrics", {})
         transactional = bool(metrics.get("transactional_promotion", 0))
+        git_shas.append(str(payload.get("git_sha", "unknown")))
         promotion_records = int(metrics.get("promotion_records", 0))
         evidence["qwen_rlvr"] = {
             "model": payload.get("model"),
@@ -50,11 +53,21 @@ def summarize(
             "promotion_records": promotion_records,
             "promotion_head_sha256": metrics.get("promotion_head_sha256"),
         }
-        checks["qwen_transactional_rlvr"] = transactional and promotion_records > 0
+        before = metrics.get("before_accuracy")
+        after = metrics.get("after_accuracy")
+        head = metrics.get("promotion_head_sha256")
+        checks["qwen_transactional_rlvr"] = (
+            transactional
+            and promotion_records > 0
+            and isinstance(head, str) and len(head) == 64
+            and isinstance(before, (int, float)) and math.isfinite(float(before)) and 0 <= float(before) <= 1
+            and isinstance(after, (int, float)) and math.isfinite(float(after)) and 0 <= float(after) <= 1
+        )
         sources["qwen_rlvr"] = _source(qwen)
 
     if fsdp is not None:
         payload = _load(fsdp)
+        git_shas.append(str(payload.get("git_sha", "unknown")))
         evidence["fsdp_scaling"] = {
             "single_world_size": payload.get("single_world_size"),
             "multi_world_size": payload.get("multi_world_size"),
@@ -67,6 +80,8 @@ def summarize(
         }
         checks["fsdp_scaling_measured"] = (
             int(payload.get("multi_world_size", 0)) > int(payload.get("single_world_size", 0))
+            and math.isfinite(float(payload.get("speedup", 0.0)))
+            and math.isfinite(float(payload.get("scaling_efficiency", 0.0)))
             and float(payload.get("speedup", 0.0)) > 0.0
             and float(payload.get("scaling_efficiency", 0.0)) > 0.0
         )
@@ -74,6 +89,7 @@ def summarize(
 
     if fsdp_resume is not None:
         payload = _load(fsdp_resume)
+        git_shas.append(str(payload.get("git_sha", "unknown")))
         resumed = payload.get("resumed_from_checkpoint") is True
         evidence["fsdp_resume"] = {
             "world_size": payload.get("world_size"),
@@ -89,6 +105,7 @@ def summarize(
             raise ValueError("vLLM summary must be a list of benchmark reports")
         phases = []
         for row in payload:
+            git_shas.append(str(row.get("git_sha", "unknown")))
             metrics = row.get("metrics", {})
             config = row.get("config", {})
             phases.append({
@@ -107,12 +124,13 @@ def summarize(
         unique_concurrency = {x["concurrency"] for x in phases if x["concurrency"] > 0}
         checks["vllm_concurrency_sweep"] = (
             len(unique_concurrency) >= 3
-            and all(x["tokens_per_s"] > 0 for x in phases)
+            and all(math.isfinite(x["tokens_per_s"]) and x["tokens_per_s"] > 0 for x in phases)
         )
         sources["vllm_serving"] = _source(vllm)
 
     if failover is not None:
         payload = _load(failover)
+        git_shas.append(str(payload.get("git_sha", "unknown")))
         metrics = payload.get("metrics", {})
         completion = float(metrics.get("completion_rate", 0.0))
         successes = float(metrics.get("scheduler.failover_successes", 0.0))
@@ -129,12 +147,20 @@ def summarize(
         )
         sources["vllm_failover"] = _source(failover)
 
+    known_git_shas = [sha for sha in git_shas if sha and sha != "unknown"]
+    checks["consistent_git_sha"] = (
+        len(known_git_shas) == len(git_shas)
+        and bool(known_git_shas)
+        and len(set(known_git_shas)) == 1
+    )
+
     required = {
         "qwen_transactional_rlvr",
         "fsdp_scaling_measured",
         "fsdp_resume_verified",
         "vllm_concurrency_sweep",
         "vllm_failover_verified",
+        "consistent_git_sha",
     }
     missing = sorted(required - checks.keys())
     failed = sorted(key for key, ok in checks.items() if not ok)
@@ -147,6 +173,7 @@ def summarize(
         "failed_checks": failed,
         "evidence": evidence,
         "sources": sources,
+        "git_sha": known_git_shas[0] if checks["consistent_git_sha"] else None,
         "claim_boundary": (
             "Complete means the required raw evidence files satisfy mechanical "
             "acceptance checks; it is not a claim of frontier-scale performance."
