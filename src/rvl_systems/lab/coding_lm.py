@@ -34,6 +34,7 @@ class CodingAsyncHFLab(AsyncHFLab):
     async def _actor(self,prompts,samples,seed):
         try:
             for i,(task_id,_) in enumerate(prompts.items()):
+                await self._await_generation_admission()
                 rid = f"group-{i:08d}"
                 if self.replay.db.execute("SELECT 1 FROM groups WHERE id=?",(rid,)).fetchone():
                     continue
