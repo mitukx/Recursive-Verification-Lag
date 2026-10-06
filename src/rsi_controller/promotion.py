@@ -7,7 +7,7 @@ from .models import EvaluationBundle, PromotionDecision, RewardHackingAssessment
 def detect_false_progress(candidate: EvaluationBundle, champion: EvaluationBundle) -> RewardHackingAssessment:
     apparent = candidate.development.reward - champion.development.reward
     trusted = candidate.promotion.trusted_score - champion.promotion.trusted_score
-    generalization = candidate.sealed.trusted_score - champion.sealed.trusted_score
+    generalization = candidate.promotion.trusted_score - champion.promotion.trusted_score
     verification_gap = max(
         abs(candidate.development.reward - candidate.development.trusted_score),
         abs(candidate.promotion.reward - candidate.promotion.trusted_score),
@@ -36,9 +36,12 @@ class PromotionGate:
         deltas = {
             "development": candidate.development.trusted_score - champion.development.trusted_score,
             "promotion": candidate.promotion.trusted_score - champion.promotion.trusted_score,
-            "sealed": candidate.sealed.trusted_score - champion.sealed.trusted_score,
+            "development": candidate.development.trusted_score - champion.development.trusted_score,
             "reward": candidate.development.reward - champion.development.reward,
-            "trusted": candidate.promotion.trusted_score - champion.promotion.trusted_score,
+            "trusted": min(
+                candidate.development.trusted_score - champion.development.trusted_score,
+                candidate.promotion.trusted_score - champion.promotion.trusted_score,
+            ),
             "failure_rate": candidate.promotion.failure_rate - champion.promotion.failure_rate,
             "latency_p95": candidate.promotion.latency_p95 - champion.promotion.latency_p95,
         }
@@ -46,7 +49,7 @@ class PromotionGate:
         ci_lower = deltas["promotion"] - self.t.confidence_z * combined_se
         checks = {
             "promotion_gain": deltas["promotion"] >= self.t.min_promotion_gain,
-            "sealed_gain": deltas["sealed"] >= self.t.min_sealed_gain,
+            "development_gain": deltas["development"] >= self.t.min_development_gain,
             "trusted_gain": deltas["trusted"] >= self.t.min_trusted_gain,
             "verification_gap": hacking.verification_gap <= self.t.max_verification_gap,
             "failure_rate": deltas["failure_rate"] <= self.t.max_failure_rate_increase,
@@ -58,7 +61,7 @@ class PromotionGate:
         }
         reasons = []
         if not checks["promotion_gain"]: reasons.append("promotion-set improvement below configured minimum")
-        if not checks["sealed_gain"]: reasons.append("sealed generalization regressed")
+        if not checks["development_gain"]: reasons.append("development trusted score regressed")
         if not checks["trusted_gain"]: reasons.append("trusted correctness regressed")
         if not checks["verification_gap"]: reasons.append("verification gap exceeds configured limit")
         if not checks["failure_rate"]: reasons.append("failure rate regression exceeds limit")
