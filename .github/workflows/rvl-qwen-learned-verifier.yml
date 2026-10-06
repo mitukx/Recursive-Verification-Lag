@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: a7fc4e0a300c30fb5292c757e4441579ab16334d
+          ref: d02826584b8df391dfad059b92756b5acdc38e63
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -43,7 +43,7 @@ jobs:
           assert torch.cuda.is_available(), 'CUDA required'
           print('torch', torch.__version__, 'cuda', torch.version.cuda, 'device', torch.cuda.get_device_name(0))
           PY
-          test "$(git rev-parse HEAD)" = "a7fc4e0a300c30fb5292c757e4441579ab16334d"
+          test "$(git rev-parse HEAD)" = "d02826584b8df391dfad059b92756b5acdc38e63"
       - name: Validate learned-verifier CPU contracts
         run: |
           python -m py_compile scripts/run_qwen_learned_verifier_bridge.py
