@@ -72,12 +72,12 @@ before spending more GPU budget.
 After a completed learned-verifier run:
 
 ```bash
-python scripts/run_real_llm_mathematical_rsi.py \
+python -m scripts.run_real_llm_mathematical_rsi \
   --protocol configs/real_llm_mathematical_rsi_v1.json \
   --input-root /path/to/qwen_learned_verifier_bridge_v1 \
   --output results/real_llm_mathematical_rsi_v1
 
-python scripts/validate_real_llm_mathematical_rsi_evidence.py \
+python -m scripts.validate_real_llm_mathematical_rsi_evidence \
   results/real_llm_mathematical_rsi_v1 \
   --protocol configs/real_llm_mathematical_rsi_v1.json \
   --input-root /path/to/qwen_learned_verifier_bridge_v1

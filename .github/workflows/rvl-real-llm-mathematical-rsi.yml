@@ -60,7 +60,7 @@ jobs:
       - name: Revalidate learned-verifier evidence chain
         run: |
           mkdir -p promotion/recomputed
-          python scripts/validate_qwen_learned_verifier_evidence.py \
+          python -m scripts.validate_qwen_learned_verifier_evidence \
             upstream/qwen_learned_verifier/results/qwen_learned_verifier_bridge_v1 \
             --protocol upstream/qwen_learned_verifier/configs/qwen_learned_verifier_bridge_v1.json \
             --expected-research-sha "$LEARNED_VERIFIER_SOURCE_SHA" \
@@ -75,7 +75,7 @@ jobs:
           assert recomputed['execution_status'] == 'completed'
           assert recomputed['scientific_result'] in {'direction_passed','direction_failed','underpowered'}
           PY
-          python scripts/research_evidence_promotion.py validate \
+          python -m scripts.research_evidence_promotion validate \
             upstream/qwen_learned_verifier/promotion/qwen_alignment_to_learned_verifier.json \
             --stage qwen_alignment_to_learned_verifier \
             --downstream-run-id "${{ inputs.learned_verifier_run_id }}" \
@@ -83,7 +83,7 @@ jobs:
             --downstream-protocol upstream/qwen_learned_verifier/configs/qwen_learned_verifier_bridge_v1.json
       - name: Create downstream evidence receipt
         run: |
-          python scripts/research_evidence_promotion.py create \
+          python -m scripts.research_evidence_promotion create \
             --stage learned_verifier_to_mathematical_rsi \
             --upstream-run-id "${{ inputs.learned_verifier_run_id }}" \
             --upstream-artifact-name "rvl-qwen-learned-verifier-v1-${{ inputs.learned_verifier_run_id }}" \
@@ -102,14 +102,14 @@ jobs:
       - name: Execute locked real-model replay
         run: |
           rm -rf results/real_llm_mathematical_rsi_v1
-          python scripts/run_real_llm_mathematical_rsi.py \
+          python -m scripts.run_real_llm_mathematical_rsi \
             --protocol configs/real_llm_mathematical_rsi_v1.json \
             --input-root upstream/qwen_learned_verifier/results/qwen_learned_verifier_bridge_v1 \
             --output results/real_llm_mathematical_rsi_v1
       - name: Independently validate replay
         run: |
           mkdir -p validation
-          python scripts/validate_real_llm_mathematical_rsi_evidence.py \
+          python -m scripts.validate_real_llm_mathematical_rsi_evidence \
             results/real_llm_mathematical_rsi_v1 \
             --protocol configs/real_llm_mathematical_rsi_v1.json \
             --input-root upstream/qwen_learned_verifier/results/qwen_learned_verifier_bridge_v1 \

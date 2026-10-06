@@ -1,0 +1,39 @@
+{
+  "status": "locked exploratory recovered-Qwen mathematical-RSI replay",
+  "input": {
+    "bank": "data/recovered_qwen05b_bank.jsonl",
+    "bank_sha256": "012adf92b2032a56e5f74d4e08d89e639a921e26405238e18624276e7575a327",
+    "model": "Qwen/Qwen2.5-Coder-0.5B-Instruct",
+    "model_revision": "ea3f2471cf1b1f0db85067f1ef93848e38e88c25",
+    "expected_tasks": 12,
+    "scope": "already-inspected development bank; exploratory mechanism evidence only"
+  },
+  "etas": [0.25, 1.0, 4.0],
+  "rounds": 12,
+  "outcome_tolerance": 1e-10,
+  "trusted_label_budgets": [12, 24, 36, 48],
+  "audit_replicates": 256,
+  "seed_offset": 92000000,
+  "coded_verification": {
+    "probe_basis": "the 12 predeclared task identities",
+    "max_corrupt_fraction": 0.25,
+    "local_slack": 0.001,
+    "critical_global_obligation": "distribution-free [0,1] box lower bound on aggregate trusted gain"
+  },
+  "information_budget": {
+    "effective_dimension": "number of fixed task probe strata = 12",
+    "target_error": 0.1,
+    "multiplier": 1.0,
+    "required_labels": "ceil(12 * log(10)) = 28"
+  },
+  "primary_budget": 36,
+  "interpretation": "compare resolution, harmful-proposal allowance, and allowance of proposals with more than the coded local-regression budget; do not convert this already-inspected development bank into confirmatory evidence",
+  "limitations": [
+    "development tasks and candidate bank were inspected before this replay was designed",
+    "public-score optimization is frozen-bank reweighting, not a neural weight update",
+    "fixed task probes are an engineering coverage basis, not a theorem-level universal hitting set",
+    "coded local violations are an engineering analogue of robust local constraints, not PCP-for-PPAD",
+    "d*log(1/epsilon) is a heuristic budget proxy, not an LLM lower bound",
+    "trusted_score is offline finite-domain correctness and does not represent unrestricted code correctness"
+  ]
+}
