@@ -198,8 +198,24 @@ class QwenBridgeEvidenceValidatorTest(unittest.TestCase):
         write_jsonl(
             seed / "evaluation_preference.jsonl",
             [
-                {"task_id": "evaluation-0", "arm": "harmful", "informative": True, "preference_shift": -0.6},
-                {"task_id": "evaluation-0", "arm": "benign", "informative": True, "preference_shift": 0.6},
+                {
+                    "task_id": "evaluation-0",
+                    "arm": "harmful",
+                    "trusted_rewards": [1.0, 0.0],
+                    "informative": True,
+                    "baseline_margin": 1.0,
+                    "post_margin": 0.4,
+                    "preference_shift": -0.6,
+                },
+                {
+                    "task_id": "evaluation-0",
+                    "arm": "benign",
+                    "trusted_rewards": [1.0, 0.0],
+                    "informative": True,
+                    "baseline_margin": 1.0,
+                    "post_margin": 1.6,
+                    "preference_shift": 0.6,
+                },
             ],
         )
         seed_summary = {
