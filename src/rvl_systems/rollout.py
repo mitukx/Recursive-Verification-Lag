@@ -16,6 +16,13 @@ class RolloutRequest:
     samples: int = 4
     temperature: float = 1.0
     seed: int = 0
+    deadline_s: float | None = None
+
+    def __post_init__(self) -> None:
+        if self.samples <= 0:
+            raise ValueError("samples must be positive")
+        if self.deadline_s is not None and self.deadline_s <= 0:
+            raise ValueError("deadline_s must be positive")
 
 
 class AsyncRolloutEngine:
@@ -34,16 +41,23 @@ class AsyncRolloutEngine:
         self._semaphore = asyncio.Semaphore(max_concurrency)
         self.telemetry = telemetry or Telemetry()
 
-    async def _one(self, request: RolloutRequest) -> list[Generation]:
-        start = time.perf_counter()
+    async def _generate(self, request: RolloutRequest) -> list[Generation]:
         async with self._semaphore:
-            generations = await self.backend.generate(
+            return await self.backend.generate(
                 request.prompt_id,
                 request.prompt,
                 n=request.samples,
                 temperature=request.temperature,
                 seed=request.seed,
             )
+
+    async def _one(self, request: RolloutRequest) -> list[Generation]:
+        start = time.perf_counter()
+        if request.deadline_s is None:
+            generations = await self._generate(request)
+        else:
+            async with asyncio.timeout(request.deadline_s):
+                generations = await self._generate(request)
         elapsed = time.perf_counter() - start
         self.telemetry.observe("rollout.request_latency_s", elapsed)
         self.telemetry.increment("rollout.requests", 1)
