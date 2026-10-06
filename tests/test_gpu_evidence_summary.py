@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.summarize_gpu_evidence import summarize
+from src.summarize_gpu_evidence import render_markdown, summarize
 
 
 class GPUEvidenceSummaryTests(unittest.TestCase):
@@ -57,11 +57,23 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                     "wall_s": 4.0,
                 }
             })
-            report = summarize(qwen=qwen,fsdp=fsdp,fsdp_resume=resume,vllm=vllm,failover=failover)
+            inventory = self.write(tmp, "gpu.json", {
+                "available": True,
+                "gpus": [
+                    {"index":"0","name":"Test GPU","driver_version":"1","memory_total_mb":"24576","compute_capability":"9.0"},
+                    {"index":"1","name":"Test GPU","driver_version":"1","memory_total_mb":"24576","compute_capability":"9.0"},
+                ],
+            })
+            report = summarize(qwen=qwen,fsdp=fsdp,fsdp_resume=resume,vllm=vllm,failover=failover,gpu_inventory=inventory)
             self.assertTrue(report["complete"])
             self.assertFalse(report["missing_checks"])
             self.assertFalse(report["failed_checks"])
             self.assertEqual(len(report["sources"]["qwen_rlvr"]["sha256"]),64)
+            self.assertEqual(report["git_sha"],sha)
+            card = render_markdown(report)
+            self.assertIn("GPU Evidence Card",card)
+            self.assertIn("Test GPU",card)
+            self.assertIn("Scaling efficiency",card)
 
     def test_missing_and_failed_evidence_are_explicit(self):
         with tempfile.TemporaryDirectory() as tmp:
