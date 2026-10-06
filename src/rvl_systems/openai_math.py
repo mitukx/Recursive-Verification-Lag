@@ -373,3 +373,55 @@ def hash_chain(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str]:
         payload["row_hash"] = head
         out.append(payload)
     return out, head
+
+
+def default_math_feature(manifest: OpenAIMathManifest):
+    """Leakage-resistant coarse cells for the existing calibrated verifier."""
+    tasks = manifest.task_map()
+
+    def feature(generation: Generation) -> str:
+        task = tasks[generation.prompt_id]
+        n = len(generation.response.encode("utf-8"))
+        length_bin = "tiny" if n < 256 else ("short" if n < 1024 else ("medium" if n < 4096 else "long"))
+        tactics = (
+            "simp" if re.search(r"\bsimp\b", generation.response) else
+            "aesop" if re.search(r"\baesop\b", generation.response) else
+            "exact" if re.search(r"\bexact\b", generation.response) else
+            "other"
+        )
+        return f"f{task.family}:{task.mechanism}:{length_bin}:{tactics}"
+
+    return feature
+
+
+def build_calibrated_math_verifier(
+    manifest: OpenAIMathManifest,
+    trusted_verifier: LeanTrustedVerifier,
+    graders: dict[str, Any],
+    *,
+    timeout_s: float = 30.0,
+    max_concurrency: int = 8,
+):
+    """Wire cheap proxy graders to sparse Lean audits via CalibratedMultiVerifier."""
+    from .lab.judges import CalibratedMultiVerifier
+
+    trusted = LeanGenerationGrader(trusted_verifier)
+    verifier = CalibratedMultiVerifier(
+        graders,
+        trusted=trusted,
+        feature=default_math_feature(manifest),
+        timeout_s=timeout_s,
+        max_concurrency=max_concurrency,
+    )
+    return verifier, trusted
+
+
+def trusted_label_record(generation: Generation, proxy: float, reward: float) -> dict[str, Any]:
+    """Canonical training record for CalibratedMultiVerifier.fit."""
+    if not 0 <= proxy <= 1 or not 0 <= reward <= 1:
+        raise ValueError("proxy and trusted reward must be in [0,1]")
+    return {
+        "generation": asdict(generation),
+        "proxy": float(proxy),
+        "reward": float(reward),
+    }
