@@ -10,20 +10,23 @@ than disconnected implementation claims.
 1. **Token-exact real-model replay.** A small Qwen model generates multiple
    GSM8K candidates. Response token IDs and behavior log-probabilities are saved
    with independently computed verifiable rewards.
-2. **Transactional RLVR.** Held-out Qwen evaluation runs before/after candidate
+2. **Low-precision GRPO parity.** The same FP32-generated behavior replay is
+   consumed by FP32, BF16, and FP16 one-step GRPO runs. Loss, gradient norm,
+   behavior-KL, tokens/s, peak GPU memory, and non-finite failures are recorded.
+3. **Transactional RLVR.** Held-out Qwen evaluation runs before/after candidate
    updates. Rejected updates restore model, AdamW optimizer, and RNG state.
    Promotion decisions are retained in a hash-chained ledger.
-3. **1 -> 2 GPU FSDP scaling.** The same real-model replay is trained with one
+4. **1 -> 2 GPU FSDP scaling.** The same real-model replay is trained with one
    and two CUDA ranks, then a two-rank job resumes from the sharded checkpoint.
    Throughput, scaling efficiency, precision, peak memory, and per-rank GPU
    telemetry are retained.
-4. **vLLM serving sweep.** Streaming inference records requests/s, tokens/s,
+5. **vLLM serving sweep.** Streaming inference records requests/s, tokens/s,
    p50/p95/p99 latency, TTFT, TBT, Prometheus snapshots, KV-cache usage when
    available, server logs, and second-level GPU telemetry.
-5. **Real process failure.** Two vLLM workers are launched on separate GPUs,
+6. **Real process failure.** Two vLLM workers are launched on separate GPUs,
    one receives SIGTERM during load, and the scheduler must recover all requests
    through cross-worker failover.
-6. **Fail-closed aggregation.** `summarize_gpu_evidence.py` checks that all
+7. **Fail-closed aggregation.** `summarize_gpu_evidence.py` checks that all
    required evidence categories are present and mechanically valid, then writes
    one `gpu-evidence-summary.json` with SHA-256 lineage for each raw source.
 
@@ -65,6 +68,7 @@ bash scripts/run_vllm_failover_demo.sh
 
 A complete bundle requires all of the following:
 
+- FP32/BF16/FP16 GRPO runs all completed with finite measured metrics;
 - transactional Qwen RLVR produced at least one promotion decision;
 - measured multi-rank FSDP throughput exists and has positive scaling efficiency;
 - the two-rank FSDP job successfully resumed from the distributed checkpoint;
