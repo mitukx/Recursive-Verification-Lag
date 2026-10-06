@@ -39,7 +39,7 @@ jobs:
       - name: Resolve upstream Issue #38 run ID
         id: upstream
         env:
-          DISPATCH_RUN_ID: ${{ steps.upstream.outputs.run_id }}
+          DISPATCH_RUN_ID: ${{ inputs.upstream_qwen_bridge_run_id }}
         run: |
           python - <<'PY'
           import json, os
