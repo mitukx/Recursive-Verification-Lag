@@ -14,7 +14,10 @@ class RecordingBatchBackend:
     async def generate_batch(self, requests):
         self.calls.append(list(requests))
         return [
-            [Generation(r.prompt_id, r.prompt, "ok", 0.0, 1, 0.0)]
+            [
+                Generation(r.prompt_id, r.prompt, "ok", 0.0, 1, 0.0)
+                for _ in range(r.samples)
+            ]
             for r in requests
         ]
 
