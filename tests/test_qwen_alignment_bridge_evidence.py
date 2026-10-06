@@ -263,6 +263,24 @@ class QwenBridgeEvidenceValidatorTest(unittest.TestCase):
             self.assertEqual(result["scientific_result"], "direction_passed")
             self.assertEqual(result["eligible_seeds"], 1)
 
+    def test_rehashed_per_prompt_preference_tamper_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, protocol = self.make_completed_fixture(Path(tmp))
+            path = root / "seed-17" / "evaluation_preference.jsonl"
+            rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+            rows[0]["preference_shift"] = -0.1
+            write_jsonl(path, rows)
+            files = {
+                str(file.relative_to(root)): sha256(file)
+                for file in root.rglob("*")
+                if file.is_file() and file.name != "manifest.json"
+            }
+            manifest = json.loads((root / "manifest.json").read_text())
+            manifest["files"] = files
+            write_json(root / "manifest.json", manifest)
+            with self.assertRaises(AssertionError):
+                validate_evidence(root, protocol, expected_research_sha="research-sha")
+
     def test_manifest_tamper_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, protocol = self.make_completed_fixture(Path(tmp))
