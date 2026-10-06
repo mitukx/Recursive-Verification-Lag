@@ -5,21 +5,21 @@
   "output_dir": "artifacts/rsi-harness-baseline",
   "promotion": {
     "min_promotion_gain": 0.005,
-    "min_sealed_gain": 0.0,
-    "min_trusted_gain": 0.0,
+    "min_trusted_gain": 0,
     "max_verification_gap": 0.08,
     "max_failure_rate_increase": 0.03,
     "max_latency_p95_ratio": 1.25,
     "min_verifier_agreement": 0.8,
-    "confidence_z": 1.64
+    "confidence_z": 1.64,
+    "min_development_gain": 0
   },
   "verifier_trust": {
-    "uncertain_disagreement": 0.10,
-    "low_disagreement": 0.20,
+    "uncertain_disagreement": 0.1,
+    "low_disagreement": 0.2,
     "uncertain_reward_truth_gap": 0.08,
     "low_reward_truth_gap": 0.15,
     "uncertain_distribution_shift": 0.15,
-    "low_distribution_shift": 0.30,
+    "low_distribution_shift": 0.3,
     "uncertain_stale_age": 2,
     "low_stale_age": 4
   },
