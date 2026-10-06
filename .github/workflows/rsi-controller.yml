@@ -1,0 +1,55 @@
+name: rsi-controller-acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'src/rsi_controller/**'
+      - 'configs/rsi/**'
+      - 'tests/test_rsi_controller.py'
+      - 'docs/rsi_controller.md'
+      - 'docs/rsi_engineering_report.md'
+      - '.github/workflows/rsi-controller.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: RSI unit integration and E2E tests
+        run: python -m unittest tests.test_rsi_controller -v
+      - name: Four-generation bounded Harness RSI baseline
+        run: python -m src.rsi_controller.run --config configs/rsi/harness_baseline.yaml --generations 4 --output artifacts/rsi-ci
+      - name: Verify promotion rejection and plots
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[json.loads(x) for x in Path('artifacts/rsi-ci/metrics/generations.jsonl').read_text().splitlines() if x.strip()]
+          outcomes={r['promotion_decision'] for r in rows}
+          assert 'PROMOTED' in outcomes, outcomes
+          assert 'REJECTED' in outcomes, outcomes
+          assert len(list(Path('artifacts/rsi-ci/metrics').glob('*.svg'))) == 6
+          assert all('sealed_score' not in r for r in rows), 'sealed metric leaked into adaptive telemetry'
+          summary=json.loads(Path('artifacts/rsi-ci/metrics/summary.json').read_text())
+          audit=summary['final_sealed_audit']
+          assert 'never used' in audit['access_policy']
+          assert audit['suite_digest'] == summary['evaluation']['suite_digests']['sealed']
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rsi-controller-${{ matrix.os }}-${{ github.run_id }}
+          path: artifacts/rsi-ci/
+          if-no-files-found: warn
+          retention-days: 90

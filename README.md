@@ -334,3 +334,18 @@ it does not update the code LM weights. See [the runbook](docs/pretrained_pilot_
 The prospective two-bank transfer study preserves both the favorable 32-draw result
 and a reversed six-source safety comparison. All 512 transfer candidates are
 imperfect. See [transfer evidence and limitations](notes/progress/26_prospective_transfer.md).
+
+## Bounded recursive self-improvement controller
+
+`src/rsi_controller/` adds an explicitly bounded champion/challenger research loop around the repository's RVL and post-training infrastructure. Each generation is hypothesis-attributed, runs through an allowlisted mutation surface and bounded sandbox, and is evaluated on evolution, development, and independent promotion sets. The sealed suite is not returned to the planner or promotion gate: it is opened once, only after the final promotion decision, for terminal generalization auditing. Higher proxy reward alone cannot promote a candidate.
+
+The CPU reference mode keeps model weights frozen and can be run without a GPU:
+
+```bash
+python -m unittest tests.test_rsi_controller -v
+python -m src.rsi_controller.run --config configs/rsi/harness_baseline.yaml --generations 4
+```
+
+The acceptance workflow runs a bounded CPU Harness-RSI baseline and requires both promotion and rejection behavior while retaining all generations. Earlier implementation-session artifacts that consulted sealed aggregates during iterative selection were removed as superseded; the current contract reserves sealed evaluation for a terminal-only audit. Adapter RSI and the bridge to the existing GRPO/RVL learner remain implemented interfaces, not demonstrated learned-model capability gains. See [the RSI controller design](docs/rsi_controller.md), [engineering report](docs/rsi_engineering_report.md), and [evidence matrix](docs/xai_evidence_matrix.md).
+
+> This is a bounded experimental self-improvement system. It is not evidence of unrestricted or generally recursive intelligence improvement.
