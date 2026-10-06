@@ -103,6 +103,7 @@ class Curriculum:
         self.attack_successes = 0
         self.attack_values = [0.5,0.5,0.5]
         self.attack_counts = [0,0,0]
+        self.failed_tasks = []
 
     def generate(self, index, seed):
         import random
@@ -112,12 +113,20 @@ class Curriculum:
         coefficient = (family+1)*rng.choice((-1,1))
         bias = rng.randint(-3,3)
         self.generated += 1
+        if self.failed_tasks and rng.random() < .3:
+            # Fresh behavior-policy rollout of an audited failed task; never
+            # relabel a cached old trajectory as if newly sampled.
+            failed = rng.choice(self.failed_tasks)
+            family,coefficient,bias = failed["family"],failed["coefficient"],failed["bias"]
         return Task(f"train-{index}",family,coefficient,bias)
 
     def observe(self, t, reward):
         f = t.task.family
         self.failures[f] = 0.9*self.failures[f]+0.1*(1-reward+0.1)
         self.critic[f] = 0.9*self.critic[f]+0.1*reward
+        if reward < .5:
+            self.failed_tasks.append({"family":f,"coefficient":t.task.coefficient,"bias":t.task.bias})
+            self.failed_tasks = self.failed_tasks[-64:]
 
     def attack(self, task, snapshot, index, verifier=None):
         # Bandit attacker explores constant, sign reversal and off-by-one edits.

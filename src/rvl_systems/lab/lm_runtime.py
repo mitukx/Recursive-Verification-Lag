@@ -189,7 +189,10 @@ class AsyncHFLab:
         self.replay.bind({"model":self.backend.model_name,"prompts":list(prompts.items()),
                           "samples":samples,"seed":seed,"max_policy_lag":self.max_policy_lag,
                           "learning_rate":self.trainer.config.learning_rate,
-                          "controller":vars(self.controller.config),"rvl_enabled":self.rvl_enabled})
+                          "controller":vars(self.controller.config),"rvl_enabled":self.rvl_enabled,
+                          "precision":getattr(self.backend,"resolved_precision","unspecified"),
+                          "generation_limit":getattr(self.backend,"max_new_tokens",None),
+                          "task_manifest":getattr(self,"task_manifest",None)})
         before = self._weights()
         async with asyncio.TaskGroup() as group:
             group.create_task(self._actor(prompts,samples,seed))

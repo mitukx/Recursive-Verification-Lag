@@ -28,6 +28,9 @@ class CodingAsyncHFLab(AsyncHFLab):
     def __init__(self,root,backend,verifier,tasks,public_grader,*,max_steps=128,deadline_s=7200,**kwargs):
         super().__init__(root,backend,verifier,**kwargs)
         self.tasks = tasks
+        from dataclasses import asdict
+        self.task_manifest = {"tasks":{k:asdict(t) for k,t in tasks.items()},
+                              "max_steps":max_steps,"deadline_s":deadline_s}
         self.agent = CodingToolAgent(public_grader,max_steps=max_steps,deadline_s=deadline_s)
 
     async def _actor(self,prompts,samples,seed):

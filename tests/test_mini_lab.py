@@ -173,6 +173,16 @@ class VerificationTests(unittest.TestCase):
         self.assertEqual(attack.steps,())
         self.assertEqual(trusted_reward(attack.task,attack.program),0)
 
+    def test_failure_task_replay_is_fresh_and_bounded(self):
+        c = Curriculum()
+        t = trajectory()
+        for _ in range(100):
+            c.observe(t,0)
+        self.assertEqual(len(c.failed_tasks),64)
+        replayed = [c.generate(i,i) for i in range(100)]
+        self.assertEqual(len({t.task_id for t in replayed}),100)
+        self.assertTrue(any(t.coefficient==1 and t.bias==2 for t in replayed))
+
     def test_invalid_verdict_nan_and_config(self):
         with self.assertRaises(ValueError):
             Verdict(float("nan"),0,(),"cell",0)
