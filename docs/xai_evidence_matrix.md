@@ -21,7 +21,7 @@ require real GPU measurements.
 | Low-precision policy | auto/fp32/fp16/bf16 model-load policy with CUDA bf16 capability guard; same-replay FP32/BF16/FP16 GRPO loss/grad/KL/throughput/memory benchmark | implementation + CPU syntax/contract CI; real GPU artifact pending |
 | Verifier integration | exact and functional verifier interfaces | implemented + CI |
 | Weight-version correctness | stale rollout rejection | implemented + CI |
-| Trainer-to-worker synchronization control plane | immutable manifests + checksums + worker acknowledgements | implemented + CI |
+| Trainer-to-worker synchronization control plane | immutable manifests + checksums + worker acknowledgements; real-model NCCL full-parameter broadcast benchmark with activation latency/effective bandwidth | implemented + CI contract; real GPU artifact pending |
 | Two-phase policy deployment | publish -> all-worker ack -> activate; real TCP-worker version transition test | implemented + integration CI |
 | Recovery | atomic reference checkpoint save/restore; remote retries | implemented + CI |
 | Observability | counters, p50/p95/max latency, tokens/s | implemented + CI |
@@ -29,7 +29,7 @@ require real GPU measurements.
 | Deterministic failure replay | semantic scheduler event log, invariant validation, concurrency-stable SHA-256 trace digest | implemented + CI artifact |
 | Regression / deploy gates | machine-readable absolute and relative benchmark rules fail CI on regressions | implemented + CI |
 | Artifact lineage | benchmark/replay manifest with path, size, SHA-256 and immediate verification | implemented + CI artifact |
-| Cluster throughput benchmark | `benchmark_vllm_cluster.py` | runnable; GPU endpoints required |
+| Cluster throughput benchmark | `benchmark_vllm_cluster.py` plus paired serial-vs-async live-vLLM benchmark | runnable; GPU endpoints required |
 | FSDP / NCCL multi-GPU | FSDP/NCCL learner, BF16/FP16 selection, DCP save/resume, 1-to-2 GPU scaling summary and self-hosted acceptance workflow | implemented harness; real GPU artifact pending |
 | Custom CUDA/Triton kernels | fused tokenwise GRPO surrogate + custom autograd backward, PyTorch parity benchmark and GPU microbenchmark harness | implemented; real CUDA speedup evidence pending |
 | BF16/FP16 empirical stability study | real-GPU one-step GRPO finite/parity benchmark integrated into full evidence workflow | long-run stability measurement still pending |
