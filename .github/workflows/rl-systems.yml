@@ -10,6 +10,7 @@ on:
       - 'tests/test_rlvr_systems.py'
       - 'tests/test_rlvr_reliability.py'
       - 'tests/test_rlvr_objectives.py'
+      - 'tests/test_remote_workers.py'
       - 'requirements-systems.txt'
       - 'docs/xai_rl_systems.md'
       - '.github/workflows/rl-systems.yml'
@@ -24,6 +25,7 @@ on:
       - 'tests/test_rlvr_systems.py'
       - 'tests/test_rlvr_reliability.py'
       - 'tests/test_rlvr_objectives.py'
+      - 'tests/test_remote_workers.py'
       - '.github/workflows/rl-systems.yml'
 
 permissions:
@@ -39,7 +41,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Unit tests
-        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives -v
+        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers -v
       - name: Optional-backend syntax check
         run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/run_hf_grpo_smoke.py
       - name: End-to-end CPU smoke test
