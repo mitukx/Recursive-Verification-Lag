@@ -65,7 +65,7 @@ class HFLocalBackend:
         model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
             trust_remote_code=self.trust_remote_code,
-            torch_dtype=dtype,
+            dtype=dtype,
         )
         if tokenizer.pad_token_id is None:
             if tokenizer.eos_token_id is None:
