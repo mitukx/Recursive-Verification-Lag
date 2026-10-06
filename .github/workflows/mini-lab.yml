@@ -1,0 +1,46 @@
+name: mini-lab-acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'src/rvl_systems/lab/**'
+      - 'src/*mini_lab.py'
+      - 'tests/test_mini_lab*.py'
+      - '.github/workflows/mini-lab.yml'
+  push:
+    branches: ['systems/mini-frontier-lab']
+    paths:
+      - 'src/rvl_systems/lab/**'
+      - 'src/*mini_lab.py'
+      - 'tests/test_mini_lab*.py'
+      - '.github/workflows/mini-lab.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cpu:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Failure replay numerical and end-to-end acceptance tests
+        run: python -m unittest discover -s tests -p 'test_mini_lab*.py' -v
+      - name: Fully asynchronous actor learner smoke
+        run: python -m src.run_mini_lab --output artifacts/async-lab --episodes 64 --actors 4 --audit-budget 16 --tool-latency-ms 1
+      - name: Paired seed adaptive versus fixed versus no refresh benchmark
+        run: python -m src.benchmark_mini_lab --output artifacts/ablation --seeds 17,29,43 --episodes 256
+      - name: Upload measured artifacts and replay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mini-lab-${{ matrix.os }}-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 90
