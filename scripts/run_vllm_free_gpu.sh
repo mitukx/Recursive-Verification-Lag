@@ -49,8 +49,10 @@ MONITOR_PID=$!
 
 python -m src.benchmark_vllm_serving   --endpoint "http://127.0.0.1:$PORT"   --model "$MODEL"   --requests "$REQUESTS"   --concurrency "$CONCURRENCY"   --max-tokens "$MAX_TOKENS"   --output-dir "$OUT/benchmark"
 
+python -m src.benchmark_vllm_sync_async   --endpoint "http://127.0.0.1:$PORT"   --model "$MODEL"   --requests "$REQUESTS"   --concurrency-per-worker 4   --max-tokens "$MAX_TOKENS"   --output "$OUT/sync-vs-async.json"
+
 mapfile -t BENCHMARK_ARTIFACTS < <(find "$OUT/benchmark" -maxdepth 1 -type f | sort)
-python -m src.manifest_artifacts --output "$OUT/manifest.json"   "$OUT/nvidia-smi.txt"   "$OUT/vllm-package.txt"   "$OUT/gpu-telemetry.csv"   "$OUT/vllm-server.log"   "${BENCHMARK_ARTIFACTS[@]}"
+python -m src.manifest_artifacts --output "$OUT/manifest.json"   "$OUT/nvidia-smi.txt"   "$OUT/vllm-package.txt"   "$OUT/gpu-telemetry.csv"   "$OUT/vllm-server.log"   "$OUT/sync-vs-async.json"   "${BENCHMARK_ARTIFACTS[@]}"
 
 python -m src.manifest_artifacts --verify "$OUT/manifest.json"
 echo "GPU benchmark complete: $OUT"

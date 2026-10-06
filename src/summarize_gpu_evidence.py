@@ -34,6 +34,8 @@ def summarize(
     failover: str | Path | None = None,
     low_precision: str | Path | None = None,
     profile: str | Path | None = None,
+    weight_sync: str | Path | None = None,
+    sync_async: str | Path | None = None,
     gpu_inventory: str | Path | None = None,
 ) -> dict[str, Any]:
     checks: dict[str, bool] = {}
@@ -206,6 +208,52 @@ def summarize(
         )
         sources["grpo_profile"] = _source(profile)
 
+
+    if weight_sync is not None:
+        payload = _load(weight_sync)
+        git_shas.append(str(payload.get("git_sha", "unknown")))
+        metrics = payload.get("metrics", {})
+        latency = float(metrics.get("latency_ms_p50", 0.0))
+        bandwidth = float(metrics.get("effective_gib_per_s_p50", 0.0))
+        payload_bytes = int(metrics.get("payload_bytes", 0))
+        world_size = int(metrics.get("world_size", 0))
+        evidence["policy_weight_sync"] = {
+            "model": payload.get("model"),
+            "world_size": world_size,
+            "payload_bytes": payload_bytes,
+            "latency_ms_p50": latency,
+            "latency_ms_p95": metrics.get("latency_ms_p95"),
+            "effective_gib_per_s_p50": bandwidth,
+        }
+        checks["policy_weight_sync_measured"] = (
+            world_size >= 2
+            and payload_bytes > 0
+            and math.isfinite(latency) and latency > 0
+            and math.isfinite(bandwidth) and bandwidth > 0
+        )
+        sources["policy_weight_sync"] = _source(weight_sync)
+
+    if sync_async is not None:
+        payload = _load(sync_async)
+        git_shas.append(str(payload.get("git_sha", "unknown")))
+        metrics = payload.get("metrics", {})
+        serial_tps = float(metrics.get("serial_tokens_per_s", 0.0))
+        async_tps = float(metrics.get("async_tokens_per_s", 0.0))
+        speedup = float(metrics.get("token_throughput_speedup", 0.0))
+        evidence["sync_vs_async_rollout"] = {
+            "model": payload.get("model"),
+            "serial_tokens_per_s": serial_tps,
+            "async_tokens_per_s": async_tps,
+            "token_throughput_speedup": speedup,
+            "request_throughput_speedup": metrics.get("request_throughput_speedup"),
+        }
+        checks["sync_vs_async_measured"] = (
+            math.isfinite(serial_tps) and serial_tps > 0
+            and math.isfinite(async_tps) and async_tps > 0
+            and math.isfinite(speedup) and speedup > 0
+        )
+        sources["sync_vs_async_rollout"] = _source(sync_async)
+
     known_git_shas = [sha for sha in git_shas if sha and sha != "unknown"]
     checks["consistent_git_sha"] = (
         len(known_git_shas) == len(git_shas)
@@ -226,6 +274,8 @@ def summarize(
         "vllm_failover_verified",
         "low_precision_grpo",
         "grpo_profile",
+        "policy_weight_sync_measured",
+        "sync_vs_async_measured",
         "consistent_git_sha",
     }
     missing = sorted(required - checks.keys())
@@ -327,6 +377,26 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Hottest self-device op: {hottest.get('name')} ({hottest.get('self_device_time_us')} us)",
             "",
         ]
+    weight_sync_evidence = evidence.get("policy_weight_sync")
+    if weight_sync_evidence:
+        lines += [
+            "## Policy weight synchronization",
+            "",
+            f"- Payload: {weight_sync_evidence.get('payload_bytes')} bytes",
+            f"- 2-rank p50 activation latency: {weight_sync_evidence.get('latency_ms_p50')} ms",
+            f"- Effective p50 bandwidth: {weight_sync_evidence.get('effective_gib_per_s_p50')} GiB/s",
+            "",
+        ]
+    sync_async_evidence = evidence.get("sync_vs_async_rollout")
+    if sync_async_evidence:
+        lines += [
+            "## Sync vs async rollout",
+            "",
+            f"- Serial tokens/s: {sync_async_evidence.get('serial_tokens_per_s')}",
+            f"- Async tokens/s: {sync_async_evidence.get('async_tokens_per_s')}",
+            f"- Token-throughput ratio: {sync_async_evidence.get('token_throughput_speedup')}",
+            "",
+        ]
     failover = evidence.get("vllm_failover")
     if failover:
         lines += [
@@ -364,6 +434,8 @@ def main() -> None:
     parser.add_argument("--failover")
     parser.add_argument("--low-precision")
     parser.add_argument("--profile")
+    parser.add_argument("--weight-sync")
+    parser.add_argument("--sync-async")
     parser.add_argument("--gpu-inventory")
     parser.add_argument("--output", required=True)
     parser.add_argument("--markdown")
@@ -378,6 +450,8 @@ def main() -> None:
         failover=args.failover,
         low_precision=args.low_precision,
         profile=args.profile,
+        weight_sync=args.weight_sync,
+        sync_async=args.sync_async,
         gpu_inventory=args.gpu_inventory,
     )
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)

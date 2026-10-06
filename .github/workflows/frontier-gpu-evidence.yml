@@ -58,6 +58,10 @@ jobs:
         run: |
           python -m src.generate_rlvr_replay             --model "$MODEL"             --tasks 4             --samples 4             --max-new-tokens 96             --precision fp32             --output "$ROOT/replay.jsonl"
 
+      - name: Measure learner-to-rollout policy weight synchronization
+        run: |
+          torchrun --standalone --nproc-per-node=2             -m src.benchmark_policy_weight_sync             --model "$MODEL"             --precision bf16             --iterations 3             --output "$ROOT/policy-weight-sync.json"
+
       - name: Real-GPU FP32 BF16 FP16 GRPO parity
         run: |
           python -m src.benchmark_grpo_precision_gpu             --model "$MODEL"             --replay "$ROOT/replay.jsonl"             --samples 8             --output "$ROOT/low-precision-grpo.json"
@@ -84,11 +88,11 @@ jobs:
 
       - name: Build fail-closed GPU evidence summary
         run: |
-          python -m src.summarize_gpu_evidence             --qwen "$ROOT/qwen/run/benchmark.json"             --fsdp "$ROOT/fsdp/scaling-summary.json"             --fsdp-resume "$ROOT/fsdp/resumed-two-gpu/distributed-report.json"             --vllm "$ROOT/vllm/benchmark/summary.json"             --failover "$ROOT/failover/failover.json"             --low-precision "$ROOT/low-precision-grpo.json"             --profile "$ROOT/grpo-profile.json"             --gpu-inventory "$ROOT/vllm/benchmark/gpu-inventory.json"             --output "$ROOT/gpu-evidence-summary.json"             --markdown "$ROOT/gpu-evidence-summary.md"             --require-all
+          python -m src.summarize_gpu_evidence             --qwen "$ROOT/qwen/run/benchmark.json"             --fsdp "$ROOT/fsdp/scaling-summary.json"             --fsdp-resume "$ROOT/fsdp/resumed-two-gpu/distributed-report.json"             --vllm "$ROOT/vllm/benchmark/summary.json"             --failover "$ROOT/failover/failover.json"             --low-precision "$ROOT/low-precision-grpo.json"             --profile "$ROOT/grpo-profile.json"             --weight-sync "$ROOT/policy-weight-sync.json"             --sync-async "$ROOT/vllm/sync-vs-async.json"             --gpu-inventory "$ROOT/vllm/benchmark/gpu-inventory.json"             --output "$ROOT/gpu-evidence-summary.json"             --markdown "$ROOT/gpu-evidence-summary.md"             --require-all
 
       - name: Manifest top-level evidence lineage
         run: |
-          python -m src.manifest_artifacts             --output "$ROOT/manifest.json"             "$ROOT/nvidia-smi.txt"             "$ROOT/dependencies.txt"             "$ROOT/replay.jsonl"             "$ROOT/replay.jsonl.meta.json"             "$ROOT/qwen/manifest.json"             "$ROOT/fsdp/manifest.json"             "$ROOT/vllm/manifest.json"             "$ROOT/failover/manifest.json"             "$ROOT/low-precision-grpo.json"             "$ROOT/grpo-profile.json"             "$ROOT/grpo-trace.json"             "$ROOT/gpu-evidence-summary.json"             "$ROOT/gpu-evidence-summary.md"
+          python -m src.manifest_artifacts             --output "$ROOT/manifest.json"             "$ROOT/nvidia-smi.txt"             "$ROOT/dependencies.txt"             "$ROOT/replay.jsonl"             "$ROOT/replay.jsonl.meta.json"             "$ROOT/qwen/manifest.json"             "$ROOT/fsdp/manifest.json"             "$ROOT/vllm/manifest.json"             "$ROOT/failover/manifest.json"             "$ROOT/low-precision-grpo.json"             "$ROOT/grpo-profile.json"             "$ROOT/grpo-trace.json"             "$ROOT/policy-weight-sync.json"             "$ROOT/vllm/sync-vs-async.json"             "$ROOT/gpu-evidence-summary.json"             "$ROOT/gpu-evidence-summary.md"
           python -m src.manifest_artifacts --verify "$ROOT/manifest.json"
 
       - name: Upload immutable raw evidence

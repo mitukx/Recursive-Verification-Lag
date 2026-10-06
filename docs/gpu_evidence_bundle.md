@@ -30,7 +30,9 @@ than disconnected implementation claims.
 7. **Real process failure.** Two vLLM workers are launched on separate GPUs,
    one receives SIGTERM during load, and the scheduler must recover all requests
    through cross-worker failover.
-8. **Fail-closed aggregation.** `summarize_gpu_evidence.py` checks that all
+8. **Policy-weight synchronization.** The full Qwen parameter payload is broadcast from rank 0 to a second CUDA rank with NCCL. The benchmark records p50/p95 activation latency, payload bytes and effective GiB/s, and verifies a receiver-side parameter probe after transfer.
+9. **Sync-vs-async rollout.** The same live vLLM endpoint is exercised first through a serial request baseline and then through the asynchronous scheduler on the same seeded request set. Tokens/s, requests/s and throughput ratios are retained.
+10. **Fail-closed aggregation.** `summarize_gpu_evidence.py` checks that all
    required evidence categories are present and mechanically valid, then writes
    one `gpu-evidence-summary.json` with SHA-256 lineage for each raw source.
 
@@ -79,6 +81,8 @@ A complete bundle requires all of the following:
 - the two-rank FSDP job successfully resumed from the distributed checkpoint;
 - the vLLM serving artifact contains at least three positive-throughput
   concurrency points;
+- policy-weight synchronization produced finite positive bandwidth and activation latency;
+- the paired serial-vs-async rollout benchmark produced finite positive throughput for both paths;
 - the injected worker failure caused at least one scheduler failure and at least
   one successful failover while preserving 100% request completion.
 

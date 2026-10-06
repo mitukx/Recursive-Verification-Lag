@@ -40,7 +40,7 @@ experiments that still require external hardware.
 | Rollout serving | bounded async rollout, EWMA + prefill/decode/KV-aware routing, weighted workload admission, fair multi-workload scheduling, overload shedding, end-to-end deadlines, optional hedged requests |
 | Failure handling | cross-worker failover, circuit-breaker quarantine, single half-open recovery probes, loser cancellation, stale policy-version rejection |
 | Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
-| Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements |
+| Trainer/worker coordination | immutable weight manifests, SHA-256 integrity checks, monotonically increasing versions, worker acknowledgements, plus real-model NCCL policy-broadcast latency/bandwidth benchmark |
 | Numerics | fp32 log-softmax, ratio clipping, non-finite guards, gradient checks, FP16/BF16 parity gates, real-GPU FP32/BF16/FP16 GRPO comparison, and INT8 weight-only numerical contracts |
 | Kernel optimization | optional fused Triton tokenwise GRPO surrogate with custom backward, PyTorch forward/gradient parity benchmark, GPU speed harness |
 | Observability | counters, tokens/s, p50/p95/max latency, Chrome traces, deterministic control-plane replay, machine-readable benchmark reports, and named real-GPU GRPO stage profiling |

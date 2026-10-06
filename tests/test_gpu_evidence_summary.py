@@ -90,6 +90,27 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                     {"name":"aten::mm","self_device_time_us":500.0}
                 ],
             })
+            weight_sync = self.write(tmp, "weight-sync.json", {
+                "git_sha": sha,
+                "model": "Qwen/test",
+                "metrics": {
+                    "world_size": 2,
+                    "payload_bytes": 1000000,
+                    "latency_ms_p50": 12.0,
+                    "latency_ms_p95": 14.0,
+                    "effective_gib_per_s_p50": 0.08,
+                },
+            })
+            sync_async = self.write(tmp, "sync-async.json", {
+                "git_sha": sha,
+                "model": "Qwen/test",
+                "metrics": {
+                    "serial_tokens_per_s": 10.0,
+                    "async_tokens_per_s": 18.0,
+                    "token_throughput_speedup": 1.8,
+                    "request_throughput_speedup": 1.7,
+                },
+            })
             inventory = self.write(tmp, "gpu.json", {
                 "available": True,
                 "gpus": [
@@ -97,7 +118,7 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                     {"index":"1","name":"Test GPU","driver_version":"1","memory_total_mb":"24576","compute_capability":"9.0"},
                 ],
             })
-            report = summarize(qwen=qwen,fsdp=fsdp,fsdp_resume=resume,vllm=vllm,failover=failover,low_precision=precision,profile=profile,gpu_inventory=inventory)
+            report = summarize(qwen=qwen,fsdp=fsdp,fsdp_resume=resume,vllm=vllm,failover=failover,low_precision=precision,profile=profile,weight_sync=weight_sync,sync_async=sync_async,gpu_inventory=inventory)
             self.assertTrue(report["complete"])
             self.assertFalse(report["missing_checks"])
             self.assertFalse(report["failed_checks"])
@@ -109,6 +130,8 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
             self.assertIn("Scaling efficiency",card)
             self.assertIn("GRPO profile",card)
             self.assertIn("aten::mm",card)
+            self.assertIn("Policy weight synchronization",card)
+            self.assertIn("Sync vs async rollout",card)
 
     def test_missing_and_failed_evidence_are_explicit(self):
         with tempfile.TemporaryDirectory() as tmp:
