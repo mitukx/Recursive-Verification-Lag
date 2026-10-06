@@ -1,0 +1,48 @@
+{
+  "status": "prospective post-v1 efficiency follow-up locked before execution; synthetic propensity-weighted audit study, not independent confirmation",
+  "research_question": "Can randomized proxy-only audit propensities reduce trusted-label cost while preserving an unbiased verifier/truth alignment estimate?",
+  "support_size": 64,
+  "task_seeds": {
+    "start": 30000,
+    "count": 1024
+  },
+  "baseline": "Dirichlet(alpha=2) finite support",
+  "true_reward": "Bernoulli(0.5), deterministic resampling until both classes occur",
+  "verifier_geometry": {
+    "sigma": 2,
+    "arms": {
+      "harmful": -0.75,
+      "benign": 0.75
+    },
+    "construction": "same fixed-error-norm alignment construction as equal_kl_alignment_stress"
+  },
+  "selection": {
+    "scheme": "independent Bernoulli inclusion with known propensities; propensities depend only on baseline probabilities and free proxy scores, never on trusted reward",
+    "methods": [
+      "uniform",
+      "proxy_leverage"
+    ],
+    "proxy_leverage_objective": "minimize sum_i (p_i*abs(v_i-E_p[v])/pi_i)^2 subject to sum_i pi_i=expected_budget and 0.01<=pi_i<=1",
+    "unconstrained_solution": "pi_i proportional to (p_i*abs(v_i-E_p[v]))^(2/3)",
+    "minimum_propensity": 0.01
+  },
+  "expected_label_budgets": [
+    4,
+    8,
+    16,
+    32
+  ],
+  "confidence_delta": 0.05,
+  "estimator": "Horvitz-Thompson covariance estimate sum_i I_i*p_i*y_i*(v_i-E_p[v])/pi_i",
+  "confidence_radius": "sqrt(log(2/delta)/2 * sum_i (p_i*abs(v_i-E_p[v])/pi_i)^2)",
+  "decisions": {
+    "block": "upper<0",
+    "allow": "lower>0",
+    "inconclusive": "otherwise"
+  },
+  "primary_budget": 16,
+  "primary_prediction": "at expected budget 16, proxy_leverage has strictly smaller mean confidence radius than uniform in both arms and pooled decisive rate at least as high; wrong-sign decisive rate <=0.08 for every method/arm",
+  "reporting": "retain every task/method/arm/budget row, selected identities, expected and realized labels, propensities, estimate, exact covariance, CI, decision and wrong-sign indicator",
+  "interpretation": "this certifies finite-support or finite-rollout-batch covariance under randomized known propensities; deterministic priority selection without propensities remains invalid",
+  "scope": "synthetic audit-efficiency study; not a population guarantee for an LLM policy and not evidence of a learned verifier"
+}
