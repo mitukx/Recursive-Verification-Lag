@@ -1,0 +1,8 @@
+{
+  "purpose": "full xAI-oriented GPU evidence run",
+  "requested_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "rlvr_steps": 8,
+  "serving_requests": 32,
+  "date": "2026-10-06",
+  "note": "Ephemeral trigger branch; workflow defaults are authoritative."
+}
