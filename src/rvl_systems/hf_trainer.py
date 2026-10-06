@@ -79,14 +79,16 @@ class HFCausalLMGRPOTrainer:
             dtype=torch.long,
             device=device,
         )
-        logits = self.model(input_ids=sequence).logits[0]
+        with torch.autograd.profiler.record_function("rvl.grpo.model_forward"):
+            logits = self.model(input_ids=sequence).logits[0]
         start = len(prompt_ids) - 1
         end = start + len(response_ids)
         response_logits = logits[start:end]
         targets = torch.tensor(response_ids, dtype=torch.long, device=device)
-        current_logps = torch.log_softmax(response_logits.float(), dim=-1).gather(
-            1, targets.unsqueeze(1)
-        ).squeeze(1)
+        with torch.autograd.profiler.record_function("rvl.grpo.logprob_objective"):
+            current_logps = torch.log_softmax(response_logits.float(), dim=-1).gather(
+                1, targets.unsqueeze(1)
+            ).squeeze(1)
         if not torch.isfinite(current_logps).all():
             raise FloatingPointError("current token log-probabilities contain non-finite values")
         old = torch.tensor(
@@ -144,18 +146,20 @@ class HFCausalLMGRPOTrainer:
     def train_step(self, samples: list[VerifiedGeneration], *, advantages: list[float] | None = None) -> dict[str, float]:
         if not samples:
             return {"loss": 0.0, "mean_reward": 0.0, "samples": 0.0}
-        records = compute_group_advantages(
-            samples,
-            eps=self.config.advantage_eps,
-            clip=self.config.clip_advantage,
-        )
+        with self.torch.autograd.profiler.record_function("rvl.grpo.advantages"):
+            records = compute_group_advantages(
+                samples,
+                eps=self.config.advantage_eps,
+                clip=self.config.clip_advantage,
+            )
         if len(records) != len(samples):
             raise RuntimeError("advantage/sample cardinality mismatch")
 
         # Training mode permits activation checkpointing; dropout was disabled
         # explicitly so behavior ratios do not include random dropout masks.
         self.model.train()
-        self.optimizer.zero_grad(set_to_none=True)
+        with self.torch.autograd.profiler.record_function("rvl.grpo.zero_grad"):
+            self.optimizer.zero_grad(set_to_none=True)
         if advantages is None:
             advantages = [record.advantage for record in records]
         if len(advantages) != len(samples) or not all(math.isfinite(x) for x in advantages):
@@ -166,23 +170,27 @@ class HFCausalLMGRPOTrainer:
             sync = (index == len(samples)-1)
             context = nullcontext() if sync or not hasattr(self.model, "no_sync") else self.model.no_sync()
             with context:
-                objective, fraction, ratio, kl = self._sample_objective(sample, advantage)
-                loss = -objective / len(samples)
-                if not self.torch.isfinite(loss):
-                    raise FloatingPointError("GRPO loss is non-finite")
-                loss.backward()
+                with self.torch.autograd.profiler.record_function("rvl.grpo.sample_forward_backward"):
+                    objective, fraction, ratio, kl = self._sample_objective(sample, advantage)
+                    loss = -objective / len(samples)
+                    if not self.torch.isfinite(loss):
+                        raise FloatingPointError("GRPO loss is non-finite")
+                    with self.torch.autograd.profiler.record_function("rvl.grpo.backward"):
+                        loss.backward()
             losses.append(float(loss.detach().cpu()))
             clip_fractions.append(float(fraction.detach().cpu()))
             max_log_ratios.append(float(ratio.detach().cpu()))
             kl_estimates.append(float(kl.detach().cpu()))
-        if hasattr(self.model, "clip_grad_norm_"):
-            grad_norm = self.model.clip_grad_norm_(self.config.max_grad_norm)
-        else:
-            grad_norm = self.torch.nn.utils.clip_grad_norm_(
-                self.model.parameters(), self.config.max_grad_norm, error_if_nonfinite=True)
+        with self.torch.autograd.profiler.record_function("rvl.grpo.grad_clip"):
+            if hasattr(self.model, "clip_grad_norm_"):
+                grad_norm = self.model.clip_grad_norm_(self.config.max_grad_norm)
+            else:
+                grad_norm = self.torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(), self.config.max_grad_norm, error_if_nonfinite=True)
         if not self.torch.isfinite(self.torch.as_tensor(grad_norm)):
             raise FloatingPointError("non-finite gradient norm")
-        self.optimizer.step()
+        with self.torch.autograd.profiler.record_function("rvl.grpo.optimizer_step"):
+            self.optimizer.step()
         return {
             "loss": sum(losses),
             "mean_reward": fmean(sample.reward for sample in samples),
