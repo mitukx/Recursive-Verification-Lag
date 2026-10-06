@@ -33,6 +33,7 @@ def summarize(
     vllm: str | Path | None = None,
     failover: str | Path | None = None,
     low_precision: str | Path | None = None,
+    profile: str | Path | None = None,
     gpu_inventory: str | Path | None = None,
 ) -> dict[str, Any]:
     checks: dict[str, bool] = {}
@@ -181,6 +182,30 @@ def summarize(
         )
         sources["low_precision_grpo"] = _source(low_precision)
 
+    if profile is not None:
+        payload = _load(profile)
+        git_shas.append(str(payload.get("git_sha", "unknown")))
+        stages = payload.get("named_stages") or []
+        top_device = payload.get("top_self_device_time") or []
+        evidence["grpo_profile"] = {
+            "model":payload.get("model"),
+            "precision":payload.get("precision"),
+            "device_name":payload.get("device_name"),
+            "tokens_per_s":payload.get("tokens_per_s"),
+            "gpu_peak_memory_bytes":payload.get("gpu_peak_memory_bytes"),
+            "trace_bytes":payload.get("trace_bytes"),
+            "named_stages":stages,
+            "top_self_device_time":top_device[:10],
+        }
+        checks["grpo_profile"] = (
+            isinstance(payload.get("tokens_per_s"), (int, float))
+            and math.isfinite(float(payload.get("tokens_per_s")))
+            and float(payload.get("tokens_per_s")) > 0
+            and int(payload.get("trace_bytes", 0)) > 0
+            and len(stages) >= 4
+        )
+        sources["grpo_profile"] = _source(profile)
+
     known_git_shas = [sha for sha in git_shas if sha and sha != "unknown"]
     checks["consistent_git_sha"] = (
         len(known_git_shas) == len(git_shas)
@@ -200,6 +225,7 @@ def summarize(
         "vllm_concurrency_sweep",
         "vllm_failover_verified",
         "low_precision_grpo",
+        "grpo_profile",
         "consistent_git_sha",
     }
     missing = sorted(required - checks.keys())
@@ -288,6 +314,19 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- FP16 relative loss error: {precision.get('comparisons',{}).get('fp16',{}).get('relative_loss_error')}",
             "",
         ]
+    profile_evidence = evidence.get("grpo_profile")
+    if profile_evidence:
+        top = profile_evidence.get("top_self_device_time") or []
+        hottest = top[0] if top else {}
+        lines += [
+            "## GRPO profile",
+            "",
+            f"- Profiled precision: {profile_evidence.get('precision')}",
+            f"- Profiled tokens/s: {profile_evidence.get('tokens_per_s')}",
+            f"- Trace bytes: {profile_evidence.get('trace_bytes')}",
+            f"- Hottest self-device op: {hottest.get('name')} ({hottest.get('self_device_time_us')} us)",
+            "",
+        ]
     failover = evidence.get("vllm_failover")
     if failover:
         lines += [
@@ -324,6 +363,7 @@ def main() -> None:
     parser.add_argument("--vllm")
     parser.add_argument("--failover")
     parser.add_argument("--low-precision")
+    parser.add_argument("--profile")
     parser.add_argument("--gpu-inventory")
     parser.add_argument("--output", required=True)
     parser.add_argument("--markdown")
@@ -337,6 +377,7 @@ def main() -> None:
         vllm=args.vllm,
         failover=args.failover,
         low_precision=args.low_precision,
+        profile=args.profile,
         gpu_inventory=args.gpu_inventory,
     )
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
