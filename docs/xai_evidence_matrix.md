@@ -45,14 +45,14 @@ explicit acceptance boundaries.
 |---|---|---|
 | Concurrent actor/learner training | CPU actors and independent real causal-LM model copies | multi-node online learner service |
 | Durable experience | WAL replay, expiring fenced leases, immutable behavior tokens, lag filtering | distributed database/retention |
-| RVL interventions | trusted audit acquisition, residual fitting, reward re-evaluation, equal-cost cadence sweeps | heuristic controller, not a certificate |
+| RVL interventions | trusted audit acquisition, residual fitting, reward re-evaluation, equal-cost cadence sweeps; fail-closed `Cov(y,v)` alignment gate with Hoeffding CI for explicitly i.i.d. single-policy audits | adaptive priority audit stream remains heuristic; propensity-aware extension or separate iid audit stream required for statistical use |
 | Policy/verifier co-evolution | bandit attacks, trusted labels, critic fitting, fresh failure-task replay | open-ended learned red teaming |
 | Model-driven coding agents | JSON tools, pinned episode weights, per-step journals, terminal-return RL | pretrained capability gain and multi-hour completion |
 | Executable reward security | evaluator-owned I/O comparisons outside candidate Python, isolated Docker, attack tests | broad adversarial robustness |
 | Verifier ensembles | executable public tests, trained residual critic, JSON remote judge adapter | real stronger-model calibration |
 | Distributed token-level RL | actual two-rank DDP optimizer update; FSDP/DCP entry point | NCCL/FSDP GPU validation |
 | Deployment | health-probed blue/green serving, drain old episode leases | real GPU reload/uptime evidence |
-| Transactional candidate promotion | paired held-out incumbent/candidate gate, family-slice regression caps, rollback of rejected learner state, hash-chained decision ledger | statistical power analysis and real GPU canary deployment |
+| Transactional candidate promotion | paired held-out incumbent/candidate gate, family-slice regression caps, rollback of rejected learner state, hash-chained decision ledger | alignment gate is deliberately separate until iid audit provenance is available; statistical power analysis and real GPU canary deployment remain |
 | Token-exact serving data | server-owned token IDs/logprobs, strict schema/model checks | real vLLM/SGLang GPU acceptance |
 | Metrics | p50/p95/p99, LM tokens/s, utilization sampler, explicit-input MFU estimator | measured sustained GPU scaling |
 
