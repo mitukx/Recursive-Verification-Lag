@@ -8,6 +8,11 @@ candidate bank, paid transcripts and full results are archived. Five tasks
 show later-onset failures in the separate timing study; independent heldout
 confirmation and real generator improvement remain open.
 
+**Calibration diagnosis:** [equal-KL controls and theory](notes/progress/37_kl_matched_transfer_diagnostic.md)
+show that the secondary public-only refresh benefit vanishes after removing
+score-scale changes. Both verifier representations preserve candidate rankings.
+This is an explicitly exploratory development analysis.
+
 **When must verification catch up with a self-improving policy?**
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.
