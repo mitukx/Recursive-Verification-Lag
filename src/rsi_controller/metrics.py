@@ -29,8 +29,8 @@ class MetricsWriter:
           ("reward_vs_trusted.svg",[("reward","reward"),("trusted_score","trusted")],"Reward vs trusted score"),
           ("verification_gap_vs_generation.svg",[("verification_gap","verification gap")],"Verification gap vs generation"),
           ("verifier_age_vs_failure_rate.svg",[("policy_verifier_age","verifier age"),("failure_rate","failure rate")],"Verifier age and failure rate"),
-          ("champion_progression.svg",[("sealed_score","sealed score")],"Champion/candidate progression"),
-          ("evolution_vs_sealed.svg",[("development_score","development/evolution proxy"),("sealed_score","sealed")],"Evolution/development vs sealed performance")]
+          ("champion_progression.svg",[("promotion_score","promotion score")],"Champion/candidate progression"),
+          ("development_vs_promotion.svg",[("development_score","development"),("promotion_score","promotion")],"Development vs promotion performance")]
         out=[]
         for filename,series,title in specs:
             path=self.root/filename; _svg_plot(path,rows,series,title); out.append(path)
