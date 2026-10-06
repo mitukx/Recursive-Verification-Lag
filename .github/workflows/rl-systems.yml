@@ -11,7 +11,9 @@ on:
       - 'src/benchmark_scheduler.py'
       - 'src/benchmark_scheduler_chaos.py'
       - 'src/benchmark_scheduler_slo.py'
-      - 'src/benchmark_admission_control.py src/benchmark_vllm_serving.py src/benchmark_vllm_failure.py src/rvl_systems/vllm_metrics.py'
+      - 'src/benchmark_failure_matrix.py'
+      - 'src/benchmark_precision_parity.py'
+      - 'src/benchmark_admission_control.py'
       - 'src/replay_control_plane.py'
       - 'src/check_benchmark_regressions.py'
       - 'src/manifest_artifacts.py'
@@ -28,6 +30,8 @@ on:
       - 'docs/xai_evidence_matrix.md'
       - 'docs/slo_scheduler.md'
       - 'docs/admission_control.md'
+      - 'docs/serving_cost_model.md'
+      - 'docs/numerical_parity.md'
       - 'docs/replay_and_regression.md'
       - '.github/workflows/rl-systems.yml'
   push:
@@ -59,9 +63,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Unit tests
-        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_scheduler_health tests.test_telemetry tests.test_weight_sync tests.test_profiling tests.test_worker_health tests.test_precision_numerics tests.test_worker_rpc tests.test_torch_distributed_config tests.test_dynamic_batching tests.test_vllm_batch tests.test_policy_deployment tests.test_scheduler_slo tests.test_admission_control tests.test_scheduler_admission tests.test_event_log tests.test_regression_gate tests.test_artifact_manifest tests.test_vllm_metrics -v
+        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_scheduler_health tests.test_telemetry tests.test_weight_sync tests.test_profiling tests.test_worker_health tests.test_precision_numerics tests.test_worker_rpc tests.test_torch_distributed_config tests.test_dynamic_batching tests.test_vllm_batch tests.test_policy_deployment tests.test_scheduler_slo tests.test_admission_control tests.test_scheduler_admission tests.test_event_log tests.test_regression_gate tests.test_artifact_manifest tests.test_vllm_metrics tests.test_kv_serving_scheduler tests.test_precision_parity -v
       - name: Optional-backend syntax check
-        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/rvl_systems/torch_distributed.py src/rvl_systems/dynamic_batch.py src/rvl_systems/vllm_batch.py src/run_hf_grpo_smoke.py src/run_torch_distributed_smoke.py src/benchmark_vllm_cluster.py src/benchmark_scheduler_chaos.py src/benchmark_scheduler_slo.py src/benchmark_admission_control.py
+        run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/rvl_systems/torch_distributed.py src/rvl_systems/dynamic_batch.py src/rvl_systems/vllm_batch.py src/run_hf_grpo_smoke.py src/run_torch_distributed_smoke.py src/benchmark_vllm_cluster.py src/benchmark_scheduler_chaos.py src/benchmark_scheduler_slo.py src/benchmark_admission_control.py src/benchmark_failure_matrix.py src/benchmark_precision_parity.py
       - name: End-to-end CPU smoke test
         run: python -m src.run_rlvr_systems_demo --rounds 3 --samples 8
       - name: Generate async rollout benchmark report
@@ -74,13 +78,17 @@ jobs:
         run: python -m src.benchmark_scheduler_slo --trials 8 --primary-ms 40 --backup-ms 2 --hedge-after-ms 5 --deadline-ms 20 --output artifacts/scheduler-slo.json
       - name: Run workload admission benchmark
         run: python -m src.benchmark_admission_control --capacity 4 --max-queued 8 --requests-per-workload 8 --hold-ms 1 --output artifacts/admission-control.json
+      - name: Run failure matrix
+        run: python -m src.benchmark_failure_matrix --output artifacts/failure-matrix.json
+      - name: Run numerical parity benchmark
+        run: python -m src.benchmark_precision_parity --output artifacts/precision-parity.json
       - name: Replay control-plane trace
         run: python -m src.replay_control_plane --input artifacts/scheduler-chaos.events.jsonl --output artifacts/scheduler-chaos.replay.json
       - name: Enforce benchmark regression gates
-        run: python -m src.check_benchmark_regressions --policy configs/benchmark_gates.json artifacts/async-rollout.json artifacts/scheduler.json artifacts/scheduler-chaos.json artifacts/scheduler-slo.json artifacts/admission-control.json
+        run: python -m src.check_benchmark_regressions --policy configs/benchmark_gates.json artifacts/async-rollout.json artifacts/scheduler.json artifacts/scheduler-chaos.json artifacts/scheduler-slo.json artifacts/admission-control.json artifacts/failure-matrix.json artifacts/precision-parity.json
       - name: Build and verify artifact manifest
         run: |
-          python -m src.manifest_artifacts --output artifacts/manifest.json artifacts/async-rollout.json artifacts/scheduler.json artifacts/scheduler-chaos.json artifacts/scheduler-slo.json artifacts/admission-control.json artifacts/scheduler-chaos.replay.json artifacts/scheduler-chaos.events.jsonl
+          python -m src.manifest_artifacts --output artifacts/manifest.json artifacts/async-rollout.json artifacts/scheduler.json artifacts/scheduler-chaos.json artifacts/scheduler-slo.json artifacts/admission-control.json artifacts/failure-matrix.json artifacts/precision-parity.json artifacts/scheduler-chaos.replay.json artifacts/scheduler-chaos.events.jsonl
           python -m src.manifest_artifacts --verify artifacts/manifest.json
       - name: Upload benchmark evidence
         uses: actions/upload-artifact@v4
