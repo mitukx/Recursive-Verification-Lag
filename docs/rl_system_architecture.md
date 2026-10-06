@@ -25,6 +25,34 @@ flowchart LR
     G --> T
 ```
 
+## Persistent online learning loop
+
+The new executable implementation is under src/rvl_systems/lab. The
+[mini-lab runbook](mini_frontier_lab.md) distinguishes the CPU reference, real
+causal-LM path, coding-agent path, distributed replay learner and unverified GPU
+scale boundaries.
+
+~~~mermaid
+flowchart TD
+    A["Episode-pinned actors"] --> B["Durable versioned replay"]
+    B --> C["Learner and terminal credit"]
+    C --> D["Checkpoint gate and publisher"]
+    D --> A
+    B --> E["RVL audit controller"]
+    E --> F["Trusted evaluator"]
+    F --> G["Verifier residual fitting"]
+    G --> B
+    H["Attack search and failure curriculum"] --> A
+    F --> H
+~~~
+
+The CPU driver commits parameters, replay acknowledgements and controller state
+atomically. The LM driver commits checkpoint pointers with consumption and
+retains immutable behavior IDs/logprobs during reward re-evaluation. Blue/green
+serving leases pin episodes across activation; existing scheduler/RPC primitives
+provide routing and backpressure. Distributed tensor learning is currently an
+explicit replay-consumer entry point, not a complete multi-node online service.
+
 ## Control plane
 
 - `rollout.py`: bounded-concurrency request execution.

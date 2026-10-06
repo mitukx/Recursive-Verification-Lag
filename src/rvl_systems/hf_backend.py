@@ -153,6 +153,8 @@ class HFLocalBackend:
                 **encoded,
                 do_sample=True,
                 temperature=temperature,
+                top_k=0,
+                top_p=1.0,
                 num_return_sequences=n,
                 max_new_tokens=self.max_new_tokens,
                 return_dict_in_generate=True,

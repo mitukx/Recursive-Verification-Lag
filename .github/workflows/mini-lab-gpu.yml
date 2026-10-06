@@ -1,0 +1,31 @@
+name: mini-lab-gpu-acceptance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cuda-nccl-fsdp:
+    runs-on: [self-hosted, linux, gpu]
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      TOKENIZERS_PARALLELISM: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert two CUDA GPUs and record environment
+        run: |
+          mkdir -p artifacts
+          python -c "import torch; assert torch.cuda.device_count() >= 2; print(torch.__version__)"
+          nvidia-smi > artifacts/gpu-environment.txt
+          pip freeze > artifacts/dependencies.txt
+      - name: CUDA NCCL FSDP token-level RL and sharded checkpoint
+        run: torchrun --standalone --nproc-per-node=2 -m src.run_distributed_mini_lab --mode fsdp --output artifacts/fsdp
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mini-lab-gpu-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
