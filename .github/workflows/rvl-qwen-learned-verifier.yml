@@ -1,19 +1,20 @@
 name: rvl-qwen-learned-verifier
 
 on:
-  push:
-    branches:
-      - 'gpu-evidence/qwen-learned-verifier-v1'
-    paths:
-      - 'gpu-evidence-trigger.json'
   workflow_dispatch:
+    inputs:
+      upstream_qwen_bridge_run_id:
+        description: 'Completed Issue #38 Actions run ID whose immutable artifact will gate this run'
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: rvl-qwen-learned-verifier-v1
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   learned-verifier:
@@ -23,10 +24,12 @@ jobs:
       TOKENIZERS_PARALLELISM: 'false'
       HF_HUB_DISABLE_TELEMETRY: '1'
       OMP_NUM_THREADS: '1'
+      RESEARCH_SOURCE_SHA: '8602c0a94d246a25efea7079c2e65cd514995d48'
+      UPSTREAM_QWEN_BRIDGE_SOURCE_SHA: 'd02826584b8df391dfad059b92756b5acdc38e63'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 30e343e47923d4378b43afd8268456bfae1e0f28
+          ref: 8602c0a94d246a25efea7079c2e65cd514995d48
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -35,6 +38,42 @@ jobs:
           python -m pip install -U pip
           python -m pip install 'torch' 'transformers==4.57.1' 'datasets==3.6.0' 'accelerate==1.10.1' 'huggingface_hub'
           python -m pip install -r requirements.txt
+      - name: Download exact Issue #38 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rvl-qwen-alignment-bridge-v1-${{ inputs.upstream_qwen_bridge_run_id }}
+          path: upstream/qwen_alignment_bridge
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.upstream_qwen_bridge_run_id }}
+      - name: Revalidate Issue #38 and create promotion receipt
+        run: |
+          mkdir -p promotion/recomputed
+          python scripts/validate_qwen_alignment_bridge_evidence.py \
+            upstream/qwen_alignment_bridge/results/qwen_alignment_bridge_v1 \
+            --protocol upstream/qwen_alignment_bridge/configs/qwen_alignment_bridge_v1.json \
+            --expected-research-sha "$UPSTREAM_QWEN_BRIDGE_SOURCE_SHA" \
+            --output promotion/recomputed/qwen_alignment_bridge_v1.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          recorded=json.loads(Path('upstream/qwen_alignment_bridge/validation/qwen_alignment_bridge_v1.json').read_text())
+          recomputed=json.loads(Path('promotion/recomputed/qwen_alignment_bridge_v1.json').read_text())
+          assert recorded == recomputed, 'upstream validation report differs from independent recomputation'
+          assert recomputed['valid'] is True
+          assert recomputed['execution_status'] == 'completed'
+          assert recomputed['scientific_result'] in {'direction_passed','direction_failed','underpowered'}
+          PY
+          python scripts/research_evidence_promotion.py create \
+            --stage qwen_alignment_to_learned_verifier \
+            --upstream-run-id "${{ inputs.upstream_qwen_bridge_run_id }}" \
+            --upstream-artifact-name "rvl-qwen-alignment-bridge-v1-${{ inputs.upstream_qwen_bridge_run_id }}" \
+            --upstream-manifest upstream/qwen_alignment_bridge/results/qwen_alignment_bridge_v1/manifest.json \
+            --upstream-validation upstream/qwen_alignment_bridge/validation/qwen_alignment_bridge_v1.json \
+            --downstream-run-id "${{ github.run_id }}" \
+            --downstream-source-sha "$RESEARCH_SOURCE_SHA" \
+            --downstream-protocol configs/qwen_learned_verifier_bridge_v1.json \
+            --output promotion/qwen_alignment_to_learned_verifier.json
       - name: Assert CUDA and immutable source
         run: |
           nvidia-smi
@@ -43,15 +82,17 @@ jobs:
           assert torch.cuda.is_available(), 'CUDA required'
           print('torch', torch.__version__, 'cuda', torch.version.cuda, 'device', torch.cuda.get_device_name(0))
           PY
-          test "$(git rev-parse HEAD)" = "30e343e47923d4378b43afd8268456bfae1e0f28"
+          test "$(git rev-parse HEAD)" = "$RESEARCH_SOURCE_SHA"
       - name: Validate learned-verifier CPU contracts
         run: |
           python -m py_compile \
             scripts/run_qwen_learned_verifier_bridge.py \
-            scripts/validate_qwen_learned_verifier_evidence.py
+            scripts/validate_qwen_learned_verifier_evidence.py \
+            scripts/research_evidence_promotion.py
           python -m unittest \
             tests.test_qwen_learned_verifier_bridge \
-            tests.test_qwen_learned_verifier_evidence -v
+            tests.test_qwen_learned_verifier_evidence \
+            tests.test_research_evidence_promotion -v
       - name: Execute locked learned-verifier bridge
         run: |
           rm -rf results/qwen_learned_verifier_bridge_v1
@@ -80,9 +121,9 @@ jobs:
           python scripts/validate_qwen_learned_verifier_evidence.py \
             results/qwen_learned_verifier_bridge_v1 \
             --protocol configs/qwen_learned_verifier_bridge_v1.json \
-            --expected-research-sha 30e343e47923d4378b43afd8268456bfae1e0f28 \
+            --expected-research-sha "$RESEARCH_SOURCE_SHA" \
             --output validation/qwen_learned_verifier_bridge_v1.json
-      - name: Upload raw learned-verifier evidence
+      - name: Upload immutable learned-verifier evidence and promotion chain
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -91,5 +132,7 @@ jobs:
             configs/qwen_learned_verifier_bridge_v1.json
             results/qwen_learned_verifier_bridge_v1/
             validation/qwen_learned_verifier_bridge_v1.json
+            promotion/qwen_alignment_to_learned_verifier.json
+            promotion/recomputed/qwen_alignment_bridge_v1.json
           if-no-files-found: error
           retention-days: 90
