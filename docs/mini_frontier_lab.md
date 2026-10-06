@@ -195,6 +195,14 @@ The ensemble now applies an executable veto. This correctness fix has dedicated
 regression tests; future results must use the fixed source revision. We retain
 the earlier negative results instead of replacing them.
 
+The [post-veto acceptance record](../results/mini_lab/20261006_executable_veto_acceptance.json)
+records 48 distinct feature tests across the CPU, real-tensor and Docker jobs,
+plus 36 matched-cost CPU runs on each OS. The descriptive adaptive-minus-fixed
+mean is -0.0104167 (about -1.04 percentage points), with positive and negative
+pairs. The same three seeds recur across hyperparameters; this is not a pooled
+significance test. Real LM smoke records actual parameter changes, six trusted
+audits and verifier fitting, using an explicitly non-capability parity reward.
+
 ## Acceptance boundaries
 
 | Requirement | What runs | What remains |
