@@ -1,0 +1,9 @@
+{
+  "experiment": "qwen-alignment-bridge-v1",
+  "research_branch": "research/rvl-transfer-evidence-v3",
+  "research_head": "24519261755c84e24c2f42d090feaafd2f22d021",
+  "protocol": "configs/qwen_alignment_bridge_v1.json",
+  "runner": "scripts/run_qwen_alignment_bridge.py",
+  "issue": 38,
+  "purpose": "execute locked matched-drift Qwen GRPO verifier-error alignment bridge; retain negative/underpowered outcomes"
+}
