@@ -33,8 +33,8 @@ experiments that still require external hardware.
 
 | Capability | Evidence |
 |---|---|
-| Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update runs in GitHub Actions |
-| Distributed training primitives | real `torchrun --nproc-per-node=2` test with broadcast, all-reduce, DDP backward, optimizer step, and cross-rank parameter equality |
+| Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update in CI, plus held-out Qwen/GSM8K before→after GPU experiment runner |
+| Distributed training primitives | real CPU `torchrun` DDP CI plus GPU-ready NCCL/FSDP sharded checkpoint-resume and 1→2 GPU scaling acceptance |
 | Rollout serving | bounded async rollout, EWMA + prefill/decode/KV-aware routing, weighted workload admission, fair multi-workload scheduling, overload shedding, end-to-end deadlines, optional hedged requests |
 | Failure handling | cross-worker failover, circuit-breaker quarantine, single half-open recovery probes, loser cancellation, stale policy-version rejection |
 | Remote workers | actual asyncio TCP RPC server/client with request IDs, ping, errors, and policy-version checks |
@@ -50,7 +50,9 @@ Start with [the systems architecture](docs/rl_system_architecture.md), the
 [workload admission design](docs/admission_control.md),
 [replay/regression design](docs/replay_and_regression.md),
 [free-GPU runbook](docs/free_gpu_runbook.md),
-[Triton GRPO kernel note](docs/triton_grpo.md), and the
+[Triton GRPO kernel note](docs/triton_grpo.md),
+[Qwen RLVR experiment](docs/qwen_rlvr_experiment.md),
+[FSDP/NCCL acceptance](docs/fsdp_nccl_acceptance.md), and the
 [evidence/gap matrix](docs/xai_evidence_matrix.md).
 
 A local control-plane smoke run requires no GPU:
