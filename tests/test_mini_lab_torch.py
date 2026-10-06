@@ -64,6 +64,62 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
             self.assertLess(float(row[2]),1e-5)
             self.assertLess(float(row[3]),1e-6)
 
+    async def test_coding_episodes_connect_terminal_credit_rvl_and_optimizer(self):
+        # Scripted tool text exercises contracts. The real tiny tensor model
+        # supplies token logprobs and receives optimizer updates; no claim that
+        # the fixture learned Python syntax or semantic reasoning.
+        import json
+        from src.rvl_systems.lab.coding import CodingTask,IOTest
+        from src.rvl_systems.lab.coding_lm import CodingAsyncHFLab
+        model,owner = self.model(),self
+        class Backend:
+            model_name = "offline-coding-fixture"
+            resolved_device = "cpu"
+            _torch = torch
+            def __init__(self):
+                self.model = copy.deepcopy(model)
+            def ensure_loaded(self):
+                pass
+            async def generate(self,pid,prompt,*,n,temperature,seed):
+                await asyncio.sleep(.001)
+                turn = int(pid.rsplit("-",1)[-1])
+                index = (seed//7919)%4
+                g = owner.samples(self.model)[index].generation
+                if turn == 0:
+                    source = "def f(x): return 2*x" if index%2 else "def f(x): return 0"
+                    action = {"tool":"edit","source":source}
+                else:
+                    action = {"tool":"finish"}
+                return [replace(g,prompt_id=pid,prompt=prompt,response=json.dumps(action))]
+        from dataclasses import replace
+        task = CodingTask("f","Implement f(x)=2*x","f",(IOTest((0,),0),),(IOTest((3,),6),))
+        async def public(g):
+            return 1.0
+        async def proxy(g):
+            return 1.0 if g.metadata["completed"] else 0.0
+        async def trusted(g):
+            return float("2*x" in g.metadata["final_source"] and g.metadata["completed"])
+        def verifier():
+            return CalibratedMultiVerifier({"proxy":proxy},trusted=trusted,
+                                           feature=lambda g:g.metadata["final_source"])
+        control = ControlConfig(audit_budget=4,refit_labels=2,risk_threshold=0)
+        with tempfile.TemporaryDirectory() as tmp:
+            lab = CodingAsyncHFLab(tmp,Backend(),verifier(),{"f":task},public,
+                                   max_steps=2,learning_rate=1e-3,control=control)
+            try:
+                report = await asyncio.wait_for(lab.run_tasks(samples=4),30)
+                self.assertEqual(report["version"],1)
+                self.assertEqual(report["trusted_audits"],2)
+                self.assertGreater(report["verifier_version"],0)
+                self.assertGreater(report["parameter_l1_change"],0)
+                raw = json.loads(lab.replay.db.execute("SELECT payload FROM groups").fetchone()[0])
+                self.assertEqual(len(raw),8)
+                self.assertTrue(all("episode_id" in s["metadata"] for s in raw))
+                self.assertTrue(all(s["generation"]["response"].startswith("{") for s in raw))
+                self.assertTrue((Path(tmp)/"coding-episodes"/"group-00000000-plan.json").exists())
+            finally:
+                lab.close()
+
     async def test_microbatch_gradient_matches_full_graph_reference(self):
         model = self.model()
         samples = self.samples(model)
