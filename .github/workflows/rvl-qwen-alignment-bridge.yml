@@ -24,10 +24,10 @@ jobs:
       HF_HUB_DISABLE_TELEMETRY: '1'
       OMP_NUM_THREADS: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: d02826584b8df391dfad059b92756b5acdc38e63
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Install pinned bridge dependencies
@@ -76,14 +76,48 @@ jobs:
             --protocol configs/qwen_alignment_bridge_v1.json \
             --expected-research-sha d02826584b8df391dfad059b92756b5acdc38e63 \
             --output validation/qwen_alignment_bridge_v1.json
+      - name: Record immutable workflow provenance
+        if: always()
+        env:
+          PINNED_RESEARCH_SOURCE: 'd02826584b8df391dfad059b92756b5acdc38e63'
+        run: |
+          mkdir -p provenance
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          protocol=Path('configs/qwen_alignment_bridge_v1.json')
+          payload={
+              "schema_version":1,
+              "repository":os.environ.get("GITHUB_REPOSITORY"),
+              "workflow":os.environ.get("GITHUB_WORKFLOW"),
+              "workflow_ref":os.environ.get("GITHUB_WORKFLOW_REF"),
+              "event_name":os.environ.get("GITHUB_EVENT_NAME"),
+              "trigger_ref":os.environ.get("GITHUB_REF"),
+              "trigger_sha":os.environ.get("GITHUB_SHA"),
+              "run_id":int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt":int(os.environ.get("GITHUB_RUN_ATTEMPT","1")),
+              "research_source_sha":os.environ["PINNED_RESEARCH_SOURCE"],
+              "protocol_sha256":hashlib.sha256(protocol.read_bytes()).hexdigest() if protocol.is_file() else None,
+              "runner_name":os.environ.get("RUNNER_NAME"),
+              "runner_os":os.environ.get("RUNNER_OS"),
+              "runner_arch":os.environ.get("RUNNER_ARCH"),
+              "action_pins":{"checkout":"11d5960a326750d5838078e36cf38b85af677262","setup_python":"a26af69be951a213d495a4c3e4e4022e16d87065","upload_artifact":"ea165f8d65b6e75b540449e92b4886f43607fa02","download_artifact":"d3f86a106a0bac45b974a628896c90dbdf5c8093"},
+          }
+          for key in ("UPSTREAM_RUN_ID","PROMOTION_RECEIPT"):
+              value=os.environ.get(key)
+              if value:
+                  payload[key.lower()]=value
+          Path('provenance/workflow.json').write_text(json.dumps(payload,indent=2,sort_keys=True)+"\\n")
+          PY
       - name: Upload immutable raw bridge evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: rvl-qwen-alignment-bridge-v1-${{ github.run_id }}
           path: |
             configs/qwen_alignment_bridge_v1.json
             results/qwen_alignment_bridge_v1/
             validation/qwen_alignment_bridge_v1.json
+            provenance/workflow.json
           if-no-files-found: error
           retention-days: 90
