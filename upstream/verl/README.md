@@ -8,9 +8,10 @@ predicted outstanding token work per replica using prompt length plus requested
 decode budget and chooses the replica with the least predicted work.
 
 The prototype mirrors verl's current acquire/release field declaration contract:
-- acquire consumes prompt_ids and sampling_params;
+- the client derives two scalars locally: prompt_tokens and decode_budget;
+- acquire serializes only those scalars, not prompt_ids or sampling_params;
 - release consumes only request_id;
-- admitted work is retained locally so prompt_ids are not serialized again;
+- admitted work is retained locally for exact release accounting;
 - sticky sessions and deterministic routing remain explicit semantics.
 
 The included benchmark is a deterministic queue/service model and is **not**
