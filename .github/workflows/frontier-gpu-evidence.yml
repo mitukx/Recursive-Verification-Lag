@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'gpu-evidence/**'
+    paths:
+      - 'gpu-evidence-trigger.json'
   workflow_dispatch:
     inputs:
       model:
@@ -18,6 +20,10 @@ on:
         description: Requests per vLLM concurrency point
         required: true
         default: '32'
+
+concurrency:
+  group: frontier-gpu-evidence-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
