@@ -33,7 +33,7 @@ experiments that still require external hardware.
 
 | Capability | Evidence |
 |---|---|
-| Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update in CI, plus held-out Qwen/GSM8K before→after GPU experiment runner |
+| Real causal-LM RL path | Hugging Face model rollout -> verifier -> token-level clipped GRPO update in CI, plus held-out Qwen/GSM8K runner with optional per-step transactional promotion and optimizer/RNG rollback |
 | Distributed training primitives | real CPU `torchrun` DDP CI plus GPU-ready NCCL/FSDP sharded checkpoint-resume and 1→2 GPU scaling acceptance |
 | Rollout serving | bounded async rollout, EWMA + prefill/decode/KV-aware routing, weighted workload admission, fair multi-workload scheduling, overload shedding, end-to-end deadlines, optional hedged requests |
 | Failure handling | cross-worker failover, circuit-breaker quarantine, single half-open recovery probes, loser cancellation, stale policy-version rejection |
