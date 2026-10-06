@@ -103,7 +103,9 @@ Feature cells can remain misspecified. A critic trained on audit labels is not
 an independent stronger LLM. Remote JSON LLM judges can be added via JSONJudge
 and MultiVerifier; their capabilities and resistance to prompt injection must
 be measured separately. Required grader failures abstain and reject rather than
-silently granting reward.
+silently granting reward. A calibrated critic may reduce a proxy score but cannot
+raise it above failed executable tests; feature-cell collision regression tests
+enforce this invariant. Explicit trusted labels remain authoritative.
 
 The bandit attacker changes its choice among constant-output, sign-reversal and
 off-by-one programs based on observed exploitation and current verifier scores.
@@ -178,6 +180,20 @@ Primary API references:
 [PyTorch FSDP](https://docs.pytorch.org/docs/stable/fsdp.html),
 [distributed checkpoints](https://docs.pytorch.org/tutorials/recipes/distributed_checkpoint_recipe.html),
 [vLLM serving](https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html).
+
+## Measured results and a correctness correction
+
+The archived [pre-veto acceptance record](../results/mini_lab/20261006_before_executable_veto.json)
+contains 36 CPU runs (three seeds, two learning rates, two fixed cadences, three
+controller modes). Adaptive and fixed runs each used 32 trusted calls.
+Differences include improvements and substantial regressions. These measurements
+do not establish adaptive superiority.
+
+A learned critic could previously raise a reward above a failed executable
+grader when correct and incorrect programs collided in its feature cell.
+The ensemble now applies an executable veto. This correctness fix has dedicated
+regression tests; future results must use the fixed source revision. We retain
+the earlier negative results instead of replacing them.
 
 ## Acceptance boundaries
 

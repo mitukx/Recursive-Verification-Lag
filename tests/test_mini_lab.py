@@ -148,6 +148,16 @@ class VerificationTests(unittest.TestCase):
         self.assertEqual(v.audit(attack).reward,0)
         self.assertEqual(v.exploits,1)
 
+    def test_critic_cannot_reward_known_executable_failure_in_colliding_cell(self):
+        v = VerifierEnsemble()
+        good = trajectory("good",program=(1,2))
+        bad = trajectory("bad",program=(1,3))
+        v.fit([(good,1)]*100)
+        self.assertEqual(v.score(good).cell,v.score(bad).cell)
+        self.assertGreater(v.score(bad).scores[1],.9)
+        self.assertEqual(public_reward(bad.task,bad.program),0)
+        self.assertEqual(v.score(bad).reward,0)
+
     def test_controller_budget_and_fixed_cadence(self):
         v,l = VerifierEnsemble(),TabularLearner()
         rows = [(trajectory(str(i)),verdict()) for i in range(4)]

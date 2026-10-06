@@ -86,6 +86,17 @@ class EnsembleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(r.reward,0)
         self.assertEqual(set(r.metadata["failed_graders"]),{"slow","invalid"})
 
+    async def test_calibrated_critic_cannot_override_public_failure(self):
+        from dataclasses import asdict
+        from src.rvl_systems.lab.judges import CalibratedMultiVerifier
+        async def failed(g):
+            return 0.0
+        v = CalibratedMultiVerifier({"executable":failed},trusted=failed,feature=lambda g:"collision")
+        v.fit([{"generation":asdict(self.generation()),"reward":1,"proxy":1}]*100)
+        result = await v.verify(self.generation())
+        self.assertGreater(result.metadata["critic_score"],.9)
+        self.assertEqual(result.reward,0)
+
     async def test_required_graders_are_concurrency_bounded(self):
         active = 0
         maximum = 0

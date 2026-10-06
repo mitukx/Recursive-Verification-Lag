@@ -35,7 +35,7 @@ class VerifierEnsemble:
         critic = successes/total
         uncertainty = min(1.0, 2 * math.sqrt(critic*(1-critic)/(total+1)))
         w = self.critic_weight
-        return Verdict((1-w)*public+w*critic, self.version, (public, critic),
+        return Verdict(min(public,(1-w)*public+w*critic), self.version, (public, critic),
                        cell, uncertainty)
 
     def audit(self, trajectory):

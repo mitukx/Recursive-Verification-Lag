@@ -113,7 +113,7 @@ class CalibratedMultiVerifier(MultiVerifier):
         public = min(raw["grader_scores"].values()) if not raw["failed_graders"] else 0.0
         s,n = self.cells.get(cell,(1.0,2.0))
         calibrated = s/n
-        reward = public if self.version==0 else .1*public+.9*calibrated
+        reward = public if self.version==0 else min(public,.1*public+.9*calibrated)
         if raw["failed_graders"]:
             reward = 0.0
         return replace(sample,reward=reward,verifier_version=self.version,

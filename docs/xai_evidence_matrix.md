@@ -34,6 +34,25 @@ require real GPU measurements.
 | Custom CUDA/Triton kernels | not yet implemented | gap |
 | BF16/FP16 empirical stability study | harness supported | measurement gap |
 
+## Persistent asynchronous training and RVL integration
+
+See [the mini-lab runbook](mini_frontier_lab.md) for executable commands and
+explicit acceptance boundaries.
+
+| Added capability | Implementation/evidence | Remaining boundary |
+|---|---|---|
+| Concurrent actor/learner training | CPU actors and independent real causal-LM model copies | multi-node online learner service |
+| Durable experience | WAL replay, expiring fenced leases, immutable behavior tokens, lag filtering | distributed database/retention |
+| RVL interventions | trusted audit acquisition, residual fitting, reward re-evaluation, equal-cost cadence sweeps | heuristic controller, not a certificate |
+| Policy/verifier co-evolution | bandit attacks, trusted labels, critic fitting, fresh failure-task replay | open-ended learned red teaming |
+| Model-driven coding agents | JSON tools, pinned episode weights, per-step journals, terminal-return RL | pretrained capability gain and multi-hour completion |
+| Executable reward security | evaluator-owned I/O comparisons outside candidate Python, isolated Docker, attack tests | broad adversarial robustness |
+| Verifier ensembles | executable public tests, trained residual critic, JSON remote judge adapter | real stronger-model calibration |
+| Distributed token-level RL | actual two-rank DDP optimizer update; FSDP/DCP entry point | NCCL/FSDP GPU validation |
+| Deployment | health-probed blue/green serving, drain old episode leases | real GPU reload/uptime evidence |
+| Token-exact serving data | server-owned token IDs/logprobs, strict schema/model checks | real vLLM/SGLang GPU acceptance |
+| Metrics | p50/p95/p99, LM tokens/s, utilization sampler, explicit-input MFU estimator | measured sustained GPU scaling |
+
 ## Evidence bar before using this as an xAI portfolio centerpiece
 
 The repository now has real model and real multi-process CI evidence. Do not
