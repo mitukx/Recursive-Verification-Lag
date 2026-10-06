@@ -65,4 +65,6 @@ jobs:
           git add results/equal_kl_alignment_stress_v1
           git diff --cached --quiet && exit 0
           git commit -m "Archive locked equal-KL verifier alignment evidence [skip ci]"
+          git fetch origin research/rvl-transfer-evidence-v3
+          git rebase origin/research/rvl-transfer-evidence-v3
           git push origin HEAD:research/rvl-transfer-evidence-v3
