@@ -102,5 +102,37 @@
       "op": "ge",
       "value": 3.5
     }
+  ],
+  "policy-deployment-recovery": [
+    {
+      "metric": "partial_ack_recovered",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "active_state_recovered",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "version_monotonic_after_restart",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "stale_coordinator_fenced",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "corrupt_pending_rejected",
+      "op": "ge",
+      "value": 1
+    },
+    {
+      "metric": "unexpected_failures",
+      "op": "le",
+      "value": 0
+    }
   ]
 }
