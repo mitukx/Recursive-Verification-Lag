@@ -14,6 +14,7 @@ on:
       - 'tests/test_remote_workers.py'
       - 'tests/test_scheduler.py'
       - 'tests/test_telemetry.py'
+      - 'tests/test_weight_sync.py'
       - 'requirements-systems.txt'
       - 'docs/xai_rl_systems.md'
       - '.github/workflows/rl-systems.yml'
@@ -32,6 +33,7 @@ on:
       - 'tests/test_remote_workers.py'
       - 'tests/test_scheduler.py'
       - 'tests/test_telemetry.py'
+      - 'tests/test_weight_sync.py'
       - '.github/workflows/rl-systems.yml'
 
 permissions:
@@ -47,7 +49,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Unit tests
-        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_telemetry -v
+        run: python -m unittest tests.test_rlvr_systems tests.test_rlvr_reliability tests.test_rlvr_objectives tests.test_remote_workers tests.test_scheduler tests.test_telemetry tests.test_weight_sync -v
       - name: Optional-backend syntax check
         run: python -m py_compile src/rvl_systems/hf_backend.py src/rvl_systems/hf_trainer.py src/run_hf_grpo_smoke.py
       - name: End-to-end CPU smoke test
