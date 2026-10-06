@@ -166,6 +166,13 @@ class TokenServingTests(unittest.TestCase):
         p,r,lp = HFCausalLMGRPOTrainer._metadata(VerifiedGeneration(g,1,0,0))
         self.assertEqual((p,r,lp),([1,2],[3,4],[-.2,-.3]))
 
+    def test_vllm_per_choice_prompt_token_contract(self):
+        from src.rvl_systems.lab.token_serving import TokenServingBackend
+        raw = self.response()
+        raw["choices"][0]["prompt_token_ids"] = raw.pop("prompt_token_ids")
+        g = TokenServingBackend("http://localhost","immutable-v3").parse(raw,"p","prompt",1,.1)[0]
+        self.assertEqual(g.metadata["prompt_token_ids"],[1,2])
+
     def test_identity_missing_prompt_ids_and_partial_logprobs_rejected(self):
         from src.rvl_systems.lab.token_serving import TokenServingBackend
         backend = TokenServingBackend("http://localhost","immutable-v3")

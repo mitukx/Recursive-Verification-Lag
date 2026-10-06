@@ -40,14 +40,22 @@ class TokenServingBackend:
     def parse(self,body,prompt_id,prompt,n,elapsed_s):
         if body.get("model") != self.model:
             raise ValueError("serving model identity mismatch")
-        prompt_ids = body.get("prompt_token_ids")
-        if not isinstance(prompt_ids,list) or not prompt_ids or not all(type(x) is int and x >= 0 for x in prompt_ids):
-            raise ValueError("server must return exact prompt token IDs; client retokenization is forbidden")
         choices = body.get("choices",[])
         if len(choices)!=n or sorted(c.get("index",-1) for c in choices)!=list(range(n)):
             raise ValueError("response choice cardinality/index mismatch")
         out = []
+        shared_prompt_ids = None
         for choice in sorted(choices,key=lambda c:c["index"]):
+            # vLLM completion responses attach prompt IDs to each choice.
+            # Some compatible servers expose them at response level.
+            prompt_ids = choice.get("prompt_token_ids")
+            if prompt_ids is None:
+                prompt_ids = body.get("prompt_token_ids")
+            if not isinstance(prompt_ids,list) or not prompt_ids or not all(type(x) is int and x >= 0 for x in prompt_ids):
+                raise ValueError("server must return exact prompt token IDs; client retokenization is forbidden")
+            if shared_prompt_ids is not None and prompt_ids != shared_prompt_ids:
+                raise ValueError("samples from one prompt have inconsistent prompt IDs")
+            shared_prompt_ids = prompt_ids
             ids = choice.get("token_ids")
             logps = (choice.get("logprobs") or {}).get("token_logprobs")
             if not isinstance(ids,list) or not ids or not all(type(x) is int and x >= 0 for x in ids):
