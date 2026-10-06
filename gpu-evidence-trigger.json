@@ -5,5 +5,7 @@
   "protocol": "configs/qwen_alignment_bridge_v1.json",
   "runner": "scripts/run_qwen_alignment_bridge.py",
   "issue": 38,
-  "purpose": "execute locked matched-drift Qwen GRPO verifier-error alignment bridge; retain negative/underpowered outcomes"
+  "purpose": "execute locked matched-drift Qwen GRPO verifier-error alignment bridge; retain negative/underpowered outcomes",
+  "execution_source_sha": "9b539907da02e4832d3fa5186940a72803a0e2c7",
+  "trigger_revision": 2
 }
