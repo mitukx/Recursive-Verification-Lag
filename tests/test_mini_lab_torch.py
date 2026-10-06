@@ -16,6 +16,8 @@ except ImportError:
 from src.rvl_systems.hf_trainer import HFCausalLMGRPOTrainer, HFTTrainerConfig
 from src.rvl_systems.lab.lm_runtime import AsyncHFLab
 from src.rvl_systems.lab.token_replay import TokenReplay
+from src.rvl_systems.lab.judges import CalibratedMultiVerifier
+from src.rvl_systems.lab.control import ControlConfig
 from src.rvl_systems.types import Generation, VerifiedGeneration
 from src.rvl_systems.verifier import FunctionalVerifier
 
@@ -91,19 +93,28 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(.005)
                 return [s.generation for s in owner.samples(self.model)]
         with tempfile.TemporaryDirectory() as tmp:
-            lab = AsyncHFLab(tmp,Backend(),FunctionalVerifier(lambda g:float(g.metadata["response_token_ids"][0]%2)),
-                             learning_rate=1e-3)
+            async def proxy(g):
+                return 1.0
+            async def trusted(g):
+                return float(g.metadata["response_token_ids"][0]%2)
+            def make_verifier():
+                return CalibratedMultiVerifier({"public":proxy},trusted=trusted,
+                    feature=lambda g:str(g.metadata["response_token_ids"][0]%2))
+            control = ControlConfig(audit_budget=4,refit_labels=2,risk_threshold=0)
+            lab = AsyncHFLab(tmp,Backend(),make_verifier(),
+                             learning_rate=1e-3,control=control)
             try:
                 first = await asyncio.wait_for(lab.run({"a":"prompt","b":"prompt"},samples=4),30)
                 self.assertGreater(first["parameter_l1_change"],0)
                 self.assertIsNot(lab.backend.model,lab.learner_model)
                 self.assertEqual(first["version"],2)
+                self.assertEqual(first["trusted_audits"],4)
+                self.assertGreater(first["verifier_version"],0)
                 for s in lab.metrics:
                     self.assertGreaterEqual(s["policy_lag"],0)
             finally:
                 lab.close()
-            resumed = AsyncHFLab(tmp,Backend(),FunctionalVerifier(lambda g:float(g.metadata["response_token_ids"][0]%2)),
-                                 learning_rate=1e-3)
+            resumed = AsyncHFLab(tmp,Backend(),make_verifier(),learning_rate=1e-3,control=control)
             try:
                 second = await asyncio.wait_for(resumed.run({"a":"prompt","b":"prompt"},samples=4),30)
                 self.assertEqual(second["version"],2)

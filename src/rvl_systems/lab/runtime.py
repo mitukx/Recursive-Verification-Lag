@@ -208,13 +208,13 @@ class MiniLab:
             self.curriculum.observe(t,verdict.reward)
         # Red-team search consumes the SAME trusted budget as ordinary auditing.
         if self.batches%self.cfg.attack_every == 0 and self.controller.spent < self.controller.config.audit_budget and self.controller.config.mode != "never":
-            attack = self.curriculum.attack(claimed[0][1].task,snapshot,self.batches)
+            attack = self.curriculum.attack(claimed[0][1].task,snapshot,self.batches,self.verifier)
             verdict = self.verifier.audit(attack)
             self.controller.spent += 1
             attacks = self.store.load_state("attack_labels") or []
             attacks.append({"trajectory":attack.to_dict(),"reward":verdict.reward})
             self.store.save_state("attack_labels",attacks)
-            self.curriculum.attack_successes += int(verdict.scores[0] > verdict.reward)
+            self.curriculum.observe_attack(verdict.scores[0],verdict.reward)
             self.store.event("attack",id=attack.trajectory_id,proxy=verdict.scores[0],trusted=verdict.reward)
         from .contracts import Trajectory
         labels = self.store.labeled()

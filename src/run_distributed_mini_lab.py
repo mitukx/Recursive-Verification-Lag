@@ -36,7 +36,24 @@ def main():
                            {"prompt_token_ids":prompt,"response_token_ids":response,
                             "response_token_logprobs":logps})
             samples.append(VerifiedGeneration(g,float(i%2),0,0))
-    distributed_step(model,samples,a.output,mode=a.mode)
+    # Per-rank telemetry includes actual nvidia-smi samples when available.
+    import asyncio
+    import json
+    import os
+    from pathlib import Path
+    from .rvl_systems.lab.measurement import GPUProfiler
+    async def measured():
+        profiler = GPUProfiler()
+        sampling = asyncio.create_task(profiler.run())
+        try:
+            await asyncio.to_thread(distributed_step,model,samples,a.output,mode=a.mode)
+        finally:
+            profiler.stop.set()
+            await sampling
+            Path(a.output).mkdir(parents=True,exist_ok=True)
+            (Path(a.output)/f"gpu-rank-{os.environ.get('RANK','0')}.json").write_text(
+                json.dumps(profiler.report(),indent=2))
+    asyncio.run(measured())
 
 
 if __name__ == "__main__":

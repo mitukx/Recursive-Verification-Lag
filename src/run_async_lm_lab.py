@@ -5,7 +5,7 @@ import json
 
 from .rvl_systems.hf_backend import HFLocalBackend
 from .rvl_systems.lab.lm_runtime import AsyncHFLab
-from .rvl_systems.verifier import FunctionalVerifier
+from .rvl_systems.lab.judges import CalibratedMultiVerifier
 
 
 def main():
@@ -17,7 +17,12 @@ def main():
     p.add_argument("--device",default="cpu")
     a = p.parse_args()
     backend = HFLocalBackend(a.model,max_new_tokens=4,device=a.device,precision="fp32")
-    verifier = FunctionalVerifier(lambda g: float(g.metadata["response_token_ids"][0]%2))
+    async def public(g):
+        return float(g.metadata["response_token_ids"][-1]%2)
+    async def trusted(g):
+        return float(g.metadata["response_token_ids"][0]%2)
+    verifier = CalibratedMultiVerifier({"executable_proxy":public},trusted=trusted,
+        feature=lambda g: str(g.metadata["response_token_ids"][0]%4))
     lab = AsyncHFLab(a.output,backend,verifier)
     try:
         report = asyncio.run(lab.run({f"task-{i}":"Write a short Python function:" for i in range(a.groups)},samples=a.samples))

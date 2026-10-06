@@ -90,7 +90,7 @@ class HFCausalLMGRPOTrainer:
         adv = torch.tensor(float(advantage), dtype=current_logps.dtype, device=device)
         surrogate = torch.minimum(ratio * adv, clipped * adv)
         clip_fraction = ((ratio < 1.0 - self.config.clip_eps) | (ratio > 1.0 + self.config.clip_eps)).float().mean()
-        return surrogate.mean(), clip_fraction, log_ratio.abs().max()
+        return surrogate.mean(), clip_fraction, log_ratio.abs().max(), ((ratio - 1) - log_ratio).mean()
 
     def train_step(self, samples: list[VerifiedGeneration], *, advantages: list[float] | None = None) -> dict[str, float]:
         if not samples:
@@ -110,13 +110,13 @@ class HFCausalLMGRPOTrainer:
             advantages = [record.advantage for record in records]
         if len(advantages) != len(samples) or not all(math.isfinite(x) for x in advantages):
             raise ValueError("invalid supplied advantages")
-        losses, clip_fractions, max_log_ratios = [], [], []
+        losses, clip_fractions, max_log_ratios, kl_estimates = [], [], [], []
         # Keep one response graph at a time, not a graph for the whole batch.
         for index, (sample, advantage) in enumerate(zip(samples, advantages)):
             sync = (index == len(samples)-1)
             context = nullcontext() if sync or not hasattr(self.model, "no_sync") else self.model.no_sync()
             with context:
-                objective, fraction, ratio = self._sample_objective(sample, advantage)
+                objective, fraction, ratio, kl = self._sample_objective(sample, advantage)
                 loss = -objective / len(samples)
                 if not self.torch.isfinite(loss):
                     raise FloatingPointError("GRPO loss is non-finite")
@@ -124,6 +124,7 @@ class HFCausalLMGRPOTrainer:
             losses.append(float(loss.detach().cpu()))
             clip_fractions.append(float(fraction.detach().cpu()))
             max_log_ratios.append(float(ratio.detach().cpu()))
+            kl_estimates.append(float(kl.detach().cpu()))
         if hasattr(self.model, "clip_grad_norm_"):
             grad_norm = self.model.clip_grad_norm_(self.config.max_grad_norm)
         else:
@@ -141,4 +142,5 @@ class HFCausalLMGRPOTrainer:
             else float(grad_norm),
             "clip_fraction": fmean(clip_fractions),
             "max_abs_log_ratio": max(max_log_ratios),
+            "behavior_kl_estimate": fmean(kl_estimates),
         }

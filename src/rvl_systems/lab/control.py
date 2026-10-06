@@ -37,6 +37,8 @@ class RVLControlPlane:
         self.decisions = []
 
     def policy_shift(self, snapshot):
+        if hasattr(snapshot, "estimated_shift"):
+            return snapshot.estimated_shift
         values = []
         for k, logits in snapshot.logits.items():
             q = softmax(logits)
@@ -99,6 +101,8 @@ class Curriculum:
         self.critic = [0.5]*families
         self.generated = 0
         self.attack_successes = 0
+        self.attack_values = [0.5,0.5,0.5]
+        self.attack_counts = [0,0,0]
 
     def generate(self, index, seed):
         import random
@@ -115,16 +119,30 @@ class Curriculum:
         self.failures[f] = 0.9*self.failures[f]+0.1*(1-reward+0.1)
         self.critic[f] = 0.9*self.critic[f]+0.1*reward
 
-    def attack(self, task, snapshot, index):
-        # Active candidate search maximizes cheap-verifier acceptance against
-        # the task-generator critic; outputs are audited, never trusted by proxy.
-        from .contracts import Step, Trajectory
+    def attack(self, task, snapshot, index, verifier=None):
+        # Bandit attacker explores constant, sign reversal and off-by-one edits.
+        # It adapts to observed exploits and the current verifier's acceptance.
+        from .contracts import Trajectory
         import math
-        context = f"{task.family}:0:0"
-        p = snapshot.probabilities(context)
-        return Trajectory(f"attack-{index}",task,snapshot.version,
-                          (),  # Search actions are not policy samples; never PG-train them.
-                          (0,task.bias),True,index)
+        programs = [(0,task.bias),(-task.coefficient,task.bias),
+                    (task.coefficient,task.bias+1)]
+        candidates = [Trajectory(f"attack-{index}-{arm}",task,snapshot.version,(),
+                                 program,True,index) for arm,program in enumerate(programs)]
+        scores = []
+        for arm,t in enumerate(candidates):
+            acceptance = verifier.score(t).reward if verifier else 1.0
+            exploration = math.sqrt(math.log(2+index)/(1+self.attack_counts[arm]))
+            scores.append(acceptance*self.attack_values[arm]+.15*exploration)
+        arm = max(range(3),key=lambda i:(scores[i],-i))
+        self.last_attack_arm = arm
+        return candidates[arm]
+
+    def observe_attack(self,proxy,trusted):
+        arm = self.last_attack_arm
+        self.attack_counts[arm] += 1
+        n = self.attack_counts[arm]
+        self.attack_values[arm] += ((proxy-trusted)-self.attack_values[arm])/n
+        self.attack_successes += int(proxy > trusted)
 
     def state(self):
         return vars(self).copy()

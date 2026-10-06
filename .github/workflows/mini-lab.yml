@@ -63,6 +63,8 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r requirements-systems.txt
+      - run: mkdir -p artifacts
+      - run: pip freeze > artifacts/dependencies.txt
       - name: Real tensor microbatch replay and async training acceptance
         run: python -m unittest discover -s tests -p 'test_mini_lab_torch.py' -v
       - name: Two-rank token-level clipped RL update

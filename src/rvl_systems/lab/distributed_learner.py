@@ -65,11 +65,11 @@ def distributed_step(model,samples,output,*,mode="ddp",learning_rate=1e-5):
         duration = torch.tensor(elapsed,device=device)
         dist.all_reduce(duration,op=dist.ReduceOp.MAX)
         if mode == "ddp":
-            parameters = torch.cat([p.detach().reshape(-1) for p in model.parameters()])
-            reference = parameters.clone()
-            dist.broadcast(reference,src=0)
-            if not torch.allclose(parameters,reference,atol=1e-6,rtol=1e-5):
-                raise AssertionError("DDP ranks diverged")
+            for parameter in model.parameters():
+                reference = parameter.detach().clone()
+                dist.broadcast(reference,src=0)
+                if not torch.allclose(parameter.detach(),reference,atol=1e-6,rtol=1e-5):
+                    raise AssertionError("DDP ranks diverged")
             state = model.module.state_dict()
             if rank == 0:
                 Path(output).mkdir(parents=True,exist_ok=True)
