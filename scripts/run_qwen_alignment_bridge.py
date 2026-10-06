@@ -11,6 +11,7 @@ import asyncio
 from dataclasses import asdict
 import gc
 import hashlib
+import importlib.metadata as importlib_metadata
 import json
 import math
 import os
@@ -230,26 +231,83 @@ def _current_token_logps(model: Any, generation: Any) -> np.ndarray:
     return values
 
 
-def post_update_drift(model: Any, verified: list[Any]) -> dict[str, float]:
-    """Tokenwise post-update k3 and log-ratio diagnostics on behavior samples."""
-    k3, absolute = [], []
-    for item in verified:
-        current = _current_token_logps(model, item.generation)
-        old = np.asarray(item.generation.metadata["response_token_logprobs"], float)
-        if current.shape != old.shape:
-            raise ValueError("old/current response token shape mismatch")
-        raw = current - old
-        clipped = np.clip(raw, -20.0, 20.0)
-        k3.extend((np.exp(clipped) - 1.0 - clipped).tolist())
-        absolute.extend(np.abs(clipped).tolist())
-    if not k3:
-        raise ValueError("post-update drift requires nonempty behavior samples")
+def token_drift_stats(
+    old_token_logps: list[float] | np.ndarray,
+    new_token_logps: list[float] | np.ndarray,
+) -> dict[str, Any]:
+    """Return raw token log-ratios plus the locked clipped-k3 drift statistic."""
+    old = np.asarray(old_token_logps, float)
+    new = np.asarray(new_token_logps, float)
+    if (
+        old.ndim != 1
+        or new.shape != old.shape
+        or old.size == 0
+        or not np.isfinite(old).all()
+        or not np.isfinite(new).all()
+    ):
+        raise ValueError("aligned nonempty finite token log-probabilities required")
+    raw = new - old
+    clipped = np.clip(raw, -20.0, 20.0)
+    k3 = np.exp(clipped) - 1.0 - clipped
     return {
-        "post_update_k3": float(np.mean(k3)),
-        "post_update_max_abs_log_ratio": float(np.max(absolute)),
-        "post_update_mean_abs_log_ratio": float(np.mean(absolute)),
-        "post_update_tokens": len(k3),
+        "old_token_logprobs": old.tolist(),
+        "new_token_logprobs": new.tolist(),
+        "raw_log_ratio": raw.tolist(),
+        "clipped_log_ratio": clipped.tolist(),
+        "token_k3": k3.tolist(),
+        "mean_k3": float(np.mean(k3)),
+        "max_abs_log_ratio": float(np.max(np.abs(clipped))),
+        "mean_abs_log_ratio": float(np.mean(np.abs(clipped))),
+        "tokens": int(old.size),
     }
+
+
+def post_update_drift_evidence(
+    model: Any,
+    verified: list[Any],
+) -> tuple[dict[str, float], list[dict[str, Any]]]:
+    """Capture candidate-level old/new token logprobs and aggregate locked drift."""
+    rows: list[dict[str, Any]] = []
+    all_k3: list[float] = []
+    all_abs: list[float] = []
+    for candidate_index, item in enumerate(verified):
+        generation = item.generation
+        current = _current_token_logps(model, generation)
+        old = np.asarray(generation.metadata["response_token_logprobs"], float)
+        stats = token_drift_stats(old, current)
+        all_k3.extend(stats["token_k3"])
+        all_abs.extend(abs(x) for x in stats["clipped_log_ratio"])
+        rows.append(
+            {
+                "candidate_index": candidate_index,
+                "prompt_id": generation.prompt_id,
+                "response": generation.response,
+                "response_token_ids": generation.metadata["response_token_ids"],
+                "proxy_reward": float(item.reward),
+                "trusted_reward": float(
+                    item.metadata["trusted_reward_evaluation_only"]
+                ),
+                "arm": item.metadata["arm"],
+                **stats,
+            }
+        )
+    if not rows:
+        raise ValueError("post-update drift requires nonempty behavior samples")
+    return (
+        {
+            "post_update_k3": float(np.mean(all_k3)),
+            "post_update_max_abs_log_ratio": float(np.max(all_abs)),
+            "post_update_mean_abs_log_ratio": float(np.mean(all_abs)),
+            "post_update_tokens": len(all_k3),
+        },
+        rows,
+    )
+
+
+def post_update_drift(model: Any, verified: list[Any]) -> dict[str, float]:
+    """Compatibility summary for callers that do not need retained raw evidence."""
+    summary, _ = post_update_drift_evidence(model, verified)
+    return summary
 
 
 def _grouped_verified(
@@ -324,6 +382,23 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
     (output / "nvidia-smi.txt").write_text(
         subprocess.check_output(["nvidia-smi"], text=True)
     )
+    (output / "pip-freeze.txt").write_text(
+        subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True)
+    )
+    dependency_names = [
+        "torch",
+        "transformers",
+        "datasets",
+        "accelerate",
+        "huggingface_hub",
+        "numpy",
+    ]
+    dependency_versions = {}
+    for name in dependency_names:
+        try:
+            dependency_versions[name] = importlib_metadata.version(name)
+        except importlib_metadata.PackageNotFoundError:
+            dependency_versions[name] = None
     save_json(
         output,
         "environment.json",
@@ -332,6 +407,9 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
             "torch": torch.__version__,
             "cuda": torch.version.cuda,
             "device": torch.cuda.get_device_name(0),
+            "device_count": torch.cuda.device_count(),
+            "device_capability": list(torch.cuda.get_device_capability(0)),
+            "dependencies": dependency_versions,
             "systems_source_sha": subprocess.check_output(
                 ["git", "rev-parse", "HEAD"], cwd=systems, text=True
             ).strip(),
@@ -549,13 +627,18 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
                 tick = time.perf_counter()
                 train_metrics = trainer.train_step(calibration_verified[arm])
                 torch.cuda.synchronize()
-                drift = post_update_drift(
+                drift, drift_rows = post_update_drift_evidence(
                     trainer.model, calibration_verified[arm]
                 )
+                drift_file = (
+                    f"calibration_token_drift/{arm}-lr-{lr:.0e}.jsonl"
+                )
+                save_jsonl(seed_root, drift_file, drift_rows)
                 calibration_grid[arm].append(
                     {
                         "lr": lr,
                         "wall_s": time.perf_counter() - tick,
+                        "token_drift_file": drift_file,
                         **train_metrics,
                         **drift,
                     }
@@ -577,15 +660,48 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
             lr = float(selection["selected"][arm]["lr"])
             _set_optimizer_lr(trainer, lr)
             train_metrics = trainer.train_step(effect_verified[arm])
-            effect_drift = post_update_drift(trainer.model, effect_verified[arm])
+            effect_drift, effect_drift_rows = post_update_drift_evidence(
+                trainer.model, effect_verified[arm]
+            )
+            effect_drift_file = f"{arm}_effect_token_drift.jsonl"
+            save_jsonl(seed_root, effect_drift_file, effect_drift_rows)
 
             post_by_task = {}
+            evaluation_logprob_rows = []
             for group in evaluation_bank:
-                post_by_task[group["task_id"]] = [
-                    float(np.mean(_current_token_logps(trainer.model, g)))
-                    for g in group["generations"]
-                ]
+                task_values = []
+                for candidate_index, generation in enumerate(group["generations"]):
+                    current = _current_token_logps(trainer.model, generation)
+                    baseline = np.asarray(
+                        generation.metadata["response_token_logprobs"], float
+                    )
+                    task_values.append(float(np.mean(current)))
+                    evaluation_logprob_rows.append(
+                        {
+                            "task_id": group["task_id"],
+                            "candidate_index": candidate_index,
+                            "candidate_id": (
+                                f'{group["task_id"]}:candidate-{candidate_index}'
+                            ),
+                            "arm": arm,
+                            "response": generation.response,
+                            "response_token_ids": generation.metadata[
+                                "response_token_ids"
+                            ],
+                            "baseline_token_logprobs": baseline.tolist(),
+                            "post_update_token_logprobs": current.tolist(),
+                            "baseline_sequence_logprob": float(np.sum(baseline)),
+                            "post_update_sequence_logprob": float(np.sum(current)),
+                            "baseline_mean_token_logprob": float(np.mean(baseline)),
+                            "post_update_mean_token_logprob": float(np.mean(current)),
+                        }
+                    )
+                post_by_task[group["task_id"]] = task_values
             evaluation_post_logps[arm] = post_by_task
+            evaluation_logprob_file = (
+                f"{arm}_evaluation_candidate_token_logprobs.jsonl"
+            )
+            save_jsonl(seed_root, evaluation_logprob_file, evaluation_logprob_rows)
 
             greedy = []
             for i, task in enumerate(evaluation_tasks):
@@ -604,6 +720,8 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
                 "lr": lr,
                 "train_metrics": train_metrics,
                 "effect_drift": effect_drift,
+                "effect_token_drift_file": effect_drift_file,
+                "evaluation_candidate_logprob_file": evaluation_logprob_file,
             }
             save_json(
                 seed_root,
@@ -619,6 +737,7 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
         # Evaluation answer access starts only here, after both LR selections,
         # both effect updates, and all model-output collection.
         evaluation_rows = []
+        evaluation_candidate_labels = []
         answer_by_task = {x["task_id"]: x["answer"] for x in evaluation_tasks}
         bank_by_task = {x["task_id"]: x for x in evaluation_bank}
         for task in evaluation_tasks:
@@ -628,6 +747,15 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
                 response_reward(g.response, answer_by_task[task_id])
                 for g in group["generations"]
             ]
+            evaluation_candidate_labels.extend(
+                {
+                    "task_id": task_id,
+                    "candidate_index": candidate_index,
+                    "candidate_id": f"{task_id}:candidate-{candidate_index}",
+                    "trusted_reward": float(reward),
+                }
+                for candidate_index, reward in enumerate(rewards)
+            )
             baseline_avg = [
                 float(np.mean(g.metadata["response_token_logprobs"]))
                 for g in group["generations"]
@@ -647,6 +775,11 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
                     }
                 )
         save_jsonl(seed_root, "evaluation_preference.jsonl", evaluation_rows)
+        save_jsonl(
+            seed_root,
+            "evaluation_candidate_trusted_labels.jsonl",
+            evaluation_candidate_labels,
+        )
 
         informative = {
             arm: [
