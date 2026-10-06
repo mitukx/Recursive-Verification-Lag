@@ -52,6 +52,7 @@ class AsyncHFLab:
         )
         self.verifier = verifier
         self.replay = TokenReplay(self.root/"token-replay.sqlite",capacity)
+        self.replay.recover_verification_leases()
         self.version = 0
         self.actor_version = -1
         self.max_policy_lag = max_policy_lag
