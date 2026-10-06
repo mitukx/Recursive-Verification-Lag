@@ -14,7 +14,7 @@
   },
   "samples_per_prompt": 8,
   "max_new_tokens": 192,
-  "temperature": 0.9,
+  "temperature": 1.0,
   "alignment_intervention": {
     "sigma": 2.0,
     "arms": {"harmful": -0.75, "benign": 0.75},
