@@ -1,12 +1,12 @@
 # Recursive Verification Lag
 
-**Latest continuation:** [endogenous auditing and fresh-task transfer lock](notes/progress/35_endogenous_auditing_and_fresh_task_lock.md).
-Current-only auditing can stop learning when every initial paid label is zero.
-An exact future-aware planner escapes this trap, but a single exploratory query
-reproduces almost all its mean benefit and direct selection of a paid known
-positive beats it. The completed eight-task study is retrospective. A pre-outcome
-16/16 fresh-task verifier-transfer analysis is locked on the separately generated
-development extension; check Actions status before treating it as evidence.
+**Latest evidence (2026-10-07):** [completed development and fresh-task transfer](notes/progress/36_completed_development_and_transfer.md).
+The locked 16/16 development transfer has a negative primary refresh effect
+(-0.0002595 expected pass probability; descriptive interval crosses zero).
+The public-score control is stronger. All 32 development tasks, the scored
+candidate bank, paid transcripts and full results are archived. Five tasks
+show later-onset failures in the separate timing study; independent heldout
+confirmation and real generator improvement remain open.
 
 **When must verification catch up with a self-improving policy?**
 
