@@ -169,6 +169,11 @@ def main():
     p.add_argument("--requests", type=int, default=512)
     p.add_argument("--servers", type=int, default=8)
     p.add_argument("--seed", type=int, default=17)
+    p.add_argument(
+        "--mode",
+        choices=["homogeneous", "heterogeneous"],
+        default="heterogeneous",
+    )
     args = p.parse_args()
     report = run(args.requests, args.servers, args.seed, mode=args.mode)
     text = json.dumps(report, indent=2, sort_keys=True)
