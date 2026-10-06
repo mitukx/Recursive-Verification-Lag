@@ -231,7 +231,7 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
             def ensure_loaded(self):
                 pass
             async def generate(self,pid,prompt,*,n,temperature,seed):
-                return [s.generation for s in owner.samples(self.model())]
+                return [s.generation for s in owner.samples(self.model)]
         class FailingVerifier:
             version = 0
             async def verify(self,generation):
