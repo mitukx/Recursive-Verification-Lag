@@ -62,14 +62,15 @@ class EvaluationStack:
             "split_sizes": {"evolution": len(self._evolution), "development": len(self._development), "promotion": len(self._promotion), "sealed": 240},
             "suite_digests": dict(self.suite_digests),
             "sealed_contents": "unavailable to improvement planner/candidates",
+            "sealed_access_policy": "terminal audit only; never used for candidate selection or promotion",
         }
 
-    def evaluate_state(self, state: Mapping[str, Any], *, seed: int, policy_version: int, verifier_version: int, policy_verifier_age: int) -> EvaluationBundle:
+    def evaluate_state(self, state: Mapping[str, Any], *, seed: int, policy_version: int, verifier_version: int, policy_verifier_age: int, include_sealed: bool = False) -> EvaluationBundle:
         return EvaluationBundle(
             evolution=_score_tasks(state, self._evolution, "evolution", seed + 11),
             development=_score_tasks(state, self._development, "development", seed + 13),
             promotion=_score_tasks(state, self._promotion, "promotion", seed + 17),
-            sealed=self._sealed.evaluate(state, "sealed", seed + 19),
+            sealed=self._sealed.evaluate(state, "sealed", seed + 19) if include_sealed else None,
             verifier_version=verifier_version,
             policy_version=policy_version,
             policy_verifier_age=policy_verifier_age,
@@ -112,14 +113,21 @@ def _score_tasks(state: Mapping[str, Any], tasks: Iterable[SyntheticTask], split
 
 def synthetic_experiment_entrypoint(payload: dict[str, Any]) -> dict[str, Any]:
     stack=EvaluationStack(seed=int(payload["suite_seed"]))
-    bundle=stack.evaluate_state(payload["candidate_state"],seed=int(payload["candidate_seed"]),policy_version=int(payload["policy_version"]),verifier_version=int(payload["verifier_version"]),policy_verifier_age=int(payload["policy_verifier_age"]))
-    return {"evolution":asdict(bundle.evolution),"development":asdict(bundle.development),"promotion":asdict(bundle.promotion),"sealed":asdict(bundle.sealed),"verifier_version":bundle.verifier_version,"policy_version":bundle.policy_version,"policy_verifier_age":bundle.policy_verifier_age,"suite_digests":dict(bundle.suite_digests)}
+    bundle=stack.evaluate_state(
+        payload["candidate_state"],
+        seed=int(payload["candidate_seed"]),
+        policy_version=int(payload["policy_version"]),
+        verifier_version=int(payload["verifier_version"]),
+        policy_verifier_age=int(payload["policy_verifier_age"]),
+        include_sealed=bool(payload.get("include_sealed", False)),
+    )
+    return {"evolution":asdict(bundle.evolution),"development":asdict(bundle.development),"promotion":asdict(bundle.promotion),"sealed":asdict(bundle.sealed) if bundle.sealed is not None else None,"verifier_version":bundle.verifier_version,"policy_version":bundle.policy_version,"policy_verifier_age":bundle.policy_verifier_age,"suite_digests":dict(bundle.suite_digests)}
 
 
 def bundle_from_payload(raw: Mapping[str, Any]) -> EvaluationBundle:
     return EvaluationBundle(
         evolution=SplitMetrics(**raw["evolution"]), development=SplitMetrics(**raw["development"]),
-        promotion=SplitMetrics(**raw["promotion"]), sealed=SplitMetrics(**raw["sealed"]),
+        promotion=SplitMetrics(**raw["promotion"]), sealed=SplitMetrics(**raw["sealed"]) if raw.get("sealed") is not None else None,
         verifier_version=int(raw["verifier_version"]), policy_version=int(raw["policy_version"]),
         policy_verifier_age=int(raw["policy_verifier_age"]), suite_digests=dict(raw["suite_digests"]),
     )
