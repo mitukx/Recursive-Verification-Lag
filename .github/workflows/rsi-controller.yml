@@ -6,6 +6,9 @@ on:
       - 'src/rsi_controller/**'
       - 'configs/rsi/**'
       - 'tests/test_rsi_controller.py'
+      - 'tests/test_mathematical_rsi.py'
+      - 'src/benchmark_mathematical_rsi.py'
+      - 'docs/oai_math_rsi_leap.md'
       - 'docs/rsi_controller.md'
       - 'docs/rsi_engineering_report.md'
       - '.github/workflows/rsi-controller.yml'
@@ -27,9 +30,26 @@ jobs:
         with:
           python-version: '3.11'
       - name: RSI unit integration and E2E tests
-        run: python -m unittest tests.test_rsi_controller -v
+        run: python -m unittest tests.test_rsi_controller tests.test_mathematical_rsi -v
       - name: Four-generation bounded Harness RSI baseline
         run: python -m src.rsi_controller.run --config configs/rsi/harness_baseline.yaml --generations 4 --output artifacts/rsi-ci
+      - name: OAI-math RSI contract benchmark
+        run: python -m src.benchmark_mathematical_rsi --output artifacts/mathematical-rsi-contract.json
+      - name: Four-generation OAI-math RSI run
+        run: python -m src.rsi_controller.run --config configs/rsi/oai_math_leap_v1.json --generations 4 --output artifacts/rsi-oai-math-ci
+      - name: Verify mathematical RSI evidence
+        run: |
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          report=json.loads(Path('artifacts/mathematical-rsi-contract.json').read_text())
+          assert all(report['checks'].values()), report['checks']
+          summary=json.loads(Path('artifacts/rsi-oai-math-ci/metrics/summary.json').read_text())
+          assert summary['mathematical_rsi_enabled'] is True
+          db=sqlite3.connect('artifacts/rsi-oai-math-ci/research_memory.sqlite')
+          count=db.execute("SELECT COUNT(*) FROM events WHERE kind='mathematical_rsi_assessment'").fetchone()[0]
+          assert count == 4, count
+          PY
       - name: Verify promotion rejection and plots
         run: |
           python - <<'PY'
@@ -50,6 +70,9 @@ jobs:
         if: always()
         with:
           name: rsi-controller-${{ matrix.os }}-${{ github.run_id }}
-          path: artifacts/rsi-ci/
+          path: |
+            artifacts/rsi-ci/
+            artifacts/rsi-oai-math-ci/
+            artifacts/mathematical-rsi-contract.json
           if-no-files-found: warn
           retention-days: 90

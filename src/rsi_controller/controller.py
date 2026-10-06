@@ -11,6 +11,7 @@ from .evaluation import EvaluationStack, bundle_from_payload
 from .failure_analysis import FailureAnalyzer, TaskObservation
 from .memory import ResearchMemory
 from .metrics import MetricsWriter
+from .math_rsi import MathematicalRSIGate
 from .models import ChampionSnapshot, GenerationRecord
 from .planner import ExperimentPlanner, PlannerContext
 from .promotion import PromotionGate, detect_false_progress
@@ -31,6 +32,7 @@ class RSIController:
         self.evaluation=EvaluationStack(seed=config.seed); self.planner=ExperimentPlanner(self.memory,config.resources)
         self.generator=CandidateGenerator(config.mutation,config.mode); self.sandbox=SandboxRunner()
         self.promotion=PromotionGate(config.promotion); self.lag=RecursiveVerificationLagMonitor(config.verifier_trust); self.failure_analyzer=FailureAnalyzer()
+        self.mathematical_rsi=MathematicalRSIGate(config.mathematical_rsi,config.promotion)
 
     def close(self): self.memory.close()
 
@@ -82,13 +84,17 @@ class RSIController:
             self.memory.event("sandbox_completed",candidate_id=candidate.candidate_id,elapsed_s=sandbox_result.elapsed_s,stdout=sandbox_result.stdout,stderr=sandbox_result.stderr)
             hacking=detect_false_progress(candidate_eval,champion_eval); lag=self.lag.assess(candidate_eval,champion_eval)
             self.memory.event("rvl_assessment",candidate_id=candidate.candidate_id,**asdict(lag)); self.memory.event("false_progress_assessment",candidate_id=candidate.candidate_id,**asdict(hacking))
-            decision=self.promotion.decide(candidate.candidate_id,candidate_eval,champion_eval,hacking,lag)
+            math_rsi=self.mathematical_rsi.assess(candidate,candidate_eval,champion_eval,hacking,lag)
+            self.memory.event("mathematical_rsi_assessment",candidate_id=candidate.candidate_id,**math_rsi.to_dict())
+            decision=self.promotion.decide(candidate.candidate_id,candidate_eval,champion_eval,hacking,lag,math_rsi)
             if lag.trust_level=="uncertain" and decision.accepted:
                 refreshed_version=candidate_policy_version; refreshed_state=json.loads(json.dumps(candidate.full_state)); refreshed_state.setdefault("V",{})["version"]=refreshed_version
                 refreshed_eval,refresh_run=self._evaluate(refreshed_state,candidate_policy_version,refreshed_version,0)
                 refreshed_lag=self.lag.assess(refreshed_eval,champion_eval); refreshed_hacking=detect_false_progress(refreshed_eval,champion_eval)
-                decision=self.promotion.decide(candidate.candidate_id,refreshed_eval,champion_eval,refreshed_hacking,refreshed_lag)
-                candidate_eval,lag,hacking=refreshed_eval,refreshed_lag,refreshed_hacking
+                refreshed_math_rsi=self.mathematical_rsi.assess(candidate,refreshed_eval,champion_eval,refreshed_hacking,refreshed_lag)
+                self.memory.event("mathematical_rsi_refresh_assessment",candidate_id=candidate.candidate_id,**refreshed_math_rsi.to_dict())
+                decision=self.promotion.decide(candidate.candidate_id,refreshed_eval,champion_eval,refreshed_hacking,refreshed_lag,refreshed_math_rsi)
+                candidate_eval,lag,hacking,math_rsi=refreshed_eval,refreshed_lag,refreshed_hacking,refreshed_math_rsi
                 self.memory.event("verifier_refresh_intervention",candidate_id=candidate.candidate_id,verifier_version=refreshed_version,reason="uncertain verifier trust",reevaluation_elapsed_s=refresh_run.elapsed_s)
                 candidate_verifier_version=refreshed_version; candidate=replace(candidate,full_state=refreshed_state)
             if decision.accepted:
@@ -127,5 +133,5 @@ class RSIController:
         }
         self.memory.event("sealed_final_audit",**sealed_audit)
         rows=self.metrics.read(); plots=self.metrics.render_plots(rows)
-        summary={"mode":self.cfg.mode.value,"attempted":attempted,"promoted":promoted,"rejected":rejected,"current_champion":final_champion.champion_id,"research_memory_integrity":self.memory.integrity_check(),"evaluation":self.evaluation.public_description(),"final_sealed_audit":sealed_audit,"plots":[str(p) for p in plots],"bounded_claim":"This is a bounded experimental self-improvement system. It is not evidence of unrestricted or generally recursive intelligence improvement."}
+        summary={"mode":self.cfg.mode.value,"attempted":attempted,"promoted":promoted,"rejected":rejected,"current_champion":final_champion.champion_id,"mathematical_rsi_enabled":self.cfg.mathematical_rsi.enabled,"research_memory_integrity":self.memory.integrity_check(),"evaluation":self.evaluation.public_description(),"final_sealed_audit":sealed_audit,"plots":[str(p) for p in plots],"bounded_claim":"This is a bounded experimental self-improvement system. It is not evidence of unrestricted or generally recursive intelligence improvement."}
         self.metrics.write_summary(summary); return summary

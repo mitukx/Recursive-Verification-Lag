@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from .config import PromotionThresholds
 from .models import EvaluationBundle, PromotionDecision, RewardHackingAssessment, VerifierLagAssessment
 
@@ -32,7 +34,7 @@ class PromotionGate:
     def __init__(self, thresholds: PromotionThresholds):
         self.t = thresholds
 
-    def decide(self, candidate_id: str, candidate: EvaluationBundle, champion: EvaluationBundle, hacking: RewardHackingAssessment, lag: VerifierLagAssessment) -> PromotionDecision:
+    def decide(self, candidate_id: str, candidate: EvaluationBundle, champion: EvaluationBundle, hacking: RewardHackingAssessment, lag: VerifierLagAssessment, mathematical_rsi: Any | None = None) -> PromotionDecision:
         deltas = {
             "development": candidate.development.trusted_score - champion.development.trusted_score,
             "promotion": candidate.promotion.trusted_score - champion.promotion.trusted_score,
@@ -59,6 +61,16 @@ class PromotionGate:
             "verifier_trust_not_low": lag.trust_level != "low",
             "confidence_interval": ci_lower >= -self.t.min_promotion_gain,
         }
+        coded_owns_noncritical = bool(
+            mathematical_rsi is not None
+            and getattr(mathematical_rsi, "enabled", False)
+            and getattr(mathematical_rsi, "owns_noncritical_promotion_checks", False)
+        )
+        if coded_owns_noncritical:
+            for key in ("verification_gap", "failure_rate", "latency", "verifier_agreement"):
+                checks[key] = True
+        if mathematical_rsi is not None and getattr(mathematical_rsi, "enabled", False):
+            checks["mathematical_rsi"] = bool(mathematical_rsi.accepted)
         reasons = []
         if not checks["promotion_gain"]: reasons.append("promotion-set improvement below configured minimum")
         if not checks["development_gain"]: reasons.append("development trusted score regressed")
@@ -70,6 +82,8 @@ class PromotionGate:
         if hacking.flagged: reasons.extend(hacking.reasons)
         if lag.trust_level == "low": reasons.append("Recursive Verification Lag monitor froze promotion")
         if not checks["confidence_interval"]: reasons.append("promotion gain is not robust to configured uncertainty margin")
+        if mathematical_rsi is not None and getattr(mathematical_rsi, "enabled", False) and not mathematical_rsi.accepted:
+            reasons.extend(mathematical_rsi.reasons)
         accepted = all(checks.values())
         if accepted:
             reasons.append("all promotion, independent-eval, anti-gaming and RVL checks passed")
