@@ -337,7 +337,7 @@ imperfect. See [transfer evidence and limitations](notes/progress/26_prospective
 
 ## Bounded recursive self-improvement controller
 
-`src/rsi_controller/` adds an explicitly bounded champion/challenger research loop around the repository's RVL and post-training infrastructure. Each generation is hypothesis-attributed, runs through an allowlisted mutation surface and bounded sandbox, and is evaluated separately on evolution, development, promotion, and sealed sets. Promotion considers independent trusted/sealed quality, verifier agreement, regressions, latency/resource metrics, reward-hacking indicators, and Recursive Verification Lag trust; higher proxy reward alone cannot promote a candidate.
+`src/rsi_controller/` adds an explicitly bounded champion/challenger research loop around the repository's RVL and post-training infrastructure. Each generation is hypothesis-attributed, runs through an allowlisted mutation surface and bounded sandbox, and is evaluated on evolution, development, and independent promotion sets. The sealed suite is not returned to the planner or promotion gate: it is opened once, only after the final promotion decision, for terminal generalization auditing. Higher proxy reward alone cannot promote a candidate.
 
 The CPU reference mode keeps model weights frozen and can be run without a GPU:
 
@@ -346,6 +346,6 @@ python -m unittest tests.test_rsi_controller -v
 python -m src.rsi_controller.run --config configs/rsi/harness_baseline.yaml --generations 4
 ```
 
-The implementation-session baseline produced three promotions and one deliberate rejection where proxy reward rose while trusted/sealed quality fell (`verification_gap=0.135`). Harness RSI is CPU-demonstrated; Adapter RSI and the bridge to the existing GRPO/RVL learner are implemented but are not yet controller-demonstrated capability gains. See [the RSI controller design](docs/rsi_controller.md), [engineering report](docs/rsi_engineering_report.md), and [evidence matrix](docs/xai_evidence_matrix.md).
+The acceptance workflow runs a bounded CPU Harness-RSI baseline and requires both promotion and rejection behavior while retaining all generations. Earlier implementation-session artifacts that consulted sealed aggregates during iterative selection were removed as superseded; the current contract reserves sealed evaluation for a terminal-only audit. Adapter RSI and the bridge to the existing GRPO/RVL learner remain implemented interfaces, not demonstrated learned-model capability gains. See [the RSI controller design](docs/rsi_controller.md), [engineering report](docs/rsi_engineering_report.md), and [evidence matrix](docs/xai_evidence_matrix.md).
 
 > This is a bounded experimental self-improvement system. It is not evidence of unrestricted or generally recursive intelligence improvement.
