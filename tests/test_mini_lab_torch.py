@@ -42,6 +42,28 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
                 float(i%2),0,0))
         return out
 
+    async def test_behavior_sampling_distribution_matches_same_version_policy(self):
+        from src.rvl_systems.hf_backend import HFLocalBackend
+        class Tokenizer:
+            eos_token_id = None
+            pad_token_id = 0
+            def __call__(self,prompt,return_tensors):
+                return {"input_ids":torch.tensor([[1,2]])}
+            def decode(self,ids,skip_special_tokens):
+                return " ".join(str(i) for i in ids)
+        backend = HFLocalBackend("offline",max_new_tokens=3,device="cpu",precision="fp32")
+        backend._model = self.model()
+        backend._torch = torch
+        backend._tokenizer = Tokenizer()
+        backend._device,backend._resolved_precision = "cpu","fp32"
+        generations = await backend.generate("p","prompt",n=2,temperature=1.0,seed=17)
+        trainer = HFCausalLMGRPOTrainer(copy.deepcopy(backend.model))
+        for g in generations:
+            sample = VerifiedGeneration(g,1,0,0)
+            row = trainer._sample_objective(sample,1)
+            self.assertLess(float(row[2]),1e-5)
+            self.assertLess(float(row[3]),1e-6)
+
     async def test_microbatch_gradient_matches_full_graph_reference(self):
         model = self.model()
         samples = self.samples(model)

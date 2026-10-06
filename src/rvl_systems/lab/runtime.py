@@ -297,6 +297,14 @@ class MiniLab:
         self.store.save_state("lab",self._state())
         state = self._state()
         semantic = {k:v for k,v in state.items() if k != "config"}
+        def normalize(value):
+            if isinstance(value,float):
+                return round(value,10)
+            if isinstance(value,dict):
+                return {k:normalize(v) for k,v in value.items()}
+            if isinstance(value,(list,tuple)):
+                return [normalize(v) for v in value]
+            return value
         result = {"schema":1,"system":"cpu-affine-tool-lab","config":asdict(self.cfg),
                   "control":asdict(self.controller.config),"initial_eval_reward":initial,
                   "final_eval_reward":self.evaluate(),"batches":self.batches,
@@ -306,7 +314,8 @@ class MiniLab:
                   "elapsed_s":elapsed,"tool_actions_per_s":self.tokens/max(elapsed,1e-9),
                   "latency_s":{"p50":percentile(self.latencies,.5),
                                "p95":percentile(self.latencies,.95),"p99":percentile(self.latencies,.99)},
-                  "semantic_sha256":digest(semantic),"history":self.metrics,
+                  "semantic_sha256":digest(normalize(semantic)),
+                  "semantic_float_precision":10,"history":self.metrics,
                   "hardware":{"platform":platform.platform(),"python":platform.python_version(),
                               "gpu_utilization":None,"mfu":None},
                   "limitations":["restricted DSL and tabular policy","single-machine SQLite",
