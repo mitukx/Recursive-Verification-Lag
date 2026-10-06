@@ -345,14 +345,27 @@ class TokenReplay:
         if not samples:
             raise ValueError("empty verified group")
         now = time.time() if now is None else now
-        verifier_version = min(int(s.verifier_version) for s in samples)
+        versions = {int(s.verifier_version) for s in samples}
+        if len(versions) != 1:
+            raise ValueError("verified rewrite mixes verifier versions")
+        verifier_version = versions.pop()
+        row = self.db.execute(
+            "SELECT payload FROM groups WHERE id=? AND status='ready'",(rid,)
+        ).fetchone()
+        if not row:
+            raise ValueError("verified group is not ready")
+        original = self._decode_generations(row[0])
+        if self._behavior_digest(original) != self._behavior_digest(
+            [s.generation for s in samples]
+        ):
+            raise ValueError("verified rewrite changed immutable behavior data")
         cur = self.db.execute(
             """UPDATE groups SET payload=?,verifier_version=?,verified_at=?
                WHERE id=? AND status='ready'""",
             (canonical([asdict(s) for s in samples]),verifier_version,now,rid),
         )
         if cur.rowcount != 1:
-            raise ValueError("verified group is not ready")
+            raise ValueError("verified group rewrite lost")
 
     def next(self,current_version,max_lag,current_verifier_version=None,max_verifier_lag=0):
         if current_version < 0 or max_lag < 0 or max_verifier_lag < 0:
