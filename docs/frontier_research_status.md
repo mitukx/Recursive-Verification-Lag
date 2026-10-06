@@ -55,6 +55,13 @@ algebra as a major new theorem.
 | Practical verification efficiency | All physical scoring, distinct labels, wall time, compute and rejected proposals reported together | Development costs archived; full tradeoff not established |
 | Scalable RL systems work | Real GPU serving, training, synchronization, profiler and multi-GPU throughput | Main has harnesses; queued self-hosted jobs are not evidence |
 
+The transactional systems runner repeatedly evaluates its promotion set to
+choose accepted updates. That set is development feedback for model selection,
+even if disjoint from gradient-training examples; its terminal score cannot be
+presented as an untouched confirmatory result. The new pilot measures terminal
+accuracy without using evaluation to select updates. A future deployment study
+must keep promotion and sealed final evaluation tasks separate.
+
 A negative GPU learning pilot should narrow the project, not be replaced by a
 success-only demo. A small positive pilot would justify a larger separately
 locked replication; it would not alone establish frontier-lab readiness.
