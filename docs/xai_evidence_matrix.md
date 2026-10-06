@@ -9,7 +9,7 @@ require real GPU measurements.
 | High-throughput multi-worker scheduling | `LeastLoadedScheduler`, bounded queue, per-worker inflight limits | implemented + CI |
 | Dynamic micro-batching | compatibility-keyed `DynamicBatcher` + vLLM batch-chat adapter | implemented + contract CI; GPU throughput pending |
 | Backpressure / timeout handling | scheduler counters and timeout paths | implemented + CI |
-| Worker failure handling | health streaks, quarantine, fail-fast when no healthy worker exists | implemented + CI |
+| Worker failure handling | cross-worker failover retries, health streaks, quarantine, explicit recovery, deterministic chaos benchmark | implemented + CI artifact |
 | Remote worker transport | asyncio TCP RPC server/client with request IDs and policy-version checks | implemented + integration CI |
 | Remote inference integration | OpenAI-compatible `VLLMHTTPBackend` | implemented; real GPU benchmark pending |
 | Local real-model rollout | `HFLocalBackend` with CUDA/MPS/CPU selection | real Transformers smoke CI |
@@ -41,7 +41,7 @@ published with immutable configs and raw results:
 4. GPU utilization / memory traces;
 5. sync-vs-async speedup;
 6. one real RLVR training curve on a public benchmark;
-7. a worker-failure experiment demonstrating recovery;
+7. a real GPU worker-failure experiment demonstrating recovery (CPU deterministic chaos evidence is already CI-validated);
 8. policy-weight synchronization overhead;
 9. fp32 vs bf16/fp16 throughput and numerical-stability comparison;
 10. NCCL/FSDP multi-GPU validation.
