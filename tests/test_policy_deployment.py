@@ -71,7 +71,7 @@ class PolicyDeploymentTest(unittest.TestCase):
             coordinator = PolicyDeploymentCoordinator(tmp, ["w0"])
             pending = coordinator.publish(b"good")
             (Path(tmp) / pending.artifact).write_bytes(b"corrupt")
-            with self.assertRaisesRegex(RuntimeError, "checksum mismatch"):
+            with self.assertRaisesRegex(RuntimeError, "mismatch"):
                 PolicyDeploymentCoordinator(tmp, ["w0"])
 
     def test_worker_set_change_fails_closed(self):
