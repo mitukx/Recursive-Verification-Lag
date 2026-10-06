@@ -40,15 +40,18 @@ from verl.workers.rollout.utils import update_prometheus_config
 def _routing_work_fields(
     prompt_ids: list[int],
     sampling_params: dict[str, Any],
+    default_decode_budget: int | None = None,
 ) -> dict[str, int | None]:
     """Return scalar workload hints for content-light router RPCs."""
     decode_budget = sampling_params.get("max_tokens")
     if decode_budget is None:
         decode_budget = sampling_params.get("max_new_tokens")
+    if decode_budget is None:
+        decode_budget = default_decode_budget
     try:
         decode_budget = None if decode_budget is None else max(0, int(decode_budget))
     except (TypeError, ValueError):
-        decode_budget = None
+        decode_budget = default_decode_budget
     return {
         "prompt_tokens": len(prompt_ids),
         "decode_budget": decode_budget,
@@ -114,6 +117,15 @@ class LLMServerClient:
             return request_id
         return uuid4().hex
 
+    def _configured_response_length(self) -> int | None:
+        rollout_config = getattr(
+            getattr(self.config, "actor_rollout_ref", None), "rollout", None
+        )
+        response_length = getattr(rollout_config, "response_length", None)
+        if isinstance(response_length, int) and response_length > 0:
+            return response_length
+        return None
+
     @rollout_trace_op
     async def generate(
         self,
@@ -145,7 +157,11 @@ class LLMServerClient:
             video_data=video_data,
             audio_data=audio_data,
             mm_processor_kwargs=mm_processor_kwargs,
-            **_routing_work_fields(prompt_ids, sampling_params),
+            **_routing_work_fields(
+                prompt_ids,
+                sampling_params,
+                self._configured_response_length(),
+            ),
             **kwargs,
         )
         try:
@@ -228,18 +244,6 @@ class FullyAsyncLLMServerClient(LLMServerClient):
                     await asyncio.sleep(1)
                 else:
                     raise
-
-    def _configured_response_length(self) -> Optional[int]:
-        """Per-response token budget from the rollout config, or ``None`` when unavailable.
-
-        Tests and lightweight callers may pass a config stub without the rollout section; in that
-        case the resume loop keeps its previous behaviour of deferring to the server default.
-        """
-        rollout_config = getattr(getattr(self.config, "actor_rollout_ref", None), "rollout", None)
-        response_length = getattr(rollout_config, "response_length", None)
-        if isinstance(response_length, int) and response_length > 0:
-            return response_length
-        return None
 
     @rollout_trace_op
     async def generate(
