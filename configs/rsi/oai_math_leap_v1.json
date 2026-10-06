@@ -5,8 +5,8 @@
   "output_dir": "artifacts/rsi-oai-math-leap-v1",
   "promotion": {
     "min_promotion_gain": 0.005,
-    "min_development_gain": 0.0,
-    "min_trusted_gain": 0.0,
+    "min_development_gain": 0,
+    "min_trusted_gain": 0,
     "max_verification_gap": 0.08,
     "max_failure_rate_increase": 0.03,
     "max_latency_p95_ratio": 1.25,
@@ -33,13 +33,14 @@
     "max_probe_complexity": 2,
     "require_information_budget": true,
     "trusted_target_error": 0.1,
-    "trusted_budget_multiplier": 2.0,
+    "trusted_budget_multiplier": 2,
     "min_trusted_samples": 8,
     "max_trusted_samples": 256,
     "reconstruction_assumptions_met": false,
     "require_reconstruction_supercritical": false,
     "reconstruction_branching_factor": 4,
-    "reconstruction_threshold": 1.0
+    "reconstruction_threshold": 1,
+    "coded_replaces_noncritical_checks": true
   },
   "resources": {
     "wall_time_s": 15,
