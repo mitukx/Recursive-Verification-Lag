@@ -21,8 +21,9 @@ require real GPU measurements.
 | Low-precision policy | auto/fp32/fp16/bf16 model-load policy with CUDA bf16 capability guard; same-replay FP32/BF16/FP16 GRPO loss/grad/KL/throughput/memory benchmark | implementation + CPU syntax/contract CI; real GPU artifact pending |
 | Verifier integration | exact and functional verifier interfaces | implemented + CI |
 | Weight-version correctness | stale rollout rejection | implemented + CI |
-| Trainer-to-worker synchronization control plane | immutable manifests + checksums + worker acknowledgements; real-model NCCL full-parameter broadcast benchmark with activation latency/effective bandwidth | implemented + CI contract; real GPU artifact pending |
-| Two-phase policy deployment | publish -> all-worker ack -> activate; real TCP-worker version transition test | implemented + integration CI |
+| Trainer-to-worker synchronization control plane | immutable manifests + checksums + durable worker acknowledgements; restart-safe monotonic versions; real-model NCCL full-parameter broadcast benchmark with activation latency/effective bandwidth | implemented + CI contract; real GPU artifact pending |
+| Crash-consistent deployment failover | durable active/pending state, recovered partial ACKs, pending-artifact checksum validation, monotonic coordinator epochs that fence stale writers | implemented + machine-readable recovery/fencing CI artifact |
+| Two-phase policy deployment | publish -> all-worker ack -> activate; state survives coordinator restart; real TCP-worker version transition test | implemented + integration CI |
 | Recovery | atomic reference checkpoint save/restore; remote retries | implemented + CI |
 | Observability | counters, p50/p95/max latency, tokens/s | implemented + CI |
 | Profiling | Chrome trace recorder and benchmark reports; named GRPO stage ranges plus real-GPU PyTorch profiler trace with top device/CPU ops, memory and tokens/s | implementation + syntax/contract CI; real GPU trace pending |

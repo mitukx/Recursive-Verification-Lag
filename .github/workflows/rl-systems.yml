@@ -32,6 +32,7 @@ on:
       - 'src/benchmark_vllm_failure.py'
       - 'src/benchmark_vllm_sync_async.py'
       - 'src/benchmark_policy_weight_sync.py'
+      - 'src/benchmark_policy_deployment_recovery.py'
       - 'src/run_qwen_rlvr_experiment.py'
       - 'src/summarize_distributed_scaling.py'
       - 'scripts/run_qwen_rlvr_gpu.sh'
@@ -69,6 +70,7 @@ on:
       - 'src/benchmark_scheduler_slo.py'
       - 'src/benchmark_vllm_cluster.py'
       - 'src/benchmark_policy_weight_sync.py'
+      - 'src/benchmark_policy_deployment_recovery.py'
       - 'src/summarize_gpu_evidence.py'
       - 'src/generate_rlvr_replay.py'
       - 'scripts/run_fsdp_scaling_gpu.sh'
@@ -110,6 +112,8 @@ jobs:
         run: python -m src.benchmark_admission_control --capacity 4 --max-queued 8 --requests-per-workload 8 --hold-ms 1 --output artifacts/admission-control.json
       - name: Run failure matrix
         run: python -m src.benchmark_failure_matrix --output artifacts/failure-matrix.json
+      - name: Exercise crash-safe policy deployment recovery and fencing
+        run: python -m src.benchmark_policy_deployment_recovery --output artifacts/policy-deployment-recovery.json
       - name: Run numerical parity benchmark
         run: python -m src.benchmark_precision_parity --output artifacts/precision-parity.json
       - name: Run INT8 weight-only numerical parity benchmark
@@ -117,10 +121,10 @@ jobs:
       - name: Replay control-plane trace
         run: python -m src.replay_control_plane --input artifacts/scheduler-chaos.events.jsonl --output artifacts/scheduler-chaos.replay.json
       - name: Enforce benchmark regression gates
-        run: python -m src.check_benchmark_regressions --policy configs/benchmark_gates.json artifacts/async-rollout.json artifacts/scheduler.json artifacts/scheduler-chaos.json artifacts/scheduler-slo.json artifacts/admission-control.json artifacts/failure-matrix.json artifacts/precision-parity.json artifacts/int8-quantization-parity.json
+        run: python -m src.check_benchmark_regressions --policy configs/benchmark_gates.json artifacts/async-rollout.json artifacts/scheduler.json artifacts/scheduler-chaos.json artifacts/scheduler-slo.json artifacts/admission-control.json artifacts/failure-matrix.json artifacts/policy-deployment-recovery.json artifacts/precision-parity.json artifacts/int8-quantization-parity.json
       - name: Build and verify artifact manifest
         run: |
-          python -m src.manifest_artifacts --output artifacts/manifest.json artifacts/async-rollout.json artifacts/scheduler.json artifacts/scheduler-chaos.json artifacts/scheduler-slo.json artifacts/admission-control.json artifacts/failure-matrix.json artifacts/precision-parity.json artifacts/int8-quantization-parity.json artifacts/scheduler-chaos.replay.json artifacts/scheduler-chaos.events.jsonl
+          python -m src.manifest_artifacts --output artifacts/manifest.json artifacts/async-rollout.json artifacts/scheduler.json artifacts/scheduler-chaos.json artifacts/scheduler-slo.json artifacts/admission-control.json artifacts/failure-matrix.json artifacts/policy-deployment-recovery.json artifacts/precision-parity.json artifacts/int8-quantization-parity.json artifacts/scheduler-chaos.replay.json artifacts/scheduler-chaos.events.jsonl
           python -m src.manifest_artifacts --verify artifacts/manifest.json
       - name: Upload benchmark evidence
         uses: actions/upload-artifact@v4

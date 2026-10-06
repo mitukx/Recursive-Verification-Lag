@@ -19,6 +19,19 @@ class WeightSyncTest(unittest.TestCase):
             publisher.acknowledge("w1", 1)
             self.assertTrue(publisher.all_acknowledged(["w0", "w1"]))
 
+    def test_restart_recovers_version_and_ack_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first = WeightPublisher(tmp)
+            first.publish_bytes(b"v1")
+            second_manifest = first.publish_bytes(b"v2")
+            first.acknowledge("w0", second_manifest.version)
+
+            recovered = WeightPublisher(tmp)
+            self.assertEqual(recovered.version, 2)
+            self.assertTrue(recovered.all_acknowledged(["w0"], version=2))
+            third = recovered.publish_bytes(b"v3")
+            self.assertEqual(third.version, 3)
+
     def test_corruption_is_detected(self):
         with tempfile.TemporaryDirectory() as tmp:
             publisher = WeightPublisher(tmp)
