@@ -57,6 +57,21 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                     "wall_s": 4.0,
                 }
             })
+            precision = self.write(tmp, "precision.json", {
+                "git_sha": sha,
+                "model": "Qwen/test",
+                "device_name": "Test GPU",
+                "all_precisions_finite": True,
+                "runs": {
+                    "fp32":{"success":True,"tokens_per_s":10.0,"gpu_peak_memory_bytes":1000,"metrics":{"loss":1.0,"grad_norm":2.0,"behavior_kl_estimate":0.01}},
+                    "bf16":{"success":True,"tokens_per_s":15.0,"gpu_peak_memory_bytes":700,"metrics":{"loss":1.01,"grad_norm":2.02,"behavior_kl_estimate":0.011}},
+                    "fp16":{"success":True,"tokens_per_s":14.0,"gpu_peak_memory_bytes":700,"metrics":{"loss":1.02,"grad_norm":2.03,"behavior_kl_estimate":0.012}},
+                },
+                "comparisons": {
+                    "bf16":{"success":True,"relative_loss_error":0.01},
+                    "fp16":{"success":True,"relative_loss_error":0.02},
+                },
+            })
             inventory = self.write(tmp, "gpu.json", {
                 "available": True,
                 "gpus": [
@@ -64,7 +79,7 @@ class GPUEvidenceSummaryTests(unittest.TestCase):
                     {"index":"1","name":"Test GPU","driver_version":"1","memory_total_mb":"24576","compute_capability":"9.0"},
                 ],
             })
-            report = summarize(qwen=qwen,fsdp=fsdp,fsdp_resume=resume,vllm=vllm,failover=failover,gpu_inventory=inventory)
+            report = summarize(qwen=qwen,fsdp=fsdp,fsdp_resume=resume,vllm=vllm,failover=failover,low_precision=precision,gpu_inventory=inventory)
             self.assertTrue(report["complete"])
             self.assertFalse(report["missing_checks"])
             self.assertFalse(report["failed_checks"])
