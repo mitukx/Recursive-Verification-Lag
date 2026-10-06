@@ -116,6 +116,7 @@ class VLLMHTTPBackend:
     endpoint: str
     model: str
     timeout_s: float = 120.0
+    max_tokens: int = 64
 
     async def generate(
         self,
@@ -142,6 +143,7 @@ class VLLMHTTPBackend:
                 "temperature": temperature,
                 "seed": seed,
                 "logprobs": 1,
+                "max_tokens": self.max_tokens,
             }
         ).encode("utf-8")
         request = urllib.request.Request(

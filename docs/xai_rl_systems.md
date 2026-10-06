@@ -71,9 +71,10 @@ backend = VLLMHTTPBackend(
 )
 ```
 
-The next production step is separating rollout-serving weights from trainable
-policy weights, batched parameter synchronization, and failure recovery across
-remote workers.
+For real GPU evidence, use `docs/free_gpu_runbook.md`. The GPU harness launches
+`vllm serve`, captures streaming TTFT/TBT and tokens/s, snapshots the vLLM
+Prometheus endpoint, records `nvidia-smi` telemetry, and includes a two-server
+SIGTERM failure-injection path.
 
 ## Engineering benchmark plan
 
