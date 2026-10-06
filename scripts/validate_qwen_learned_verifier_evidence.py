@@ -503,6 +503,42 @@ def validate_evidence(
     for row in seed_rows:
         seed_summary = load_json(root / f'seed-{int(row["seed"])}' / "seed_summary.json")
         _require(seed_summary.get("seed") == row.get("seed"), "seed summary identity mismatch")
+        _require(
+            bool(seed_summary.get("eligible_primary_seed"))
+            == bool(row.get("eligible_primary_seed")),
+            "top-level/per-seed eligibility mismatch",
+        )
+        _require(
+            seed_summary.get("skip_reason") == row.get("skip_reason"),
+            "top-level/per-seed skip reason mismatch",
+        )
+        if "geometry_spearman" in seed_summary:
+            _require(
+                _finite_or_nan_close(
+                    seed_summary["geometry_spearman"], row["geometry_spearman"]
+                ),
+                "top-level/per-seed geometry Spearman mismatch",
+            )
+            _require(
+                _finite_or_nan_close(
+                    seed_summary["effect_k3_spearman"], row["effect_k3_spearman"]
+                ),
+                "top-level/per-seed k3 Spearman mismatch",
+            )
+            _require(
+                _finite_or_nan_close(
+                    seed_summary["effect_k3_ratio"], row["effect_k3_ratio"]
+                ),
+                "top-level/per-seed k3 ratio mismatch",
+            )
+            for arm in ARMS:
+                _require(
+                    _finite_or_nan_close(
+                        seed_summary["mean_preference_shift"][arm],
+                        row["mean_preference_shift"][arm],
+                    ),
+                    f"top-level/per-seed preference mismatch {arm}",
+                )
         details.append(validate_seed(root / f'seed-{int(row["seed"])}', seed_summary, lock))
 
     eligible = [row for row in seed_rows if row.get("eligible_primary_seed")]
