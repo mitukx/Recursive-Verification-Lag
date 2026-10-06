@@ -397,6 +397,42 @@ class TokenReplay:
             "status":row[5],
         }
 
+    def verification_debt_signals(self,current_policy_version,current_verifier_version,now=None):
+        from .verification_debt import VerificationDebtSignals
+        if current_policy_version < 0 or current_verifier_version < 0:
+            raise ValueError("invalid current versions")
+        now = time.time() if now is None else now
+        rows = self.db.execute(
+            """SELECT policy_version,verifier_version,status,generated_at
+               FROM groups WHERE status IN ('pending_verification','verifying','ready')"""
+        ).fetchall()
+        pending = sum(status=="pending_verification" for _,_,status,_ in rows)
+        verifying = sum(status=="verifying" for _,_,status,_ in rows)
+        stale_rewards = sum(
+            status=="ready" and verifier_version < current_verifier_version
+            for _,verifier_version,status,_ in rows
+        )
+        max_policy_lag = max(
+            [max(0,current_policy_version-policy_version) for policy_version,_,_,_ in rows]
+            or [0]
+        )
+        max_verifier_lag = max(
+            [max(0,current_verifier_version-verifier_version)
+             for _,verifier_version,status,_ in rows
+             if status=="ready" and verifier_version >= 0]
+            or [0]
+        )
+        ages = [max(0.0,now-generated_at) for _,_,status,generated_at in rows
+                if status in ('pending_verification','verifying')]
+        return VerificationDebtSignals(
+            pending=pending,
+            verifying=verifying,
+            stale_rewards=stale_rewards,
+            max_policy_lag=max_policy_lag,
+            max_verifier_lag=max_verifier_lag,
+            oldest_unverified_age_s=max(ages or [0.0]),
+        )
+
     def verification_backlog(self,current_verifier_version,max_verifier_lag=0):
         threshold = current_verifier_version-max_verifier_lag
         return int(self.db.execute(
