@@ -16,6 +16,15 @@ importantly, matched-KL policy differences occur on 14/16 tasks, including
 12 tasks with no reversal, implicating within-ranking score geometry rather
 than rank change alone. This is an explicitly exploratory development analysis.
 
+**Prospective mechanism test:** [equal-KL verifier-error alignment](notes/progress/39_equal_kl_alignment_phase.md)
+was locked before execution and run on 512 independent finite-support tasks.
+At matched policy KL, rotating only verifier-error alignment produces opposite
+true-progress signs while proxy reward still improves. The declared small-KL
+phase prediction achieved 1.0 mean-sign accuracy: harmful cells have false-
+progress rate 1.0 and benign cells 0.0 at KL 0.005. The boundary remains correct
+in mean sign through KL 0.3. This is synthetic mechanism identification, not
+heldout LLM evidence.
+
 **When must verification catch up with a self-improving policy?**
 
 This repository contains an independent research project on the statistical limits of recursively reusing imperfect verifiers during policy optimization.
@@ -114,6 +123,7 @@ This leads to the working interpretation:
 | Recursive refresh cadence | fast refresh self-corrects; stale reuse can collapse |
 | 2D recursive phase | failure approximately collapses under stale exposure within a fixed score calibration |
 | Invariance test | max log-density ratio transfers well across optimizer families, but no shift-only scalar works across verifier classes |
+| Prospective equal-KL alignment stress | same KL + same error norm can flip true progress by rotating verifier-error alignment; primary phase accuracy 1.0 |
 
 ## Key figures
 
@@ -186,18 +196,20 @@ The project currently has a theorem/experiment bridge but is not presented here 
 
 ## Current next step
 
-The highest-value external validation is a pretrained code-model experiment with:
+The central mechanism is now prospective in a controlled environment. The highest-value external-validity step is to move the same geometry into a real-model post-training experiment:
 
-1. multiple sampled candidate programs per task,
-2. public tests as a cheap proxy,
-3. hidden/exhaustive tests as trusted semantic reward,
-4. independent sweeps over optimization pressure, verifier refresh cadence, and trusted-label budget,
-5. a richer-verifier control,
-6. comparison of stale-shift coordinates such as max density ratio, KL, and restricted feature geometry.
+1. use actual sampled LLM rollouts and independent trusted reward,
+2. measure or intervene on verifier-error alignment before the update,
+3. match realized policy KL across alignment conditions,
+4. keep a no-update and shuffled/misaligned-reward control,
+5. evaluate only on an untouched terminal split across multiple seeds,
+6. retain raw generations, verifier outputs, parameter-update diagnostics, compute and failures.
+
+A separately pinned Qwen/GSM8K T4 pilot already implements the real-update and independent-terminal-evaluation scaffold; GPU execution remains a separate evidence gate.
 
 ---
 
-**Status:** active independent research, September 2026.
+**Status:** active independent research, October 2026.
 
 
 ## Pretrained candidate-bank pipeline
