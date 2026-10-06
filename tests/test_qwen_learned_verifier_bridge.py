@@ -5,6 +5,7 @@ import numpy as np
 from scripts.run_qwen_learned_verifier_bridge import (
     ARMS,
     deterministic_prompt_shuffle,
+    grpo_aligned_geometry_metrics,
     pairwise_reversal_rate,
     select_matched_drift_lrs_multi,
     spearman,
@@ -35,6 +36,36 @@ class LearnedVerifierBridgeContractTest(unittest.TestCase):
         self.assertLess(bad["cov_y_v"], 0)
         self.assertEqual(good["ranking_accuracy"], 1.0)
         self.assertEqual(bad["ranking_accuracy"], 0.0)
+
+    def test_grpo_aligned_geometry_separates_between_prompt_calibration(self):
+        groups = [
+            {
+                "task_id": "high-base-rate",
+                "trusted_rewards": [1.0, 1.0, 0.0, 1.0],
+            },
+            {
+                "task_id": "low-base-rate",
+                "trusted_rewards": [0.0, 0.0, 1.0, 0.0],
+            },
+        ]
+        scores = {
+            "high-base-rate": [0.9, 0.8, 1.0, 0.7],
+            "low-base-rate": [0.2, 0.3, 0.1, 0.4],
+        }
+        result = grpo_aligned_geometry_metrics(groups, scores)
+        self.assertGreater(result["pooled_cov_y_v"], 0.0)
+        self.assertLess(result["within_prompt_cov_y_v_occurrence_weighted"], 0.0)
+        self.assertGreater(result["between_prompt_cov_y_v"], 0.0)
+        self.assertLess(result["mean_prompt_cov_y_grpo_advantage"], 0.0)
+        self.assertAlmostEqual(
+            result["pooled_cov_y_v"],
+            result["within_prompt_cov_y_v_occurrence_weighted"]
+            + result["between_prompt_cov_y_v"],
+            places=12,
+        )
+        self.assertAlmostEqual(result["pooled_cov_reconstruction_error"], 0.0, places=12)
+        self.assertEqual(result["trusted_informative_prompts"], 2)
+        self.assertEqual(result["nonconstant_score_prompts"], 2)
 
     def test_pairwise_reversal_rate(self):
         result = pairwise_reversal_rate([0, 1, 2], [0, 2, 1])

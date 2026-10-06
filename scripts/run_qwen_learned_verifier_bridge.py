@@ -103,6 +103,115 @@ def verifier_geometry_metrics(
     }
 
 
+def grpo_aligned_geometry_metrics(
+    groups: list[dict[str, Any]],
+    scores: dict[str, list[float]],
+    *,
+    advantage_eps: float = 1e-6,
+    clip_advantage: float = 5.0,
+) -> dict[str, Any]:
+    """Decompose pooled verifier geometry into components visible to GRPO.
+
+    HFCausalLMGRPOTrainer centers and standardizes rewards within each prompt before
+    applying the clipped surrogate. Prompt-level score offsets therefore contribute
+    to pooled Cov(y,v) but not to the actual GRPO advantage. This diagnostic is
+    secondary only and never participates in LR selection or arm selection.
+    """
+    if advantage_eps <= 0 or clip_advantage <= 0 or not groups:
+        raise ValueError("positive advantage_eps/clip_advantage and nonempty groups required")
+    prompt_rows: list[dict[str, Any]] = []
+    all_y: list[float] = []
+    all_v: list[float] = []
+    total = 0
+    within_weighted = 0.0
+    advantage_cov_weighted = 0.0
+    for group in groups:
+        task_id = str(group["task_id"])
+        y = np.asarray(group["trusted_rewards"], float)
+        v = np.asarray(scores[task_id], float)
+        if (
+            y.ndim != 1
+            or v.shape != y.shape
+            or y.size == 0
+            or not np.isfinite(y).all()
+            or not np.isfinite(v).all()
+            or np.any(y < 0)
+            or np.any(y > 1)
+            or np.any(v < 0)
+            or np.any(v > 1)
+        ):
+            raise ValueError(f"invalid aligned prompt geometry for {task_id}")
+        e = v - y
+        y_centered = y - y.mean()
+        v_centered = v - v.mean()
+        e_centered = e - e.mean()
+        variance_v = float(np.mean(v_centered * v_centered))
+        scale = math.sqrt(variance_v + advantage_eps)
+        advantage = np.clip(v_centered / scale, -clip_advantage, clip_advantage)
+        advantage_centered = advantage - advantage.mean()
+        cov_y_v = float(np.mean(y_centered * v_centered))
+        cov_y_e = float(np.mean(y_centered * e_centered))
+        cov_y_advantage = float(np.mean(y_centered * advantage_centered))
+        n = int(y.size)
+        total += n
+        within_weighted += n * cov_y_v
+        advantage_cov_weighted += n * cov_y_advantage
+        all_y.extend(y.tolist())
+        all_v.extend(v.tolist())
+        prompt_rows.append(
+            {
+                "task_id": task_id,
+                "occurrences": n,
+                "trusted_mean": float(y.mean()),
+                "score_mean": float(v.mean()),
+                "score_variance": variance_v,
+                "cov_y_v": cov_y_v,
+                "cov_y_e": cov_y_e,
+                "cov_y_grpo_advantage": cov_y_advantage,
+                "informative_trusted_labels": bool(np.any(y > 0.5) and np.any(y <= 0.5)),
+                "nonconstant_verifier_scores": bool(variance_v > 0.0),
+            }
+        )
+
+    y_all = np.asarray(all_y, float)
+    v_all = np.asarray(all_v, float)
+    pooled_cov = float(np.mean((y_all - y_all.mean()) * (v_all - v_all.mean())))
+    within_occurrence_weighted = float(within_weighted / total)
+    between = 0.0
+    for row in prompt_rows:
+        weight = float(row["occurrences"]) / total
+        between += weight * (
+            (float(row["trusted_mean"]) - float(y_all.mean()))
+            * (float(row["score_mean"]) - float(v_all.mean()))
+        )
+    reconstruction_error = float(
+        pooled_cov - (within_occurrence_weighted + between)
+    )
+    return {
+        "pooled_cov_y_v": pooled_cov,
+        "within_prompt_cov_y_v_occurrence_weighted": within_occurrence_weighted,
+        "between_prompt_cov_y_v": float(between),
+        "pooled_cov_reconstruction_error": reconstruction_error,
+        "mean_prompt_cov_y_v": float(np.mean([row["cov_y_v"] for row in prompt_rows])),
+        "mean_prompt_cov_y_e": float(np.mean([row["cov_y_e"] for row in prompt_rows])),
+        "mean_prompt_cov_y_grpo_advantage": float(
+            np.mean([row["cov_y_grpo_advantage"] for row in prompt_rows])
+        ),
+        "occurrence_weighted_cov_y_grpo_advantage": float(
+            advantage_cov_weighted / total
+        ),
+        "trusted_informative_prompts": int(
+            sum(bool(row["informative_trusted_labels"]) for row in prompt_rows)
+        ),
+        "nonconstant_score_prompts": int(
+            sum(bool(row["nonconstant_verifier_scores"]) for row in prompt_rows)
+        ),
+        "advantage_eps": float(advantage_eps),
+        "clip_advantage": float(clip_advantage),
+        "per_prompt": prompt_rows,
+    }
+
+
 def pairwise_reversal_rate(
     first: list[float] | np.ndarray,
     second: list[float] | np.ndarray,
@@ -358,6 +467,9 @@ def _score_rows(
 def _geometry_from_scores(
     groups: list[dict[str, Any]],
     scores: dict[str, dict[str, list[float]]],
+    *,
+    advantage_eps: float = 1e-6,
+    clip_advantage: float = 5.0,
 ) -> dict[str, Any]:
     y = _flatten_labels(groups)
     result = {}
@@ -367,6 +479,12 @@ def _geometry_from_scores(
             float,
         )
         result[arm] = verifier_geometry_metrics(y, v)
+        result[arm]["grpo_aligned"] = grpo_aligned_geometry_metrics(
+            groups,
+            scores[arm],
+            advantage_eps=advantage_eps,
+            clip_advantage=clip_advantage,
+        )
     fresh = np.asarray(
         [value for group in groups for value in scores["fresh"][group["task_id"]]],
         float,
@@ -845,8 +963,16 @@ async def run(lock: dict[str, Any], systems: Path, output: Path) -> dict[str, An
         holdout_scores = score_bundle(current_holdout, "holdout")
         calibration_scores = score_bundle(calibration, "calibration")
         effect_scores = score_bundle(effect, "effect")
-        holdout_geometry = _geometry_from_scores(current_holdout, holdout_scores)
-        effect_geometry = _geometry_from_scores(effect, effect_scores)
+        geometry_kwargs = {
+            "advantage_eps": float(trainer.config.advantage_eps),
+            "clip_advantage": float(trainer.config.clip_advantage),
+        }
+        holdout_geometry = _geometry_from_scores(
+            current_holdout, holdout_scores, **geometry_kwargs
+        )
+        effect_geometry = _geometry_from_scores(
+            effect, effect_scores, **geometry_kwargs
+        )
         save_json(seed_root, "verifier_holdout_metrics.json", holdout_geometry)
         save_json(seed_root, "pre_update_verifier_geometry.json", effect_geometry)
         save_json(seed_root, "pre_update_policy_shift.json", policy_shift)
