@@ -45,7 +45,8 @@ class WorkloadAwareRequestLoadBalancer:
         self._inflight_requests = {sid: 0 for sid in servers}
         self._outstanding_work = {sid: 0.0 for sid in servers}
         self._request_id_to_server = LRUCache(maxsize=max_cache_size)
-        self._request_work = LRUCache(maxsize=max_cache_size)
+        # In-flight accounting must never be evicted by the sticky-session LRU.
+        self._request_work: dict[str, tuple[str, float]] = {}
         self._prefill_weight = float(prefill_weight)
         self._decode_weight = float(decode_weight)
         self._default_decode_tokens = int(default_decode_tokens)
@@ -130,7 +131,7 @@ class WorkloadAwareRequestLoadBalancer:
             return
         if request_id is None:
             raise ValueError("workload-aware release requires request_id")
-        record = self._request_work.pop(request_id, None)
+        record = self._request_work.get(request_id)
         if record is None:
             return
         recorded_server, work = record
@@ -139,6 +140,7 @@ class WorkloadAwareRequestLoadBalancer:
                 f"release server mismatch for {request_id}: "
                 f"{server_id} != {recorded_server}"
             )
+        del self._request_work[request_id]
         if self._inflight_requests[server_id] > 0:
             self._inflight_requests[server_id] -= 1
         self._outstanding_work[server_id] = max(
