@@ -8,6 +8,7 @@ from scripts.run_qwen_alignment_bridge import (
     candidate_preference_shift,
     effect_drift_ratio,
     select_matched_drift_lrs,
+    token_drift_stats,
 )
 
 
@@ -67,6 +68,23 @@ class QwenAlignmentBridgeContractTest(unittest.TestCase):
         missing = candidate_preference_shift(base, post, [0, 0, 0, 0])
         self.assertFalse(missing["informative"])
         self.assertIsNone(missing["preference_shift"])
+
+    def test_token_drift_stats_retains_raw_old_new_and_matches_k3(self):
+        old = [-2.0, -1.0, -3.0]
+        new = [-1.5, -1.2, -2.5]
+        stats = token_drift_stats(old, new)
+        self.assertEqual(stats["old_token_logprobs"], old)
+        self.assertEqual(stats["new_token_logprobs"], new)
+        self.assertEqual(stats["tokens"], 3)
+        ratios = np.asarray(new) - np.asarray(old)
+        expected = np.exp(ratios) - 1.0 - ratios
+        np.testing.assert_allclose(stats["raw_log_ratio"], ratios)
+        np.testing.assert_allclose(stats["token_k3"], expected)
+        self.assertAlmostEqual(stats["mean_k3"], float(np.mean(expected)))
+
+    def test_token_drift_stats_rejects_shape_mismatch(self):
+        with self.assertRaises(ValueError):
+            token_drift_stats([-1.0], [-1.0, -2.0])
 
     def test_effect_drift_ratio_is_symmetric_and_fail_closed(self):
         self.assertAlmostEqual(effect_drift_ratio(2e-5, 3e-5), 1.5)
