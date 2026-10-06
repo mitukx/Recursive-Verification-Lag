@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from src.finite_code_tasks import tasks, score
+from src.finite_code_tasks import Task, score
 
 
 def main():
@@ -13,7 +13,8 @@ def main():
     meta=json.loads(a.bank.with_suffix('.manifest.json').read_text())
     if not meta['complete'] or hashlib.sha256(a.bank.read_bytes()).hexdigest()!=meta['bank_sha256']:
         raise ValueError('bank is incomplete or modified')
-    rows=[json.loads(l) for l in a.bank.read_text().splitlines()]; known={t.task_id:t for t in tasks()}
+    rows=[json.loads(l) for l in a.bank.read_text().splitlines()]
+    known={t['task_id']:Task(**t) for t in meta['tasks']}
     for row in rows:
         rescored=score(row['source'],known[row['task_id']])
         for col in ['public_score','trusted_score','exhaustive_score','features']:

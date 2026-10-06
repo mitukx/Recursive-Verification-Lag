@@ -1,0 +1,69 @@
+{
+  "designs": {
+    "early": [
+      "fixed",
+      0.5,
+      [
+        1,
+        2,
+        3
+      ]
+    ],
+    "uniform": [
+      "fixed",
+      0.5,
+      [
+        1,
+        5,
+        9
+      ]
+    ],
+    "late": [
+      "fixed",
+      0.5,
+      [
+        1,
+        11,
+        12
+      ]
+    ],
+    "kl_05": [
+      "kl",
+      0.5,
+      null
+    ],
+    "geometry_10": [
+      "geometry",
+      10.0,
+      null
+    ]
+  },
+  "acquisition": [
+    "stream",
+    "policy"
+  ],
+  "events": 3,
+  "labels_per_event": 2,
+  "rounds": 12,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "policy_acquisition_exploration": 0.05,
+  "bank_sha256": "8753a37a92c8e4828f9362172371e4573697a5337ef9ca457860fecbbd0757ce",
+  "status": "prospective_transfer_v1; unchanged source-timing grid; see locked protocol",
+  "source_sha256": {
+    "src/source_timing_pilot.py": "323e9018c6fbf432c2ef4b0e32029064426521d3077ae690599c4e62021d0ca4",
+    "src/source_audit.py": "99208576de389a68773db635ecca11573be614a100cc4b9ae85302ed924aa0bc",
+    "src/candidate_bank_experiment.py": "c13c7543fa66582a6f87cda4359fb7d0be6860106a352430e56cb8a107e872f2"
+  },
+  "completed_runs": 4800,
+  "runs_sha256": "5cbd00d44b91ef1e7f275d9c651004fd296bc7297346d18bb664343683511b5f",
+  "gzip_sha256": "7da1c2bfb87439cdb17e5f7c5fbd5ceb5ffdab398cc9add2edcd06bdc6968bd3",
+  "runs_jsonl_sha256": "5cbd00d44b91ef1e7f275d9c651004fd296bc7297346d18bb664343683511b5f",
+  "runs_gzip_sha256": "7da1c2bfb87439cdb17e5f7c5fbd5ceb5ffdab398cc9add2edcd06bdc6968bd3",
+  "legacy_engine_status": "exploratory existing development bank; design fixed before this run after previous results"
+}

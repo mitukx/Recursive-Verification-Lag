@@ -1,0 +1,9 @@
+task_id,mean_gain,mean_paid_sources,accepted_last,nonzero_gain
+asymmetric_hinge,0.0,4.8,0.3,0.0
+parity_switch,0.22792057929186696,4.9,0.6,0.55
+shifted_clip,0.1389748280512718,5.5,0.35,0.35
+signed_square,0.0,2.0,1.0,0.0
+split_threshold,0.0597156428642148,5.2,0.3,0.1
+two_landmark_distance,0.0432274174838838,6.0,0.1,0.15
+weighted_floor,0.07208659789798293,5.4,0.25,0.35
+wrap_six,0.2690909262218053,4.2,0.8,0.4

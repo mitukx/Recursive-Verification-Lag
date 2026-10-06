@@ -1,0 +1,10 @@
+{
+  "input_bank_sha256": "1e659345d057a3e311d8f62e8bb0f7c3b213dbfccb34c6025a7dc559022eb1d7",
+  "scored_bank_sha256": "1bd600975d6f69b9aeb34afa285836bc9b5bc287a92109fc01a6eef6d0edf4bf",
+  "docker_image_digest": "sha256:dc578f3f22a630f156deaa3bfcd700e69c8797f68b27ce51768ee77f2414ad88",
+  "docker_platform": "linux/amd64",
+  "per_candidate_wall_seconds": 20.0,
+  "reference_validation": "all 8 references passed original assertions and released plus tests",
+  "scoring_worker_sha256": "5f92ba6dbf34492078cd44af0c16df2dff779776e89d5ba798afba3f22fd552f",
+  "scorer_sha256": "f1510b247ed564cf7d2e124d1886a266bec231131585dc05ddb974a3f1a26144"
+}

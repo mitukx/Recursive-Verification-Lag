@@ -1,0 +1,81 @@
+{
+  "bank_sha256": "71a4cecd9d9414deb2adc28b2afd5d54d5ba6dbfd036f1ca50b1364a6147c935",
+  "designs": {
+    "early": [
+      "fixed",
+      0.5,
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    "uniform": [
+      "fixed",
+      0.5,
+      [
+        1,
+        4,
+        7,
+        10
+      ]
+    ],
+    "late": [
+      "fixed",
+      0.5,
+      [
+        1,
+        10,
+        11,
+        12
+      ]
+    ],
+    "kl_01": [
+      "kl",
+      0.1,
+      null
+    ],
+    "kl_05": [
+      "kl",
+      0.5,
+      null
+    ],
+    "maxlog_05": [
+      "maxlog",
+      0.5,
+      null
+    ],
+    "maxlog_15": [
+      "maxlog",
+      1.5,
+      null
+    ],
+    "geometry_10": [
+      "geometry",
+      10.0,
+      null
+    ],
+    "geometry_100": [
+      "geometry",
+      100.0,
+      null
+    ]
+  },
+  "rounds": 12,
+  "draws_per_audit": 8,
+  "audit_events": 4,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "status": "prospective_within_family_hand_authored_v2",
+  "record_coordinates": true,
+  "source_sha256": {
+    "src/exact_cost_pilot.py": "0ddb32d44d91150c78220e38843e8b4fca947bdcc8bc65baccdc36bf8a08742e",
+    "src/candidate_bank_experiment.py": "c13c7543fa66582a6f87cda4359fb7d0be6860106a352430e56cb8a107e872f2"
+  }
+}

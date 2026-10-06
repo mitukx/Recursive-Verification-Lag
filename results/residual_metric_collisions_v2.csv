@@ -1,0 +1,17 @@
+task_id,representation,sources,zero_distance_pairs,contradictory_pairs,worst_collision_residual_gap,minimum_lipschitz_constant
+asymmetric_hinge,public,16,44,29,0.41379310344827586,inf
+asymmetric_hinge,all,16,0,0,0.0,52.96551724137931
+parity_switch,public,14,30,19,0.06896551724137931,inf
+parity_switch,all,14,0,0,0.0,23.54022988505747
+shifted_clip,public,16,51,32,0.896551724137931,inf
+shifted_clip,all,16,0,0,0.0,38.252873563218394
+signed_square,public,15,79,0,0.0,0.0
+signed_square,all,15,3,0,0.0,0.0
+split_threshold,public,16,51,27,0.896551724137931,inf
+split_threshold,all,16,0,0,0.0,211.8620689655172
+two_landmark_distance,public,16,55,47,0.9655172413793104,inf
+two_landmark_distance,all,16,1,1,0.5172413793103448,inf
+weighted_floor,public,14,28,19,0.7931034482758621,inf
+weighted_floor,all,14,2,1,0.5517241379310345,inf
+wrap_six,public,16,41,2,0.689655172413793,inf
+wrap_six,all,16,2,0,0.0,0.8620426584644721

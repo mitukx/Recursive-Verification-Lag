@@ -1,0 +1,94 @@
+# A sharp observable frontier for bounded finite-bank rewards
+
+**Status:** proved elementary identification proposition; not a novel
+statistical confidence bound, an optimal refresh-rate theorem, or a general
+claim about real-model deployments. It clarifies exactly what trusted labels
+can establish without verifier-error assumptions. The proof applies to frozen
+finite support and deterministic trusted reward per identical-source class.
+
+Let the finite candidate occurrences be grouped into source classes (g),
+with common but unknown reward (r_g\in[a_g,b_g]). At a decision point, the
+current and proposed distributions (q,p) and the paid audit transcript are
+observable. Write (w_g=\sum_{i\in g}(p_i-q_i)). For audited classes (A),
+the transcript reveals exact (r_g); for others there are only the specified
+bounds. Define
+
+\[
+L_A(p,q)=\sum_{g\in A}w_gr_g+\sum_{g\notin A}\min\{w_ga_g,w_gb_g\},
+\quad
+U_A(p,q)=\sum_{g\in A}w_gr_g+\sum_{g\notin A}\max\{w_ga_g,w_gb_g\}.
+\]
+
+**Proposition (exact gain-identification interval).** Conditional on this
+transcript and these assumptions, the set of feasible true gains
+\(\mathbb E_p r-\mathbb E_q r\) is exactly \([L_A,U_A]\). In particular,
+\(L_A\ge0\) certifies nonnegative gain for every compatible reward function.
+If \(L_A<0<U_A\), there are two compatible worlds with opposite gain signs;
+any refresh/stop rule using only the same transcript makes the same decision
+in both. A new audit, a structural assumption on errors, or abstention is
+necessary to resolve the sign. With group-independent reward intervals,
+the interval width is exactly
+\(\sum_{g\notin A}|w_g|(b_g-a_g)\).
+
+**Proof.** The gain is \(\sum_g w_gr_g\). Audited summands are fixed.
+For every unaudited class, the linear summand reaches its min and max at the
+corresponding interval endpoints. Choices across unaudited classes are
+independent, so these endpoint choices can be attained simultaneously; every
+intermediate gain follows by convex interpolation. When zero lies strictly
+inside, the two endpoint assignments generate identical observable policies,
+cheap scores and audit transcript but have opposite true gains. Width follows
+by subtracting the endpoint sums. QED.
+
+For safety **relative to the initial policy**, set \(q=p_0\), not the last
+refresh policy. The controller may compute \(p\) adaptively from previous
+trusted labels: the proposition is deterministic and still holds conditional
+on the realized transcript. To act before an update, evaluate the *proposed*
+policy and require \(L_A\ge0\); if it fails, auditing extra high-impact
+sources can shrink the interval. Auditing alone cannot guarantee that a useful
+proposal becomes safe: the identified interval may still straddle zero even
+after every allowed label is acquired, or the true gain may be negative.
+
+This is a source-coverage frontier, not a single universal density-ratio law.
+The terms \(|w_g|(b_g-a_g)\) directly show which unqueried reward directions
+matter. With no structure, confident improvement requires covering those
+directions or accumulating enough positive audited contribution. If the cheap
+verifier or task specification constrains reward jointly, this interval can
+be narrowed with a justified coupled feasible set; arbitrary per-class
+intervals deliberately avoid such assumptions. The experiment below checks
+how often this robust certificate is informative. It cannot turn the algebra
+into a statistical warning guarantee.
+
+**Corollary (safety of an abstaining controller).** Start at \(p_0\). At
+each step, compute a candidate from any adaptive verifier, use only paid labels
+to form \(L_A(p,p_0)\), and accept only if the lower bound is nonnegative;
+otherwise acquire additional labels and recompute, or retain the previous
+accepted policy. By induction every accepted policy has reward at least that
+of \(p_0\) under every reward vector compatible with its transcript. The
+proof does not assume that the verifier is unbiased and applies to soft or
+Best-of-N proposals. It is a conditional finite-support safety statement, not
+a guarantee of improved capability: if all proposals are uncertifiable or
+harmful the controller can remain at \(p_0\) forever. The controller in
+`src/certified_refresh.py` implements this gate with a six-source budget and
+greedy \(|w_g|\) acquisition, without any claim that this acquisition rule is
+optimal. Further, an adversary can reveal an endpoint reward at each newly
+audited source that leaves the lower bound unchanged for a fixed proposal;
+there is no universal finite audit budget guaranteeing certification of an
+arbitrary proposal in the absence of reward structure.
+
+**Boundary lemma for partial updates.** Hold the audit transcript fixed. Let
+\(h(\alpha)=L_A((1-\alpha)p+\alpha z,p_0)\) for a currently certified
+policy \(p\) and a proposed policy \(z\). The function is concave and
+piecewise linear, because it is the infimum over compatible reward vectors of
+an affine function of \(\alpha\). Hence \(\{\alpha\in[0,1]:h(\alpha)\ge0\}\)
+is an interval containing zero, and binary search finds its largest endpoint.
+If \(h(0)=0\) and the right derivative \(h'_+(0)<0\), concavity gives
+\(h(\alpha)\le\alpha h'_+(0)<0\) for every \(\alpha>0\): no positive
+line-search step is certifiable without changing the transcript, direction,
+or assumptions. If \(h'_+(0)>0\), sufficiently small positive steps are
+certifiable. For group weights \(w_g=\sum_{i\in g}(p_i-p_{0,i})\) and direction
+\(v_g=\sum_{i\in g}(z_i-p_i)\), the derivative is the audited sum
+\(\sum_{g\in A}v_gr_g\), plus \(v_ga_g\) for each unaudited \(w_g>0\),
+\(v_gb_g\) for \(w_g<0\), and \(\min\{v_ga_g,v_gb_g\}\) for \(w_g=0\).
+This is an elementary convex-analysis observation, not a novel minimax law.
+The strict negative-derivative obstruction concerns this fixed proposal line;
+it does not exclude a different safe proposal or a valid structural model.

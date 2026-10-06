@@ -1,30 +1,28 @@
-# Research Roadmap
+# Research roadmap after isolated MBPP+ scoring
 
-## Highest-value external validation
+The [claim and decision record](oral_research_decision.md) sets current
+goals, alternative explanations and stop rules. The first eight-task
+scored MBPP+ bank is a negative timing/projection pilot, not an independent
+confirmation of the controlled expression-bank phase boundary.
 
-Run the same mechanism tests with a pretrained small code model.
+1. Freeze disjoint next-32 development and next-32 heldout MBPP+ task IDs
+   using the original outcome-blind prompt-only hash ranking. Generate 16
+   programs per task using the pinned 1.5B model and separate fixed seeds.
+   Keep all tasks, invalid outputs and duplicates. Do not inspect heldout
+   trusted outcomes while choosing thresholds.
+2. Score only in isolated Docker, after validating official references.
+   Repeat identical six-source streams and the fixed 32-draw timing arm.
+   If fewer than five heldout tasks exhibit later-onset failures under a
+   fixed baseline, call the failure frontier underidentified.
+3. Derive a calibrated verifier-error class with a nonvacuous
+   trajectory-specific upper certificate and a genuinely recursive lower
+   bound. Current box/cover bounds and zero-distance collisions exclude
+   easy universal metric or elapsed-time laws.
+4. If and only if a failure/prediction signal transfers, replicate with
+   fresh candidate generation or model parameter updates to address
+   capability creation. Record paid source cost, rejected updates and
+   audited-source concentration.
 
-A minimal study should use:
-
-1. 50–200 finite-domain coding tasks;
-2. a fixed bank of sampled candidate programs per task;
-3. public tests or a learned public proxy;
-4. stronger hidden/exhaustive tests as trusted semantic reward;
-5. independent sweeps over selection pressure, verifier refresh cadence, and trusted-data budget;
-6. a richer-verifier control;
-7. both Best-of-N and soft/exponential selection;
-8. pre-registered inclusion criteria and per-task results.
-
-## Key falsification test
-
-If increasing trusted-data budget systematically moves the semantic failure boundary in a fixed verifier class, the current misspecification-threshold interpretation should be weakened.
-
-If richer verifier representation removes the boundary while more data mainly sharpen it, the current mechanism story is strengthened.
-
-## Theoretical target
-
-The next worthwhile theorem is not another divergence definition. It is an observable **adaptive refresh frontier** based on the residual verification geometry after past trusted information has been incorporated.
-
-A useful result would characterize when to refresh without oracle knowledge of the true gain.
-
-If this cannot be done without artificial assumptions or direct access to the true margin, theory expansion should stop and the existing bridge theorem should remain the endpoint.
+The user has an M1 Pro/32GB Mac. The first pilot was scored in GitHub
+Actions Docker because this scratch executor has no Docker daemon. Future
+generated code must also be scored in isolated containers.

@@ -1,0 +1,17 @@
+task_id,representation,sources,zero_distance_pairs,contradictory_pairs,worst_collision_residual_gap,minimum_lipschitz_constant
+279,public,8,28,0,0.0,0.0
+279,all,8,0,0,0.0,0.0
+4,public,8,16,0,0.0,0.0
+4,all,8,0,0,0.0,0.0
+451,public,6,15,5,1.0,inf
+451,all,6,0,0,0.0,341.3333333333333
+573,public,8,28,0,0.0,0.0
+573,all,8,0,0,0.0,0.0
+606,public,7,9,0,0.0,0.0
+606,all,7,2,0,0.0,0.0
+733,public,8,16,5,1.0,inf
+733,all,8,0,0,0.0,204.8
+754,public,6,6,0,0.0,1.0
+754,all,6,1,0,0.0,0.9968860768058778
+787,public,8,7,0,0.0,1.0
+787,all,8,0,0,0.0,0.9999970197810839
