@@ -3,9 +3,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import time
+from pathlib import Path
 
 from src.rvl_systems.backends import ToyTabularBackend
+from src.rvl_systems.benchmark_report import BenchmarkReport
 from src.rvl_systems.rollout import AsyncRolloutEngine, RolloutRequest
 from src.rvl_systems.telemetry import Telemetry
 
@@ -36,17 +39,13 @@ async def run_benchmark(requests: int, samples: int, latency_ms: float, concurre
     async_s = time.perf_counter() - async_start
 
     return {
-        "requests": requests,
-        "samples_per_request": samples,
-        "latency_ms_per_sample": latency_ms,
-        "concurrency": concurrency,
         "samples": len(generated),
         "serial_samples": serial_count,
         "serial_wall_s": serial_s,
         "async_wall_s": async_s,
         "speedup": serial_s / max(async_s, 1e-12),
         "async_samples_per_s": len(generated) / max(async_s, 1e-12),
-        "telemetry": telemetry.snapshot(),
+        **telemetry.snapshot(),
     }
 
 
@@ -56,10 +55,27 @@ async def main() -> None:
     parser.add_argument("--samples", type=int, default=8)
     parser.add_argument("--latency-ms", type=float, default=5.0)
     parser.add_argument("--concurrency", type=int, default=8)
+    parser.add_argument("--output")
     args = parser.parse_args()
-    print(json.dumps(await run_benchmark(
+    metrics = await run_benchmark(
         args.requests, args.samples, args.latency_ms, args.concurrency
-    ), indent=2))
+    )
+    report = BenchmarkReport(
+        name="async-rollout",
+        metrics=metrics,
+        config={
+            "requests": args.requests,
+            "samples_per_request": args.samples,
+            "latency_ms_per_sample": args.latency_ms,
+            "concurrency": args.concurrency,
+        },
+        git_sha=os.environ.get("GITHUB_SHA", "unknown"),
+    )
+    payload = report.payload()
+    if args.output:
+        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+        report.write_json(args.output)
+    print(json.dumps(payload, indent=2))
 
 
 if __name__ == "__main__":
