@@ -227,6 +227,7 @@ class DistributedVerifierFleet:
         self._failures = [0 for _ in self.clients]
         self._quarantined = [False for _ in self.clients]
         self._cursor = 0
+        self._round_robin_lock = asyncio.Lock()
 
     def publish_expected_version(self, version: int) -> None:
         version = int(version)
@@ -254,12 +255,24 @@ class DistributedVerifierFleet:
                 rows.append({"ok": False, "compatible": False, "error": str(exc)})
         return rows
 
+    async def _reserve_round_robin(self, excluded: set[int]) -> int | None:
+        async with self._round_robin_lock:
+            for offset in range(len(self.clients)):
+                idx = (self._cursor + offset) % len(self.clients)
+                if self._quarantined[idx] or idx in excluded:
+                    continue
+                self._cursor = (idx + 1) % len(self.clients)
+                return idx
+        return None
+
     async def verify(self, generation: Generation) -> VerifiedGeneration:
         errors: list[str] = []
-        for offset in range(len(self.clients)):
-            idx = (self._cursor + offset) % len(self.clients)
-            if self._quarantined[idx]:
-                continue
+        attempted: set[int] = set()
+        while len(attempted) < len(self.clients):
+            idx = await self._reserve_round_robin(attempted)
+            if idx is None:
+                break
+            attempted.add(idx)
             client = self.clients[idx]
             try:
                 result = await client.verify(
@@ -267,7 +280,6 @@ class DistributedVerifierFleet:
                     expected_verifier_version=self.expected_verifier_version,
                 )
                 self._failures[idx] = 0
-                self._cursor = (idx + 1) % len(self.clients)
                 return result
             except Exception as exc:
                 self._failures[idx] += 1
