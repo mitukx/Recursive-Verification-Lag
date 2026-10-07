@@ -1,5 +1,19 @@
 # Recursive Verification Lag
 
+## Post-training capability track
+
+The repository now treats **real post-training capability improvement** as the primary acceptance target. The central empirical question is whether verified RL can improve an independent held-out capability metric, and whether a learned reward/verifier remains useful as policy optimization shifts the model distribution.
+
+The current campaign combines two existing real-model paths:
+
+- **Oracle RLVR:** Qwen/GSM8K rollout -> deterministic trusted reward -> token-level GRPO -> held-out before/after evaluation.
+- **Learned reward model:** matched-update `oracle / fresh / stale / shuffled` verifier arms with trusted terminal evaluation withheld from optimization.
+
+A machine-readable scorecard combines these results without hiding null, negative, failed, or underpowered runs. See [Post-training capability campaign v1](docs/posttraining_capability_campaign.md) and `configs/posttraining_capability_campaign_v1.json`.
+
+**No capability-gain claim is made until the real GPU runs and held-out evidence are retained.** The distributed serving, replay, verifier deployment, failure recovery, and profiling stack below exists to make those experiments reproducible and auditable.
+
+
 **Latest evidence (2026-10-07):** [completed development and fresh-task transfer](notes/progress/36_completed_development_and_transfer.md).
 The locked 16/16 development transfer has a negative primary refresh effect
 (-0.0002595 expected pass probability; descriptive interval crosses zero).
