@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "portfolio_goal": "Executable long-horizon RL for AI engineering: train agents to improve models, code and ML systems while preserving trusted evaluation and systems provenance.",
+  "claim_policy": "A track is portfolio-ready only when its required real-workload evidence is retained. Implemented harnesses, toy tasks and synthetic measurements are supporting evidence, not substitutes.",
+  "tracks": {
+    "rsi_research_automation": {
+      "target": "AI4AI / research automation for ML systems and machine-learning engineering",
+      "existing": [
+        "bounded champion/challenger RSI controller",
+        "sealed terminal audit",
+        "rollback-safe promotion",
+        "verifier-lag and false-progress checks"
+      ],
+      "required_evidence": [
+        "real model-development tasks such as inference optimization, training debugging or kernel/performance work",
+        "executable correctness and benchmark reward",
+        "baseline-vs-post-trained or search-improved task success",
+        "cross-task held-out transfer",
+        "full experiment provenance and negative outcomes"
+      ],
+      "status": "harness_ready_real_workload_missing"
+    },
+    "long_horizon_rl": {
+      "target": "multi-step and multi-hour agentic RL with delayed credit and recovery",
+      "existing": [
+        "episode-pinned policy versions",
+        "per-tool durable journals",
+        "resume/recovery",
+        "configurable 7200s episode deadline",
+        "terminal-return training"
+      ],
+      "required_evidence": [
+        "real completed trajectories lasting at least tens of minutes with a declared multi-hour budget",
+        "resume after injected failure without task corruption",
+        "trajectory-length and success curves",
+        "credit-assignment ablation",
+        "held-out long-horizon task success after training"
+      ],
+      "status": "mechanics_ready_long_horizon_evidence_missing"
+    },
+    "coding_rl": {
+      "target": "RL for real software engineering and coding agents",
+      "existing": [
+        "model-driven inspect/edit/test/finish loop",
+        "isolated Docker public and hidden graders",
+        "terminal-return RL",
+        "reward-forgery regression tests"
+      ],
+      "required_evidence": [
+        "real repository tasks rather than affine toy functions",
+        "frozen train/dev/test repository split",
+        "executable hidden tests",
+        "before-vs-after coding benchmark improvement",
+        "trajectory analysis showing useful exploration and self-verification"
+      ],
+      "status": "agent_harness_ready_real_repo_rl_missing"
+    },
+    "grok_infra": {
+      "target": "RL training/inference infrastructure and production-style reliability",
+      "existing": [
+        "verification-aware actor-verifier-learner pipeline",
+        "token-exact vLLM-to-GRPO bridge",
+        "distributed verifier RPC and adaptive routing",
+        "two-phase verifier deployment",
+        "FSDP/NCCL and low-precision harnesses",
+        "failure recovery, observability and provenance"
+      ],
+      "required_evidence": [
+        "real one-GPU and multi-GPU throughput",
+        "p50/p95/p99 latency and GPU utilization",
+        "1-to-2 GPU scaling and checkpoint resume",
+        "worker-failure recovery on real serving",
+        "measured optimization or upstream impact in verl, SGLang or vLLM"
+      ],
+      "status": "implementation_strong_real_gpu_and_upstream_impact_missing"
+    },
+    "built_grok_end_to_end": {
+      "target": "end-to-end model-building judgment across data, training, agents, evaluation and serving",
+      "existing": [
+        "real-model RLVR runner",
+        "learned reward model",
+        "agent harness",
+        "promotion/evaluation gates",
+        "serving and training systems"
+      ],
+      "required_evidence": [
+        "one coherent data-to-SFT-or-preference-to-RL-to-eval pipeline",
+        "model capability improvement on independent evaluation",
+        "data curation and failure-analysis iteration",
+        "agentic/coding task improvement",
+        "deployment-quality reproducibility"
+      ],
+      "status": "components_present_end_to_end_model_iteration_missing"
+    },
+    "post_training_rl": {
+      "target": "reward modeling, preference optimization and RL for capability improvement",
+      "existing": [
+        "token-level GRPO/RLVR",
+        "held-out transactional promotion",
+        "fresh/stale/shuffled learned-verifier experiment",
+        "capability scorecard"
+      ],
+      "required_evidence": [
+        "positive or honestly retained null real-model held-out RL result",
+        "learned reward-model calibration and policy-shift degradation",
+        "fresh-vs-stale trusted capability comparison",
+        "DPO or preference-optimization baseline on the same split",
+        "reasoning/coding capability result rather than training reward alone"
+      ],
+      "status": "experiment_locked_real_gpu_result_and_dpo_baseline_missing"
+    }
+  },
+  "priority_order": [
+    "rsi_research_automation",
+    "long_horizon_rl",
+    "coding_rl",
+    "post_training_rl",
+    "grok_infra",
+    "built_grok_end_to_end"
+  ]
+}
