@@ -51,6 +51,8 @@ measurements. Baseline/candidate order alternates, both see the same fresh probe
 and all seven raw pairs are retained. A performance reward requires correctness,
 Docker isolation and at least 1.05 speedup in every pair. This conservative
 development gate is not a statistical generalization certificate.
+An unchanged candidate is always ineligible for performance reward, even if
+baseline-vs-itself timings happen to fluctuate above the threshold.
 
 Reports retain exact sources, source commit, candidate/oracle/evaluation hashes,
 CPU budget, machine identity, dependencies, stderr, failure status and raw pairs.

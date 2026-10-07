@@ -63,13 +63,15 @@ class MLSysEnvironmentTests(unittest.TestCase):
         fast = [{"baseline_s": 2.0, "candidate_s": 1.0}] * 7
         good = {"passed": 64, "failed": 0}
         self.assertEqual(summarize(good, fast, isolated=True,
-                                  evaluation=evaluation)["performance_reward"], 1.0)
+                                  evaluation=evaluation, candidate_changed=True)["performance_reward"], 1.0)
+        self.assertEqual(summarize(good, fast, isolated=True,
+                                  evaluation=evaluation, candidate_changed=False)["performance_reward"], 0.0)
         for checks, pairs, isolated in (({**good, "failed": 1}, fast, True),
                                        (good, fast, False), (None, fast, True),
                                        (good, [], True),
                                        (good, fast + [{"baseline_s": 1.0, "candidate_s": 2.0}], True)):
             self.assertEqual(summarize(checks, pairs, isolated=isolated,
-                                      evaluation=evaluation)["performance_reward"], 0.0)
+                                      evaluation=evaluation, candidate_changed=True)["performance_reward"], 0.0)
 
     def test_tolerance_cannot_be_relaxed(self):
         for key, value in (("rtol", 0.1), ("atol", 0.1), ("minimum_speedup", 1.0),

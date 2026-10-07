@@ -216,8 +216,9 @@ def validate_evaluation(evaluation):
         raise ValueError("tolerances cannot be relaxed")
 
 
-def summarize(correctness, paired, *, isolated, evaluation):
-    eligible = bool(correctness and correctness["failed"] == 0 and isolated and paired)
+def summarize(correctness, paired, *, isolated, evaluation, candidate_changed=False):
+    eligible = bool(correctness and correctness["failed"] == 0 and isolated and paired
+                    and candidate_changed)
     speedups = [row["baseline_s"] / row["candidate_s"] for row in paired]
     median_speedup = statistics.median(speedups) if speedups else None
     # Every retained pair must meet the locked threshold; keep negative results.
@@ -225,6 +226,7 @@ def summarize(correctness, paired, *, isolated, evaluation):
     performance_reward = min(1.0, max(0.0, math.log2(median_speedup))) if gate else 0.0
     return {"correctness_passed": bool(correctness and correctness["failed"] == 0),
             "isolated_performance_eligible": eligible, "performance_gate_passed": gate,
+            "candidate_source_changed": candidate_changed,
             "median_roundtrip_speedup": median_speedup,
             "minimum_roundtrip_speedup": min(speedups) if speedups else None,
             "performance_reward": performance_reward,
@@ -299,7 +301,8 @@ def run(candidate, output, *, trusted_local=False, image=None, evaluation_path=N
             report["error"] = {"type": type(exc).__name__, "detail": str(exc)[:500]}
         report["summary"] = summarize(
             report["correctness"] if report["status"] == "completed" else None,
-            report["paired_timings"], isolated=not trusted_local, evaluation=evaluation)
+            report["paired_timings"], isolated=not trusted_local, evaluation=evaluation,
+            candidate_changed=sha(candidate_bytes) != sha(baseline))
         report["artifact_sha256"] = {}
         for name, data in (("candidate.py", candidate_bytes), ("baseline.py", baseline)):
             (output / name).write_bytes(data)
