@@ -149,7 +149,17 @@ class VerifierDeploymentCoordinator:
             },
         )
 
+    def _assert_current_epoch(self) -> None:
+        durable = self._read_state()
+        durable_epoch = int(durable.get("coordinator_epoch", 0))
+        if durable_epoch != self.epoch:
+            raise RuntimeError(
+                f"stale verifier coordinator fenced: local_epoch={self.epoch}, "
+                f"durable_epoch={durable_epoch}"
+            )
+
     async def prepare(self, manifest: VerifierArtifactManifest) -> list[str]:
+        self._assert_current_epoch()
         if manifest.version < self.active_version:
             raise ValueError("cannot prepare verifier older than active version")
         payload = asdict(manifest)
@@ -183,6 +193,7 @@ class VerifierDeploymentCoordinator:
         return acks
 
     async def activate(self) -> int:
+        self._assert_current_epoch()
         if self.pending_manifest is None:
             raise RuntimeError("no prepared verifier deployment")
         manifest = VerifierArtifactManifest.from_dict(self.pending_manifest)
