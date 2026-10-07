@@ -94,6 +94,7 @@ def load_gsm8k_tasks(
     train_limit: int,
     eval_limit: int,
     seed: int,
+    revision: str | None = None,
 ) -> tuple[list[RLVRTask], list[RLVRTask]]:
     try:
         from datasets import load_dataset
@@ -105,7 +106,11 @@ def load_gsm8k_tasks(
     if train_limit <= 0 or eval_limit <= 0:
         raise ValueError("train_limit and eval_limit must be positive")
 
-    dataset = load_dataset("openai/gsm8k", "main")
+    dataset = load_dataset(
+        "openai/gsm8k",
+        "main",
+        revision=revision,
+    )
     train_raw = dataset["train"].shuffle(seed=seed)
     eval_raw = dataset["test"].shuffle(seed=seed + 1)
 
