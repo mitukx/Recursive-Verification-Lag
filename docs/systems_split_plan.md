@@ -1,6 +1,10 @@
 # Systems repository split plan
 
 The research and systems tracks should ultimately be separate public repositories.
+The MTS-facing [execution plan](xai_mts_execution_plan.md) keeps one shared
+campaign until standalone real-workload evidence exists. The first executable
+MLSys operator task is development evidence and does not satisfy the exit
+criteria below.
 
 ## Recommended split
 
