@@ -28,7 +28,7 @@ def load(path):
     return json.loads(path.read_text())
 
 
-def verify_manifest(root):
+def verify_manifest(root, lock_path=LOCK):
     manifest = load(root / "manifest.json")
     files = manifest.get("files")
     if not isinstance(files, dict) or not files:
@@ -45,8 +45,13 @@ def verify_manifest(root):
               if p.is_file() and p != root / "manifest.json"}
     if actual != set(files):
         raise ValueError("all raw files must be indexed by the evidence manifest")
-    if hashlib.sha256((root / "protocol.json").read_bytes()).hexdigest() != manifest.get("protocol_sha256"):
-        raise ValueError("protocol checksum mismatch")
+    # The runner hashes the source lock, then saves protocol.json with sorted
+    # keys. Its separately indexed raw-file hash covers that reformatted copy.
+    # Verify both source bytes and semantic identity; do not equate their hashes.
+    source_lock = lock_path.read_bytes()
+    if (hashlib.sha256(source_lock).hexdigest() != manifest.get("protocol_sha256") or
+            load(root / "protocol.json") != json.loads(source_lock)):
+        raise ValueError("source protocol checksum/content mismatch")
     if manifest.get("runner_sha256") != RUNNER_SHA256:
         raise ValueError("runner differs from the retained locked implementation")
     return manifest
@@ -83,7 +88,7 @@ def summarize(root, lock_path=LOCK):
     if not (root / "manifest.json").is_file():
         output["missing"] = ["manifest.json"]
         return output
-    manifest = verify_manifest(root)
+    manifest = verify_manifest(root, lock_path)
     protocol = load(root / "protocol.json")
     if protocol != lock:
         raise ValueError("execution protocol differs from the pre-execution lock")

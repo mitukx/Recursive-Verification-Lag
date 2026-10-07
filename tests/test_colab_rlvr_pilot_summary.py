@@ -14,7 +14,9 @@ class ColabPilotSummaryTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.lock = json.loads(LOCK.read_text())
-        self.write("protocol.json", self.lock)
+        # Match the real runner: source lock hash and reformatted protocol copy
+        # intentionally differ even though their decoded JSON is identical.
+        (self.root / "protocol.json").write_text(json.dumps(self.lock, indent=2, sort_keys=True) + "\n")
         self.write("environment.json", {"systems_source_sha": self.lock["systems_source_sha"],
                    "research_source_sha": RESEARCH_SHA, "cuda": "test-fixture"})
         (self.root / "nvidia-smi.txt").write_text("SYNTHETIC UNIT TEST, NOT HARDWARE EVIDENCE")
@@ -60,7 +62,7 @@ class ColabPilotSummaryTests(unittest.TestCase):
         self.write("manifest.json", {
             "files": {str(p.relative_to(self.root)): hashlib.sha256(p.read_bytes()).hexdigest()
                       for p in self.root.rglob("*") if p.is_file() and p.name != "manifest.json"},
-            "protocol_sha256": hashlib.sha256((self.root / "protocol.json").read_bytes()).hexdigest(),
+            "protocol_sha256": hashlib.sha256(LOCK.read_bytes()).hexdigest(),
             "runner_sha256": hashlib.sha256(RUNNER.read_bytes()).hexdigest()})
 
     def test_null_result_stays_null_even_when_completed(self):
@@ -69,6 +71,18 @@ class ColabPilotSummaryTests(unittest.TestCase):
         self.assertFalse(result["frontier_or_hiring_readiness_claim"])
         self.assertEqual(result["trusted_minus_shuffled"]["mean"], 0)
         self.assertTrue(all(r["nonzero_gradient_updates"] == 0 for r in result["runs"]))
+
+    def test_source_hash_is_distinct_from_reformatted_copy(self):
+        self.assertNotEqual(hashlib.sha256(LOCK.read_bytes()).hexdigest(),
+                            hashlib.sha256((self.root / "protocol.json").read_bytes()).hexdigest())
+        self.assertEqual(summarize(self.root)["status"], "completed_small_gpu_pilot")
+
+    def test_rehashed_protocol_change_cannot_pass_source_lock(self):
+        changed = dict(self.lock, steps=8)
+        self.write("protocol.json", changed)
+        self.manifest()
+        with self.assertRaisesRegex(ValueError, "source protocol"):
+            summarize(self.root)
 
     def test_incomplete_failure_retained_without_positive_metrics(self):
         (self.root / "43_trusted_reward_terminal.json").unlink()
