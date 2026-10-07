@@ -34,6 +34,7 @@ class ColabPilotSummaryTests(unittest.TestCase):
                 self.write(f"{seed}_{arm}_history.json", [
                     {"step": i, "seed": seed, "arm": arm, "loss": 0, "grad_norm": 0,
                      "train_wall_s": 1, "parameter_probe_max_abs_change": 0,
+                     "max_abs_log_ratio": 0, "clip_fraction": 0,
                      "nonconstant_reward_group": False, "true_reward_mean": 0, "response_tokens": 4}
                     for i in range(4)])
                 rollouts = [{"generation": {"prompt_id": f"train-{step}", "response": "#### 0", "token_count": 1},

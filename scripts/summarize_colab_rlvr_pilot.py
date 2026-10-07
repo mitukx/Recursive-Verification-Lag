@@ -145,7 +145,7 @@ def summarize(root, lock_path=LOCK):
         if any(h["seed"] != seed or h["arm"] != arm for h in history):
             raise ValueError("update attribution mismatch")
         for h in history:
-            for key in ("loss", "grad_norm", "train_wall_s", "parameter_probe_max_abs_change"):
+            for key in ("loss", "grad_norm", "train_wall_s", "parameter_probe_max_abs_change", "max_abs_log_ratio", "clip_fraction"):
                 if not math.isfinite(float(h[key])):
                     raise ValueError("finite update diagnostics required")
         rollouts = [json.loads(line) for line in (root / f"{seed}_{arm}_rollouts.jsonl").read_text().splitlines() if line.strip()]
@@ -187,6 +187,8 @@ def summarize(root, lock_path=LOCK):
                                "nonconstant_reward_groups": nonconstant,
                                "nonzero_gradient_updates": sum(float(h["grad_norm"]) > 0 for h in history),
                                "maximum_parameter_probe_change": max(float(h["parameter_probe_max_abs_change"]) for h in history),
+                               "max_fresh_rollout_abs_log_ratio": max(float(h["max_abs_log_ratio"]) for h in history),
+                               "mean_fresh_rollout_clip_fraction": fmean(float(h["clip_fraction"]) for h in history),
                                "train_wall_s": sum(float(h["train_wall_s"]) for h in history),
                                "peak_allocated_gpu_bytes": row["peak_allocated_gpu_bytes"]})
     output["arm_outcomes"] = {}
@@ -201,6 +203,12 @@ def summarize(root, lock_path=LOCK):
                    "evaluation_tasks": len(expected), "training_seeds": lock["seeds"],
                    "baseline_accuracy": fmean(baseline.values()), "zero_update_reproducible": True,
                    "trusted_minus_shuffled": descriptive_interval(contrasts)})
+    maximum_ratio_gap = max(r["max_fresh_rollout_abs_log_ratio"] for r in output["runs"])
+    output["fresh_rollout_numerical_diagnostic"] = {
+        "max_abs_log_ratio": maximum_ratio_gap,
+        "exceeds_0_01": maximum_ratio_gap > 0.01,
+        "assessment": "exploratory diagnostic added after first T4 updates; not a preregistered primary outcome",
+        "interpretation": "investigate sampling/learner policy mismatch before attributing capability changes to correct on-policy GRPO" if maximum_ratio_gap > .01 else "no large mismatch observed by this diagnostic"}
     return output
 
 

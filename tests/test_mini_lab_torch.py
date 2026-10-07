@@ -56,13 +56,25 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
         backend._torch = torch
         backend._tokenizer = Tokenizer()
         backend._device,backend._resolved_precision = "cpu","fp32"
-        generations = await backend.generate("p","prompt",n=2,temperature=1.0,seed=17)
-        trainer = HFCausalLMGRPOTrainer(copy.deepcopy(backend.model))
-        for g in generations:
-            sample = VerifiedGeneration(g,1,0,0)
-            row = trainer._sample_objective(sample,1)
-            self.assertLess(float(row[2]),1e-5)
-            self.assertLess(float(row[3]),1e-6)
+        # Match the Qwen setting that the first T4 pilot revealed as a mismatch,
+        # plus a suppression processor and beam defaults that must not leak in.
+        backend.model.generation_config.repetition_penalty = 1.1
+        backend.model.generation_config.suppress_tokens = [3]
+        backend.model.generation_config.num_beams = 2
+        inherited = copy.deepcopy(backend.model.generation_config.to_dict())
+        for temperature in (0.7, 1.0, 1.3):
+            with self.subTest(temperature=temperature):
+                generations = await backend.generate("p","prompt",n=2,temperature=temperature,seed=17)
+                trainer = HFCausalLMGRPOTrainer(copy.deepcopy(backend.model))
+                for g in generations:
+                    sample = VerifiedGeneration(g,1,0,0)
+                    row = trainer._sample_objective(sample,1)
+                    self.assertLess(float(row[2].detach()),1e-5)
+                    self.assertLess(float(row[3].detach()),1e-6)
+                self.assertEqual(backend.model.generation_config.to_dict(), inherited)
+        greedy = (await backend.generate("p","prompt",n=1,temperature=0.,seed=17))[0]
+        with self.assertRaisesRegex(ValueError, "greedy"):
+            trainer._sample_objective(VerifiedGeneration(greedy,1,0,0),1)
 
     async def test_coding_episodes_connect_terminal_credit_rvl_and_optimizer(self):
         # Scripted tool text exercises contracts. The real tiny tensor model

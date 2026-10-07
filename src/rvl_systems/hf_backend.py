@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -128,8 +129,10 @@ class HFLocalBackend:
     ) -> list[Generation]:
         if n <= 0:
             raise ValueError("n must be positive")
-        if temperature < 0:
-            raise ValueError("temperature must be non-negative")
+        if not math.isfinite(temperature) or temperature < 0:
+            raise ValueError("temperature must be finite and non-negative")
+        if temperature == 0 and n != 1:
+            raise ValueError("greedy decoding supports exactly one return sequence")
         self.ensure_loaded()
         torch = self._torch
         tokenizer = self._tokenizer
@@ -148,7 +151,24 @@ class HFLocalBackend:
         start = time.perf_counter()
         was_training = model.training
         model.eval()
+        from transformers import GenerationConfig
+        # A pretrained chat model can inherit repetition penalties, suppression,
+        # or truncation processors. Their scores are not the policy logits the
+        # learner evaluates. Start from neutral defaults, retaining only special
+        # token identities, and make temperature the sole sampling transform.
+        special = model.generation_config
+        generation_config = GenerationConfig(
+            bos_token_id=special.bos_token_id,
+            eos_token_id=special.eos_token_id,
+            pad_token_id=tokenizer.pad_token_id,
+            do_sample=temperature > 0,
+            temperature=temperature if temperature > 0 else 1.0,
+            top_k=0,
+            top_p=1.0,
+        )
         generation_kwargs = {
+            "generation_config": generation_config,
+            "use_model_defaults": False,
             "do_sample": temperature > 0,
             "num_return_sequences": n,
             "max_new_tokens": self.max_new_tokens,
@@ -164,22 +184,19 @@ class HFLocalBackend:
                     "top_p": 1.0,
                 }
             )
-        elif n != 1:
-            raise ValueError(
-                "greedy decoding supports exactly one return sequence"
-            )
-        with torch.inference_mode():
-            outputs = model.generate(
-                **encoded,
-                **generation_kwargs,
-            )
-            transition = model.compute_transition_scores(
-                outputs.sequences,
-                outputs.scores,
-                normalize_logits=True,
-            )
-        if was_training:
-            model.train()
+        try:
+            with torch.inference_mode():
+                outputs = model.generate(
+                    **encoded,
+                    **generation_kwargs,
+                )
+                transition = model.compute_transition_scores(
+                    outputs.sequences,
+                    outputs.scores,
+                    normalize_logits=True,
+                )
+        finally:
+            model.train(was_training)
         latency = time.perf_counter() - start
 
         generations: list[Generation] = []
@@ -212,6 +229,8 @@ class HFLocalBackend:
                         "model": self.model_name,
                         "device": device,
                         "precision": self.resolved_precision,
+                        "sampling_temperature": temperature,
+                        "logprob_distribution": "neutral_temperature_scaled_policy" if temperature > 0 else "greedy_scores_not_trainable",
                         "prompt_token_ids": prompt_token_ids,
                         "response_token_ids": response_ids,
                         "response_token_logprobs": token_logprobs,

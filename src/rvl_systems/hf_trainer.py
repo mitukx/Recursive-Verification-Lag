@@ -84,9 +84,12 @@ class HFCausalLMGRPOTrainer:
         start = len(prompt_ids) - 1
         end = start + len(response_ids)
         response_logits = logits[start:end]
+        temperature = float(sample.generation.metadata.get("sampling_temperature", 1.0))
+        if not math.isfinite(temperature) or temperature <= 0:
+            raise ValueError("training requires a finite positive sampling temperature; greedy scores are not behavior probabilities")
         targets = torch.tensor(response_ids, dtype=torch.long, device=device)
         with torch.autograd.profiler.record_function("rvl.grpo.logprob_objective"):
-            current_logps = torch.log_softmax(response_logits.float(), dim=-1).gather(
+            current_logps = torch.log_softmax(response_logits.float() / temperature, dim=-1).gather(
                 1, targets.unsqueeze(1)
             ).squeeze(1)
         if not torch.isfinite(current_logps).all():
