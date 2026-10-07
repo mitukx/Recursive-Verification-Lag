@@ -64,6 +64,7 @@ class VLLMTokenExactBridgeTests(unittest.TestCase):
             metadata.write_text(json.dumps({
                 "status": "remote_token_exact_verified_replay",
                 "model": "model",
+                "model_revision": "revision",
                 "replay_sha256": digest,
                 "samples": 4,
                 "groups": 1,
