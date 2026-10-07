@@ -30,6 +30,7 @@ def validate(
     replay_hash = sha256_file(replay)
     require(meta.get("status") == "remote_token_exact_verified_replay", "unexpected replay status")
     require(meta.get("model") == model_repo, "served model identity mismatch")
+    require(meta.get("model_revision") == model_revision, "served model revision mismatch")
     require(meta.get("replay_sha256") == replay_hash, "replay metadata hash mismatch")
     require(report.get("replay_sha256") == replay_hash, "learner consumed different replay")
     require(report.get("status") == "completed", "learner report not completed")
