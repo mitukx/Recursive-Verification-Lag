@@ -100,6 +100,7 @@ async def generate(args) -> dict:
         "status": "remote_token_exact_verified_replay",
         "backend": "TokenServingBackend",
         "model": args.model,
+        "model_revision": args.model_revision,
         "dataset": "openai/gsm8k",
         "dataset_revision": args.dataset_revision,
         "tasks": len(tasks),
@@ -125,6 +126,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--endpoint", required=True)
     p.add_argument("--model", required=True)
+    p.add_argument("--model-revision", required=True)
     p.add_argument("--dataset-revision", default=DEFAULT_GSM8K_REVISION)
     p.add_argument("--tasks", type=int, default=8)
     p.add_argument("--samples", type=int, default=4)
