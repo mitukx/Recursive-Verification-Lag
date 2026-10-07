@@ -33,6 +33,7 @@ class VerifierWorkerServer:
         worker_id: str,
         capacity: int = 1,
         request_timeout_s: float = 120.0,
+        service_time_hint_s: float | None = None,
     ) -> None:
         if not worker_id:
             raise ValueError("worker_id is required")
@@ -42,6 +43,11 @@ class VerifierWorkerServer:
         self.worker_id = worker_id
         self.capacity = int(capacity)
         self.request_timeout_s = float(request_timeout_s)
+        if service_time_hint_s is not None and service_time_hint_s <= 0:
+            raise ValueError("service_time_hint_s must be positive")
+        self.service_time_hint_s = (
+            float(service_time_hint_s) if service_time_hint_s is not None else None
+        )
         self._semaphore = asyncio.Semaphore(self.capacity)
         self._server: asyncio.AbstractServer | None = None
         self._inflight = 0
@@ -80,6 +86,7 @@ class VerifierWorkerServer:
                         "healthy": self._healthy,
                         "capacity": self.capacity,
                         "inflight": self._inflight,
+                        "service_time_hint_s": self.service_time_hint_s,
                     },
                 )
                 return
@@ -220,6 +227,7 @@ class DistributedVerifierFleet:
         self._failures = [0 for _ in self.clients]
         self._quarantined = [False for _ in self.clients]
         self._cursor = 0
+        self._round_robin_lock = asyncio.Lock()
 
     def publish_expected_version(self, version: int) -> None:
         version = int(version)
@@ -247,12 +255,24 @@ class DistributedVerifierFleet:
                 rows.append({"ok": False, "compatible": False, "error": str(exc)})
         return rows
 
+    async def _reserve_round_robin(self, excluded: set[int]) -> int | None:
+        async with self._round_robin_lock:
+            for offset in range(len(self.clients)):
+                idx = (self._cursor + offset) % len(self.clients)
+                if self._quarantined[idx] or idx in excluded:
+                    continue
+                self._cursor = (idx + 1) % len(self.clients)
+                return idx
+        return None
+
     async def verify(self, generation: Generation) -> VerifiedGeneration:
         errors: list[str] = []
-        for offset in range(len(self.clients)):
-            idx = (self._cursor + offset) % len(self.clients)
-            if self._quarantined[idx]:
-                continue
+        attempted: set[int] = set()
+        while len(attempted) < len(self.clients):
+            idx = await self._reserve_round_robin(attempted)
+            if idx is None:
+                break
+            attempted.add(idx)
             client = self.clients[idx]
             try:
                 result = await client.verify(
@@ -260,7 +280,6 @@ class DistributedVerifierFleet:
                     expected_verifier_version=self.expected_verifier_version,
                 )
                 self._failures[idx] = 0
-                self._cursor = (idx + 1) % len(self.clients)
                 return result
             except Exception as exc:
                 self._failures[idx] += 1
@@ -272,3 +291,147 @@ class DistributedVerifierFleet:
     @property
     def quarantined(self) -> tuple[bool, ...]:
         return tuple(self._quarantined)
+
+
+
+class AdaptiveVerifierFleet(DistributedVerifierFleet):
+    """Capacity/latency-aware verifier routing with bounded failover.
+
+    The routing score approximates predicted completion time:
+
+        ((local_inflight + remote_inflight + 1) / capacity) * service_time
+
+    where service_time is an EWMA of measured end-to-end verifier RPC latency,
+    initialized from the worker's optional health hint. The score is only a
+    systems scheduling heuristic; it is not a reward-quality signal.
+    """
+
+    def __init__(
+        self,
+        clients: Iterable[TCPVerifierClient],
+        *,
+        expected_verifier_version: int,
+        failure_threshold: int = 1,
+        ewma_alpha: float = 0.25,
+        default_service_time_s: float = 0.05,
+        request_deadline_s: float | None = None,
+    ) -> None:
+        super().__init__(
+            clients,
+            expected_verifier_version=expected_verifier_version,
+            failure_threshold=failure_threshold,
+        )
+        if not 0.0 < ewma_alpha <= 1.0:
+            raise ValueError("ewma_alpha must be in (0,1]")
+        if default_service_time_s <= 0:
+            raise ValueError("default_service_time_s must be positive")
+        if request_deadline_s is not None and request_deadline_s <= 0:
+            raise ValueError("request_deadline_s must be positive")
+        self.ewma_alpha = float(ewma_alpha)
+        self.default_service_time_s = float(default_service_time_s)
+        self.request_deadline_s = (
+            float(request_deadline_s) if request_deadline_s is not None else None
+        )
+        n = len(self.clients)
+        self._local_inflight = [0 for _ in range(n)]
+        self._remote_inflight = [0 for _ in range(n)]
+        self._capacity = [1 for _ in range(n)]
+        self._service_time = [self.default_service_time_s for _ in range(n)]
+        self._completed = [0 for _ in range(n)]
+        self._routing_lock = asyncio.Lock()
+
+    def publish_expected_version(self, version: int) -> None:
+        super().publish_expected_version(version)
+        self._local_inflight = [0 for _ in self.clients]
+        self._remote_inflight = [0 for _ in self.clients]
+        self._completed = [0 for _ in self.clients]
+
+    async def refresh_health(self) -> list[dict]:
+        rows = await super().refresh_health()
+        for idx, row in enumerate(rows):
+            if not row.get("compatible"):
+                continue
+            self._capacity[idx] = max(1, int(row.get("capacity", 1)))
+            self._remote_inflight[idx] = max(0, int(row.get("inflight", 0)))
+            hint = row.get("service_time_hint_s")
+            if hint is not None and float(hint) > 0 and self._completed[idx] == 0:
+                self._service_time[idx] = float(hint)
+        return rows
+
+    def _score(self, idx: int) -> float:
+        queued = self._local_inflight[idx] + self._remote_inflight[idx] + 1
+        return (queued / self._capacity[idx]) * self._service_time[idx]
+
+    async def _reserve_best(self, excluded: set[int]) -> int | None:
+        async with self._routing_lock:
+            candidates = [
+                idx for idx in range(len(self.clients))
+                if not self._quarantined[idx] and idx not in excluded
+            ]
+            if not candidates:
+                return None
+            idx = min(candidates, key=lambda i: (self._score(i), i))
+            self._local_inflight[idx] += 1
+            return idx
+
+    async def verify(self, generation: Generation) -> VerifiedGeneration:
+        errors: list[str] = []
+        attempted: set[int] = set()
+        while len(attempted) < len(self.clients):
+            idx = await self._reserve_best(attempted)
+            if idx is None:
+                break
+            attempted.add(idx)
+            started = time.perf_counter()
+            try:
+                call = self.clients[idx].verify(
+                    generation,
+                    expected_verifier_version=self.expected_verifier_version,
+                )
+                if self.request_deadline_s is None:
+                    result = await call
+                else:
+                    result = await asyncio.wait_for(call, timeout=self.request_deadline_s)
+                elapsed = time.perf_counter() - started
+                async with self._routing_lock:
+                    old = self._service_time[idx]
+                    self._service_time[idx] = (
+                        self.ewma_alpha * elapsed + (1.0 - self.ewma_alpha) * old
+                    )
+                    self._completed[idx] += 1
+                    self._failures[idx] = 0
+                metadata = dict(result.metadata)
+                metadata["routing_predicted_service_s"] = self._service_time[idx]
+                metadata["routing_worker_index"] = idx
+                return VerifiedGeneration(
+                    generation=result.generation,
+                    reward=result.reward,
+                    verifier_latency_s=result.verifier_latency_s,
+                    verifier_version=result.verifier_version,
+                    metadata=metadata,
+                )
+            except Exception as exc:
+                errors.append(f"worker[{idx}]: {type(exc).__name__}: {exc}")
+                async with self._routing_lock:
+                    self._failures[idx] += 1
+                    if self._failures[idx] >= self.failure_threshold:
+                        self._quarantined[idx] = True
+            finally:
+                async with self._routing_lock:
+                    self._local_inflight[idx] = max(0, self._local_inflight[idx] - 1)
+        raise RuntimeError("all verifier workers unavailable: " + "; ".join(errors))
+
+    def routing_snapshot(self) -> list[dict]:
+        return [
+            {
+                "worker_index": idx,
+                "capacity": self._capacity[idx],
+                "local_inflight": self._local_inflight[idx],
+                "remote_inflight": self._remote_inflight[idx],
+                "service_time_ewma_s": self._service_time[idx],
+                "completed": self._completed[idx],
+                "quarantined": self._quarantined[idx],
+                "predicted_completion_s": self._score(idx),
+            }
+            for idx in range(len(self.clients))
+        ]
