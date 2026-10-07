@@ -4,7 +4,10 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None
 
 from src.rvl_systems.learned_verifier_head import (
     ARTIFACT_FORMAT,
@@ -22,7 +25,10 @@ from src.rvl_systems.verifier_rpc import TCPVerifierClient, VerifierWorkerServer
 from src.rvl_systems.verifier import FunctionalVerifier
 
 
-class TinyBackbone(torch.nn.Module):
+TinyModuleBase = torch.nn.Module if torch is not None else object
+
+
+class TinyBackbone(TinyModuleBase):
     def __init__(self, hidden=8):
         super().__init__()
         self.embedding = torch.nn.Embedding(64, hidden)
@@ -67,6 +73,7 @@ def trusted_samples():
     return rows
 
 
+@unittest.skipIf(torch is None, "requires optional torch systems dependency")
 class LearnedVerifierHeadTests(unittest.TestCase):
     def test_fit_verify_save_reload_without_pickle(self):
         async def run():
