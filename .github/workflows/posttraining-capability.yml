@@ -7,6 +7,11 @@ on:
       - 'scripts/summarize_posttraining_campaign.py'
       - 'scripts/summarize_colab_rlvr_pilot.py'
       - 'scripts/verify_colab_evidence_bundle.py'
+      - 'scripts/run_colab_rlvr_pilot_v2.py'
+      - 'scripts/summarize_colab_rlvr_pilot_v2.py'
+      - 'configs/colab_rlvr_pilot_v2.json'
+      - 'tests/test_corrected_rlvr_pilot.py'
+      - 'notebooks/free_colab_rlvr_pilot_v2.ipynb'
       - 'tests/test_colab_rlvr_pilot_summary.py'
       - 'tests/test_colab_evidence_bundle.py'
       - 'notebooks/free_colab_rlvr_pilot.ipynb'
@@ -32,7 +37,7 @@ jobs:
       - name: Scorecard contracts
         run: |
           pip install numpy==2.2.6
-          python -m unittest tests.test_posttraining_campaign tests.test_colab_rlvr_pilot_summary tests.test_colab_evidence_bundle -v
+          python -m unittest tests.test_posttraining_campaign tests.test_colab_rlvr_pilot_summary tests.test_colab_evidence_bundle tests.test_corrected_rlvr_pilot -v
       - name: Recompute retained T4 evidence (no GPU rerun)
         run: python -m scripts.verify_colab_evidence_bundle
       - name: Syntax check

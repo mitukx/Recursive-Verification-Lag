@@ -1,0 +1,32 @@
+{
+  "schema_version": 2,
+  "status": "locked before corrected learning execution; engineering replication, not confirmatory RVL validation",
+  "systems_source_sha": "c7e646b043cb56e5ea3c2623bb8a61e065451f72",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "dataset": "openai/gsm8k",
+  "dataset_revision": "740312add88f781978c0658806c59bc2815b9866",
+  "train_indices": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  "evaluation_indices": [256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287],
+  "split_selection": "same first 16 official train rows; separate official test rows 256..287 fixed before outcome inspection, outside the first pilot and retained bridge protocols; no guarantee about model pretraining exposure",
+  "seeds": [17, 29, 43],
+  "steps": 4,
+  "samples_per_prompt": 4,
+  "max_new_tokens": 256,
+  "train_temperature": 1.0,
+  "precision": "fp32",
+  "learning_rate": 0.0000005,
+  "arms": ["trusted_reward", "within_prompt_shuffled_reward"],
+  "fresh_policy_gate": {
+    "max_abs_log_ratio": 0.002,
+    "max_clip_fraction": 0.0,
+    "rationale": "fixed before corrected 256-token learning: accommodates the previously retained 0.00110242 historical 256-token replay residual while bounding ratio error far below GRPO clipping; not the shorter 64-token diagnostic tolerance",
+    "on_failure": "retain tokens, behavior/learner scores and failure; do not run the optimizer or relax the threshold"
+  },
+  "evaluation": "initial greedy baseline plus exact zero-update repeat; all terminal seed/arm evaluations, no promotion, early success stopping, evaluation-driven learning-rate selection or replacement of failed conditions",
+  "primary_reporting": "paired per-task terminal-minus-baseline correctness and trusted-minus-shuffled contrast; every seed/arm retained; descriptive task bootstrap conditional on three retained seeds",
+  "systems_reporting": "wall time for generation, fresh scoring, reward, learning, evaluation and whole-parameter hashing; allocated memory; raw stage evidence only, no kernel or speedup claim",
+  "parameter_provenance": "SHA256 over every named parameter, shape, dtype and bytes before/after each condition; hash changes are not capability gains",
+  "scope": "small single-GPU math RL engineering replication; no held-out software-agent learning, long-horizon success, multi-GPU scaling or production-scale claim",
+  "dependencies": {"transformers": "4.57.1", "datasets": "3.6.0", "accelerate": "1.10.1"}
+}
