@@ -1,14 +1,23 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
+import json
+import os
 import time
 import uuid
 from dataclasses import asdict
+from pathlib import Path
 from typing import Iterable
 
 from .rpc_protocol import read_json_line, write_json_line
 from .types import Generation, VerifiedGeneration
 from .verifier import Verifier
+from .verifier_deployment import (
+    PinnedVersionVerifier,
+    VerifierArtifactManifest,
+    sha256_file,
+)
 
 
 def _generation_from_dict(raw: dict) -> Generation:
@@ -34,6 +43,8 @@ class VerifierWorkerServer:
         capacity: int = 1,
         request_timeout_s: float = 120.0,
         service_time_hint_s: float | None = None,
+        deployment_loader=None,
+        deployment_state_path: str | Path | None = None,
     ) -> None:
         if not worker_id:
             raise ValueError("worker_id is required")
@@ -52,15 +63,156 @@ class VerifierWorkerServer:
         self._server: asyncio.AbstractServer | None = None
         self._inflight = 0
         self._healthy = True
+        self.deployment_loader = deployment_loader
+        self.deployment_state_path = (
+            Path(deployment_state_path) if deployment_state_path is not None else None
+        )
+        self._coordinator_epoch = 0
+        self._active_manifest: VerifierArtifactManifest | None = None
+        self._prepared_manifest: VerifierArtifactManifest | None = None
+        self._prepared_verifier = None
 
     @property
     def verifier_version(self) -> int:
         return int(self.verifier.version)
 
     async def start(self, host: str = "127.0.0.1", port: int = 0) -> tuple[str, int]:
+        await self._recover_deployment_state()
         self._server = await asyncio.start_server(self._handle, host, port)
         address = self._server.sockets[0].getsockname()
         return str(address[0]), int(address[1])
+
+    def _deployment_state(self) -> dict:
+        return {
+            "schema_version": 1,
+            "coordinator_epoch": self._coordinator_epoch,
+            "active_manifest": (
+                asdict(self._active_manifest) if self._active_manifest is not None else None
+            ),
+            "prepared_manifest": (
+                asdict(self._prepared_manifest) if self._prepared_manifest is not None else None
+            ),
+        }
+
+    def _persist_deployment_state(self) -> None:
+        if self.deployment_state_path is None:
+            return
+        self.deployment_state_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.deployment_state_path.with_suffix(self.deployment_state_path.suffix + ".tmp")
+        tmp.write_text(json.dumps(self._deployment_state(), indent=2, sort_keys=True) + "\n")
+        os.replace(tmp, self.deployment_state_path)
+
+    async def _load_deployed_verifier(self, manifest: VerifierArtifactManifest):
+        if self.deployment_loader is None:
+            raise RuntimeError("verifier deployment loader is not configured")
+        path = Path(manifest.path)
+        if not path.is_file():
+            raise FileNotFoundError(f"verifier artifact missing: {path}")
+        if sha256_file(path) != manifest.sha256:
+            raise RuntimeError("verifier artifact checksum mismatch")
+        loaded = self.deployment_loader(manifest)
+        if inspect.isawaitable(loaded):
+            loaded = await loaded
+        if not hasattr(loaded, "verify"):
+            raise TypeError("deployment loader did not return a verifier")
+        return PinnedVersionVerifier(loaded, manifest.version)
+
+    async def _recover_deployment_state(self) -> None:
+        if self.deployment_state_path is None or not self.deployment_state_path.exists():
+            return
+        if self.deployment_loader is None:
+            raise RuntimeError("deployment state exists but no deployment loader is configured")
+        raw = json.loads(self.deployment_state_path.read_text())
+        self._coordinator_epoch = int(raw.get("coordinator_epoch", 0))
+        active = raw.get("active_manifest")
+        prepared = raw.get("prepared_manifest")
+        if active is not None:
+            self._active_manifest = VerifierArtifactManifest.from_dict(active)
+            self.verifier = await self._load_deployed_verifier(self._active_manifest)
+        if prepared is not None:
+            self._prepared_manifest = VerifierArtifactManifest.from_dict(prepared)
+            if (
+                self._active_manifest is not None
+                and self._prepared_manifest == self._active_manifest
+            ):
+                self._prepared_verifier = self.verifier
+            else:
+                self._prepared_verifier = await self._load_deployed_verifier(
+                    self._prepared_manifest
+                )
+
+    def _accept_coordinator_epoch(self, epoch: int) -> None:
+        if epoch < self._coordinator_epoch:
+            raise RuntimeError(
+                f"stale coordinator epoch {epoch}; current epoch is {self._coordinator_epoch}"
+            )
+        if epoch > self._coordinator_epoch:
+            self._coordinator_epoch = epoch
+            self._prepared_manifest = None
+            self._prepared_verifier = None
+            self._persist_deployment_state()
+
+    async def _prepare_verifier(self, request: dict) -> dict:
+        epoch = int(request["coordinator_epoch"])
+        self._accept_coordinator_epoch(epoch)
+        manifest = VerifierArtifactManifest.from_dict(dict(request["manifest"]))
+        if manifest.version < self.verifier_version:
+            raise RuntimeError("cannot prepare verifier older than active version")
+        if manifest.version == self.verifier_version:
+            if self._active_manifest is None or manifest != self._active_manifest:
+                raise RuntimeError("active verifier version has different artifact identity")
+            self._prepared_manifest = manifest
+            self._prepared_verifier = self.verifier
+        else:
+            self._prepared_verifier = await self._load_deployed_verifier(manifest)
+            self._prepared_manifest = manifest
+        self._persist_deployment_state()
+        return {
+            "ok": True,
+            "worker_id": self.worker_id,
+            "verifier_version": manifest.version,
+            "coordinator_epoch": self._coordinator_epoch,
+            "artifact_sha256": manifest.sha256,
+        }
+
+    async def _activate_verifier(self, request: dict) -> dict:
+        epoch = int(request["coordinator_epoch"])
+        if epoch != self._coordinator_epoch:
+            raise RuntimeError(
+                f"activation epoch {epoch} does not match worker epoch {self._coordinator_epoch}"
+            )
+        version = int(request["verifier_version"])
+        if version == self.verifier_version:
+            if self._active_manifest is None or self._active_manifest.version != version:
+                raise RuntimeError("active verifier has no matching artifact identity")
+            if (
+                self._prepared_manifest is not None
+                and self._prepared_manifest.version == version
+            ):
+                self._prepared_manifest = None
+                self._prepared_verifier = None
+                self._persist_deployment_state()
+            return {
+                "ok": True,
+                "worker_id": self.worker_id,
+                "verifier_version": version,
+                "coordinator_epoch": self._coordinator_epoch,
+            }
+        if self._prepared_manifest is None or self._prepared_verifier is None:
+            raise RuntimeError("verifier activation requires a prepared artifact")
+        if self._prepared_manifest.version != version:
+            raise RuntimeError("prepared verifier version does not match activation")
+        self.verifier = self._prepared_verifier
+        self._active_manifest = self._prepared_manifest
+        self._prepared_manifest = None
+        self._prepared_verifier = None
+        self._persist_deployment_state()
+        return {
+            "ok": True,
+            "worker_id": self.worker_id,
+            "verifier_version": self.verifier_version,
+            "coordinator_epoch": self._coordinator_epoch,
+        }
 
     async def close(self) -> None:
         if self._server is None:
@@ -87,8 +239,25 @@ class VerifierWorkerServer:
                         "capacity": self.capacity,
                         "inflight": self._inflight,
                         "service_time_hint_s": self.service_time_hint_s,
+                        "coordinator_epoch": self._coordinator_epoch,
+                        "active_artifact_sha256": (
+                            self._active_manifest.sha256
+                            if self._active_manifest is not None
+                            else None
+                        ),
+                        "prepared_verifier_version": (
+                            self._prepared_manifest.version
+                            if self._prepared_manifest is not None
+                            else None
+                        ),
                     },
                 )
+                return
+            if op == "prepare_verifier":
+                await write_json_line(writer, await self._prepare_verifier(request))
+                return
+            if op == "activate_verifier":
+                await write_json_line(writer, await self._activate_verifier(request))
                 return
             if op != "verify":
                 await write_json_line(writer, {"ok": False, "error": f"unsupported op: {op}"})
@@ -113,7 +282,10 @@ class VerifierWorkerServer:
                         verified = await self.verifier.verify(generation)
                 finally:
                     self._inflight -= 1
-            if verified.verifier_version != expected_version:
+            if (
+                verified.verifier_version != expected_version
+                or self.verifier_version != expected_version
+            ):
                 raise RuntimeError("verifier changed version while request was in flight")
             metadata = dict(verified.metadata)
             metadata.update(
@@ -170,6 +342,36 @@ class TCPVerifierClient:
         if not response.get("ok"):
             raise RuntimeError(str(response.get("error", "verifier ping failed")))
         return response
+
+    async def _management_rpc(self, payload: dict) -> dict:
+        reader, writer = await asyncio.open_connection(self.host, self.port)
+        try:
+            await write_json_line(writer, payload)
+            response = await asyncio.wait_for(read_json_line(reader), timeout=self.timeout_s)
+        finally:
+            writer.close()
+            await writer.wait_closed()
+        if not response.get("ok"):
+            raise RuntimeError(str(response.get("error", "verifier management RPC failed")))
+        return response
+
+    async def prepare_verifier(self, manifest: dict, *, coordinator_epoch: int) -> dict:
+        return await self._management_rpc(
+            {
+                "op": "prepare_verifier",
+                "manifest": dict(manifest),
+                "coordinator_epoch": int(coordinator_epoch),
+            }
+        )
+
+    async def activate_verifier(self, version: int, *, coordinator_epoch: int) -> dict:
+        return await self._management_rpc(
+            {
+                "op": "activate_verifier",
+                "verifier_version": int(version),
+                "coordinator_epoch": int(coordinator_epoch),
+            }
+        )
 
     async def verify(self, generation: Generation, *, expected_verifier_version: int) -> VerifiedGeneration:
         request_id = uuid.uuid4().hex
