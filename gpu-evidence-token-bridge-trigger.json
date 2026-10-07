@@ -1,0 +1,7 @@
+{
+  "purpose": "run real vLLM token-exact serving-to-GRPO bridge",
+  "source_sha": "ad7536935bd2cdd09091ca2c1b45ed610bbfd08e",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "claim_boundary": "serving-to-learner token/logprob compatibility; not a quality claim"
+}
