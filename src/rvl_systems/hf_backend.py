@@ -166,10 +166,9 @@ class HFLocalBackend:
             top_k=0,
             top_p=1.0,
         )
-        # Expand every neutral field as an explicit override. Transformers 4.x
-        # otherwise merges model defaults even into a fresh GenerationConfig;
-        # 5.x removed the use_model_defaults switch. Explicit overrides work in
-        # both and avoid mixing the config object with generation kwargs.
+        # Expand neutral fields as explicit overrides: the supported, pinned
+        # Transformers release can otherwise merge model defaults even into a
+        # fresh GenerationConfig. Do not mix that object with generation kwargs.
         generation_kwargs = {
             key: value for key, value in generation_config.to_dict().items()
             if not key.startswith("_") and key not in {"transformers_version", "max_length"}
