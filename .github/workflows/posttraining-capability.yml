@@ -9,7 +9,7 @@ on:
       - 'scripts/verify_colab_evidence_bundle.py'
       - 'tests/test_colab_rlvr_pilot_summary.py'
       - 'tests/test_colab_evidence_bundle.py'
-      - 'notebooks/free_colab_mts_pilot.ipynb'
+      - 'notebooks/free_colab_rlvr_pilot.ipynb'
       - 'results/colab_rlvr_pilot_20261008/**'
       - 'docs/free_colab_pilot_evidence.md'
       - 'tests/test_posttraining_campaign.py'
@@ -41,7 +41,7 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          notebook = json.loads(Path('notebooks/free_colab_mts_pilot.ipynb').read_text())
+          notebook = json.loads(Path('notebooks/free_colab_rlvr_pilot.ipynb').read_text())
           for i, cell in enumerate(notebook['cells']):
               if cell['cell_type'] == 'code':
                   compile(''.join(cell['source']), f'cell-{i}', 'exec')

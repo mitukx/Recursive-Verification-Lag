@@ -100,7 +100,7 @@ python -m unittest tests.test_colab_rlvr_pilot_summary tests.test_colab_evidence
 
 A successful artifact check explicitly prints `diagnostic_process_status:
 failed`; it verifies faithful reporting rather than promoting a failed experiment.
-The historical [Colab notebook](../notebooks/free_colab_mts_pilot.ipynb) still pins
+The historical [Colab notebook](../notebooks/free_colab_rlvr_pilot.ipynb) still pins
 the original affected implementation for reproduction. It must not be mistaken
 for a corrected training run. The isolated corrected numerical diagnostic can
 be run on another CUDA runtime with the retained pilot evidence:
@@ -117,7 +117,7 @@ new source/protocol lock, a fresh parity gate before updates, and separate raw
 outputs. Do not overwrite this historical pilot or reuse its inspected test
 split as independent confirmation.
 
-## MTS evidence this supports
+## Engineering evidence this supports
 
 This supports a concrete engineering account: execute a pinned real-model RL
 pilot on free hardware; identify an unexpected fresh-policy ratio error; repair
@@ -125,5 +125,5 @@ sampler/learner distribution semantics; validate bounded parity on T4; retain
 negative learning results, failed checks and machine-verifiable raw evidence.
 It does **not** demonstrate capability improvement, long-horizon learning,
 held-out AI-engineering agent gains, kernel speedups, multi-GPU scaling,
-production Grok infrastructure or involvement in building Grok. The original
+production-scale model infrastructure. The original
 mismatched training path also prevents a causal claim about correct GRPO learning.

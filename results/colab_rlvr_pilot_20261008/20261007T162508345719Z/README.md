@@ -21,4 +21,4 @@ Diagnostic 2: `e7595d07bcec572c8459dfc9b1365ca194fe4627` (corrected parity passe
 Task text/answers are retained from the pinned [GSM8K dataset](https://github.com/openai/grade-school-math)
 under its MIT license; see `GSM8K_LICENSE`. No model weights are included.
 Hashes do not provide remote hardware attestation. The observed negative outcome
-and failed replay tolerance must accompany any portfolio claim.
+and failed replay tolerance must accompany any research claim.

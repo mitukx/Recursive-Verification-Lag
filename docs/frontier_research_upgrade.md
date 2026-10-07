@@ -3,7 +3,7 @@
 This continuation starts from draft PR #3 (`research/rvl-transfer-v1`), not
 the older `main` branch. It adds an exact decision-cost diagnostic and a
 development-only standard-code experiment. It does not claim a finished
-frontier-lab-quality result, adoption by a lab, or a hiring outcome.
+production-scale result or external adoption.
 
 **Latest increment:** `notes/progress/35_endogenous_auditing_and_fresh_task_lock.md`
 and `notes/theory/endogenous_information_and_progress.md` add an endogenous

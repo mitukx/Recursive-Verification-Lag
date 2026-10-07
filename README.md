@@ -1,6 +1,6 @@
 # Recursive Verification Lag
 
-## Frontier RL / AI4AI target
+## Frontier RL / AI4AI research
 
 The repository is now organized around one north-star problem: **train long-horizon
 agents to improve real AI engineering work, while keeping optimization grounded
@@ -10,11 +10,11 @@ Six evidence tracks share the same platform: **RSI/research automation for
 MLSys/MLE, long-horizon RL, coding RL, RL infrastructure, end-to-end model
 building, and post-training/RL**. Their current evidence gaps and fail-closed
 claim requirements are locked in
-[`configs/xai_frontier_tracks_v1.json`](configs/xai_frontier_tracks_v1.json).
-See [the portfolio architecture](docs/xai_frontier_rl_portfolio.md).
+[`configs/frontier_tracks_v1.json`](configs/frontier_tracks_v1.json).
+See [the research architecture](docs/frontier_rl_architecture.md).
 
-The [MTS execution plan](docs/xai_mts_execution_plan.md) maps the shared campaign
-to verified public role requirements and defines which outcomes can be claimed.
+The [research execution plan](docs/research_execution_plan.md) defines the shared experimental
+campaign and the evidence required for each research claim.
 The first [executable MLSys development task](docs/mlsys_research_automation.md)
 extracts the exact GRPO operator used by the causal-LM trainer: evaluator-owned
 forward/gradient parity, Docker candidate isolation, paired external timing and
@@ -145,7 +145,7 @@ experiments that still require external hardware.
 | GPU serving integration | OpenAI-compatible vLLM/SGLang adapter, streaming TTFT/TBT benchmark, Prometheus metrics capture, GPU telemetry, real process-failure harness, and one-shot two-GPU evidence workflow |
 
 Start with [the systems architecture](docs/rl_system_architecture.md), the
-[engineering runbook](docs/xai_rl_systems.md), the
+[engineering runbook](docs/rl_systems.md), the
 [SLO-aware scheduler design](docs/slo_scheduler.md),
 [workload admission design](docs/admission_control.md),
 [replay/regression design](docs/replay_and_regression.md),
@@ -154,7 +154,7 @@ Start with [the systems architecture](docs/rl_system_architecture.md), the
 [Qwen RLVR experiment](docs/qwen_rlvr_experiment.md),
 [FSDP/NCCL acceptance](docs/fsdp_nccl_acceptance.md),
 [one-shot GPU evidence bundle](docs/gpu_evidence_bundle.md), and the
-[evidence/gap matrix](docs/xai_evidence_matrix.md).
+[evidence/gap matrix](docs/evidence_matrix.md).
 
 A local control-plane smoke run requires no GPU:
 
@@ -403,6 +403,6 @@ python -m unittest tests.test_rsi_controller -v
 python -m src.rsi_controller.run --config configs/rsi/harness_baseline.yaml --generations 4
 ```
 
-The acceptance workflow runs a bounded CPU Harness-RSI baseline and requires both promotion and rejection behavior while retaining all generations. Earlier implementation-session artifacts that consulted sealed aggregates during iterative selection were removed as superseded; the current contract reserves sealed evaluation for a terminal-only audit. Adapter RSI and the bridge to the existing GRPO/RVL learner remain implemented interfaces, not demonstrated learned-model capability gains. See [the RSI controller design](docs/rsi_controller.md), [engineering report](docs/rsi_engineering_report.md), and [evidence matrix](docs/xai_evidence_matrix.md).
+The acceptance workflow runs a bounded CPU Harness-RSI baseline and requires both promotion and rejection behavior while retaining all generations. Earlier implementation-session artifacts that consulted sealed aggregates during iterative selection were removed as superseded; the current contract reserves sealed evaluation for a terminal-only audit. Adapter RSI and the bridge to the existing GRPO/RVL learner remain implemented interfaces, not demonstrated learned-model capability gains. See [the RSI controller design](docs/rsi_controller.md), [engineering report](docs/rsi_engineering_report.md), and [evidence matrix](docs/evidence_matrix.md).
 
 > This is a bounded experimental self-improvement system. It is not evidence of unrestricted or generally recursive intelligence improvement.

@@ -1,4 +1,4 @@
-"""Build a hiring-facing post-training capability scorecard from raw evidence.
+"""Build a post-training research capability scorecard from raw evidence.
 
 This script does not run training. It combines independently retained real-model
 artifacts from the oracle RLVR capability track and the learned reward-model

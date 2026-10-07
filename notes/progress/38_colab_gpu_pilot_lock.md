@@ -26,7 +26,7 @@ clipping, ratios, parameter probes, timings and terminal predictions are saved.
 **Status at this commit: running / pending evidence.** Runtime connection and
 script launch are not successful training, improvement, or a GPU benchmark
 result. Failed attempts and partial outputs will be retained. This small pilot
-cannot establish general RVL, frontier-scale learning or hiring readiness.
+cannot establish general RVL, frontier-scale learning.
 
 Reproduction on a CUDA environment:
 

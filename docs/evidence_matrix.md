@@ -1,4 +1,4 @@
-# xAI-oriented engineering evidence matrix
+# RL engineering evidence matrix
 
 This file deliberately separates implemented evidence from claims that still
 require real GPU measurements.
@@ -14,8 +14,8 @@ require real GPU measurements.
 | Worker failure handling | cross-worker failover retries, circuit breaker, cooldown, single half-open probe, explicit recovery, deterministic chaos + error/OOM/timeout failure matrix | implemented + CI artifact |
 | Remote worker transport | asyncio TCP RPC server/client with request IDs and policy-version checks | implemented + integration CI |
 | Remote inference integration | OpenAI-compatible `VLLMHTTPBackend` | implemented; real GPU benchmark pending |
-| Local real-model rollout | `HFLocalBackend` with CUDA/MPS/CPU selection | real Transformers smoke CI |
-| RLVR / GRPO update | grouped advantages + clipped token-level causal-LM trainer + held-out Qwen/GSM8K before/after runner; optional per-step transactional held-out promotion with exact model/optimizer/RNG rollback | real Transformers update smoke CI; GPU quality measurement pending |
+| Local real-model rollout | `HFLocalBackend` with CUDA/MPS/CPU selection | real Transformers smoke CI + bounded T4 sampler/learner parity diagnostic |
+| RLVR / GRPO update | grouped advantages + clipped token-level causal-LM trainer + held-out Qwen/GSM8K before/after runner; optional per-step transactional held-out promotion with exact model/optimizer/RNG rollback | real Transformers update smoke CI; retained negative T4 pilot with original policy mismatch, corrected learning replication pending |
 | PyTorch distributed execution | 2-process torchrun, broadcast, all-reduce, DDP gradient sync + optimizer step | real CI |
 | RL numerics safety | fp32 log-softmax, finite checks, clipped ratios, grad non-finite guard, clip diagnostics, FP16/BF16 parity gates | implemented + CI; real GPU kernel parity pending |
 | Low-precision policy | auto/fp32/fp16/bf16 model-load policy with CUDA bf16 capability guard; same-replay FP32/BF16/FP16 GRPO loss/grad/KL/throughput/memory benchmark | implementation + CPU syntax/contract CI; real GPU artifact pending |
@@ -60,7 +60,7 @@ explicit acceptance boundaries.
 | Token-exact serving data | server-owned token IDs/logprobs, strict schema/model checks | real vLLM/SGLang GPU acceptance |
 | Metrics | p50/p95/p99, LM tokens/s, utilization sampler, explicit-input MFU estimator | measured sustained GPU scaling |
 
-## Evidence bar before using this as an xAI portfolio centerpiece
+## Evidence required for measured RL systems claims
 
 The repository now has real model and real multi-process CI evidence. Do not
 advertise it as a high-performance GPU RL system until the following are
@@ -79,7 +79,7 @@ published with immutable configs and raw results:
 11. verification-aware async phase diagram from locked `configs/verification_aware_async_gpu_v1.json`: sync vs policy-only async vs policy+verifier freshness under verifier latency/capacity stress, including held-out trusted quality.
 
 The codebase should make these experiments easy; the measurements are the
-actual hiring evidence.
+actual research evidence.
 
 ## Bounded RSI controller evidence
 

@@ -1,8 +1,7 @@
-# xAI MTS evidence plan
+# Research execution plan
 
-Reviewed against official public roles on 2026-10-08. This is an independent
-project and a plan for evidence; it does not establish employment, affiliation,
-frontier-model capability, or involvement in building Grok.
+This independent research program connects executable AI-engineering tasks,
+trusted evaluation and reproducible RL systems measurements.
 
 ## One centerpiece
 
@@ -14,32 +13,26 @@ audit allocation preserve actual progress during recursive optimization. The
 operator development task is the first executable workload entry, while existing
 Qwen RLVR and learned-verifier experiments supply the model-training path.
 
-The MTS story should have three independently supported outcomes: held-out
+The research campaign should have three independently supported outcomes: held-out
 engineering-task improvement, successful long trajectories with recovery, and
 measured RL systems performance. Do not multiply six tracks into six unfinished
 flagship projects.
 
-## Public role requirements and project targets
+## Research questions and required evidence
 
-The user's RSI, research-automation, long-horizon, coding-RL and Grok-infra names
-are used as capability targets. Those exact names were not confirmed as current
-job titles on the reviewed public board. The closest verified public roles are:
-
-| Public role | Requirement relevant to this project | Evidence to produce |
+| Research area | Question | Required evidence |
 |---|---|---|
-| [Post-Training and RL](https://job-boards.greenhouse.io/xai/jobs/5114737007) | reward modeling, RLHF/DPO, RL improving real capabilities | pinned baseline vs RLVR vs learned-verifier arms; preference baseline on the same split; independent capability measurements |
-| [RL Training Framework](https://job-boards.greenhouse.io/xai/jobs/5186992007) | end-to-end performance profiling, debugging, scalability, observability, RL numerics | real training trace, bottleneck diagnosis, paired optimization, checkpoint/recovery and 1-to-2 GPU experiment |
-| [RL Inference](https://job-boards.greenhouse.io/xai/jobs/5180223007) | distributed systems, LLM inference, low precision, quantization, vLLM/SGLang | real serving throughput/tail latency, correctness and low-precision checks, measured worker recovery |
-| [Model Training](https://job-boards.greenhouse.io/xai/jobs/5086324007) | modeling judgment and useful model building | one reproducible data -> training -> evaluation -> failure diagnosis -> second iteration |
+| Post-training and RL | Does trusted or learned reward improve independently evaluated capability? | pinned RLVR and learned-verifier arms, matched preference baseline, raw held-out outcomes |
+| RL training systems | Which bottlenecks or numerical failures limit reliable learning? | real traces, diagnosis, paired optimizations, checkpoint recovery and measured scaling |
+| RL inference | Can serving improve throughput and tail latency while preserving behavior scores? | real serving measurements, low-precision parity and measured worker recovery |
+| Model development | Does a data/training intervention improve the next model iteration? | reproducible data -> training -> evaluation -> diagnosis -> separate second run |
 
-The public applications request an exceptional-work description in 100 words
-or fewer. Write that statement from measured outcomes after the campaign. A
-project implementation can be described today; capability or scaling gains
-cannot be supplied by aspirational wording.
+Claims must follow retained measurements. Implementation alone does not establish
+capability or scaling improvements.
 
 ## Work order
 
-The user's compute constraint is **free first; Colab Pro only if necessary**.
+The compute policy is **free first; Colab Pro only if necessary**.
 Use standard public-repository CPU CI for isolation/contracts and an interactive
 free Colab session for the small single-GPU pilot. Reuse the already locked
 `scripts/run_colab_rlvr_pilot.py` and `configs/colab_rlvr_pilot_v1.json`; do not
@@ -49,7 +42,7 @@ availability are variable even on paid plans ([official FAQ](https://research.go
 One Colab GPU cannot validate 1-to-2 GPU scaling. Keep that outcome pending
 until suitable hardware exists.
 
-The historical pilot notebook is [`notebooks/free_colab_mts_pilot.ipynb`](../notebooks/free_colab_mts_pilot.ipynb).
+The historical pilot notebook is [`notebooks/free_colab_rlvr_pilot.ipynb`](../notebooks/free_colab_rlvr_pilot.ipynb).
 It pins the existing research commit and original protocol, checks GPU presence,
 retains the Colab CUDA PyTorch, installs only the locked model/data dependencies,
 streams logs and exports successes, failures and partial results. It does not
@@ -132,4 +125,4 @@ Missing outcomes remain: independently evaluated agent learning, a held-out
 repository-task bank, completed long trajectories, real GPU scaling/serving
 measurements and a coherent second model-building iteration. Null and negative
 outcomes should remain visible. State what was learned and what decision it led
-to; do not convert missing outcomes into positive application claims.
+to; do not convert missing outcomes into positive research claims.
