@@ -31,7 +31,8 @@ class AsyncHFLab:
     def __init__(self, root, backend, verifier, *, learning_rate=1e-5,
                  max_policy_lag=4, max_verifier_lag=0, capacity=4, control=None,
                  verification_lease_s=30, max_verification_attempts=3,
-                 verification_workers=1, verification_debt=None):
+                 verification_workers=1, verification_debt=None,
+                 arm="verification_aware_async"):
         import fcntl
         if min(max_policy_lag,max_verifier_lag) < 0:
             raise ValueError("lag bounds must be non-negative")
@@ -39,6 +40,8 @@ class AsyncHFLab:
             raise ValueError("invalid verification retry configuration")
         if verification_workers <= 0:
             raise ValueError("verification_workers must be positive")
+        if arm not in {"sync_inline","async_policy_only","verification_aware_async"}:
+            raise ValueError("unknown verification scheduling arm")
         self.root = Path(root)
         self.root.mkdir(parents=True,exist_ok=True)
         self.lock = (self.root/"driver.lock").open("a+")
@@ -65,6 +68,10 @@ class AsyncHFLab:
         self.verification_lease_s = verification_lease_s
         self.max_verification_attempts = max_verification_attempts
         self.verification_workers = verification_workers
+        self.arm = arm
+        self.enforce_verifier_freshness = arm != "async_policy_only"
+        self.verification_debt_backpressure = arm == "verification_aware_async"
+        self.sync_inline_generation = arm == "sync_inline"
         self.metrics = []
         self.verification_metrics = []
         self.verification_debt_controller = VerificationDebtController(
@@ -121,6 +128,10 @@ class AsyncHFLab:
     async def _await_generation_admission(self):
         while True:
             assessment = self._verification_debt_assessment()
+            backlog = self.replay.verification_backlog(
+                self.verifier.version,self.max_verifier_lag,
+                enforce_verifier_freshness=self.enforce_verifier_freshness,
+            )
             self.verification_debt_history.append({
                 "policy_version":self.version,
                 "verifier_version":self.verifier.version,
@@ -128,13 +139,31 @@ class AsyncHFLab:
                 "level":assessment.level,
                 "action":assessment.action,
                 "signals":vars(assessment.signals),
+                "arm":self.arm,
+                "verification_backlog":backlog,
+                "gate_applied":(
+                    self.sync_inline_generation or self.verification_debt_backpressure
+                ),
             })
-            if assessment.action == "admit_generation":
+            if self.arm == "async_policy_only":
+                return
+            if self.sync_inline_generation:
+                if backlog == 0:
+                    return
+            elif assessment.action == "admit_generation":
                 return
             self.verification_progress.clear()
-            assessment = self._verification_debt_assessment()
-            if assessment.action == "admit_generation":
-                continue
+            if self.sync_inline_generation:
+                backlog = self.replay.verification_backlog(
+                    self.verifier.version,self.max_verifier_lag,
+                    enforce_verifier_freshness=True,
+                )
+                if backlog == 0:
+                    continue
+            else:
+                assessment = self._verification_debt_assessment()
+                if assessment.action == "admit_generation":
+                    continue
             await self.verification_progress.wait()
 
     async def _actor(self,prompts,samples,seed):
@@ -176,6 +205,7 @@ class AsyncHFLab:
             claim = self.replay.claim_verification(
                 self.version,self.max_policy_lag,self.verifier.version,
                 self.max_verifier_lag,lease_s=self.verification_lease_s,
+                enforce_verifier_freshness=self.enforce_verifier_freshness,
             )
             if claim is None:
                 if self.actor_done and self.replay.active_count() == 0:
@@ -260,7 +290,8 @@ class AsyncHFLab:
         while True:
             group = self.replay.next(
                 self.version,self.max_policy_lag,
-                self.verifier.version,self.max_verifier_lag,
+                self.verifier.version if self.enforce_verifier_freshness else None,
+                self.max_verifier_lag,
             )
             if group is None:
                 self.space.set()
@@ -309,7 +340,8 @@ class AsyncHFLab:
                 ),
                 "verification_attempts":meta["verification_attempts"],
                 "verification_backlog":self.replay.verification_backlog(
-                    current_verifier_version,self.max_verifier_lag
+                    current_verifier_version,self.max_verifier_lag,
+                    enforce_verifier_freshness=self.enforce_verifier_freshness,
                 ),
                 "elapsed_s":time.perf_counter()-start,
                 "response_tokens":sum(
@@ -381,7 +413,7 @@ class AsyncHFLab:
             self.estimated_shift = 0.0
         samples = [self._rescore_current(s) for s in samples]
         self.replay.rewrite_verified(rid,samples)
-        if self.rvl_enabled:
+        if self.rvl_enabled and self.enforce_verifier_freshness:
             self.replay.requeue_stale_verifications(
                 self.verifier.version,self.max_verifier_lag
             )
@@ -395,6 +427,7 @@ class AsyncHFLab:
             "samples":samples,
             "seed":seed,
             "max_policy_lag":self.max_policy_lag,
+            "arm":self.arm,
             "learning_rate":self.trainer.config.learning_rate,
             "controller":vars(self.controller.config),
             "rvl_enabled":self.rvl_enabled,
@@ -404,6 +437,9 @@ class AsyncHFLab:
         })
         self.replay.bind_verification({
             "max_verifier_lag":self.max_verifier_lag,
+            "arm":self.arm,
+            "enforce_verifier_freshness":self.enforce_verifier_freshness,
+            "verification_debt_backpressure":self.verification_debt_backpressure,
             "verification_debt_config":vars(self.verification_debt_controller.config),
             "verification_lease_s":self.verification_lease_s,
             "max_verification_attempts":self.max_verification_attempts,
@@ -422,6 +458,10 @@ class AsyncHFLab:
         )
         counts = self.replay.counts()
         report = {
+            "arm":self.arm,
+            "enforce_verifier_freshness":self.enforce_verifier_freshness,
+            "verification_debt_backpressure":self.verification_debt_backpressure,
+            "sync_inline_generation":self.sync_inline_generation,
             "version":self.version,
             "parameter_l1_change":delta,
             "history":self.metrics,
@@ -442,7 +482,8 @@ class AsyncHFLab:
             "max_verifier_lag":self.max_verifier_lag,
             "replay_counts":counts,
             "verification_backlog":self.replay.verification_backlog(
-                self.verifier.version,self.max_verifier_lag
+                self.verifier.version,self.max_verifier_lag,
+                enforce_verifier_freshness=self.enforce_verifier_freshness,
             ),
             "quarantined_verification_groups":counts.get("quarantined",0),
             "limitations":[

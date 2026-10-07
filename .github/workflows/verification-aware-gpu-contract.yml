@@ -1,0 +1,49 @@
+name: verification-aware-gpu-contract
+
+on:
+  pull_request:
+    paths:
+      - 'configs/verification_aware_async_gpu_v1.json'
+      - 'src/verification_aware_phase_plan.py'
+      - 'src/run_verification_aware_gpu_phase.py'
+      - 'src/validate_verification_aware_gpu_evidence.py'
+      - 'tests/test_verification_aware_gpu_phase.py'
+      - 'docs/verification_aware_gpu_execution.md'
+      - '.github/workflows/verification-aware-gpu-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Phase-plan and evidence contract tests
+        run: python -m unittest tests.test_verification_aware_gpu_phase -v
+      - name: Compile prospective phase plan
+        run: |
+          python -m src.verification_aware_phase_plan \
+            --protocol configs/verification_aware_async_gpu_v1.json \
+            --source-sha "$GITHUB_SHA" \
+            --output artifacts/verification-aware-gpu-plan.json
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/verification-aware-gpu-plan.json'))
+          assert p['cell_count'] == 78
+          assert len({x['cell_id'] for x in p['cells']}) == 78
+          print({'cell_count':p['cell_count'],'protocol_sha256':p['protocol_sha256']})
+          PY
+      - name: Syntax-check GPU executor
+        run: python -m py_compile src/run_verification_aware_gpu_phase.py src/validate_verification_aware_gpu_evidence.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verification-aware-gpu-plan-${{ github.run_id }}
+          path: artifacts/verification-aware-gpu-plan.json
+          if-no-files-found: error
+          retention-days: 90

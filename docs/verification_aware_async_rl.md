@@ -64,6 +64,23 @@ Learner metrics now retain:
 - verification age at learner admission;
 - verification attempts and backlog.
 
+## Locked three-arm runtime semantics
+
+The Issue #66 comparison now runs through one `AsyncHFLab` implementation with
+an explicit `arm` switch, reducing implementation-level confounds:
+
+- `sync_inline`: generation waits until the previous verification backlog is
+  drained before admitting another rollout group; verifier freshness is enforced.
+- `async_policy_only`: generation is not throttled by verification debt and the
+  learner does not require a current verifier version. Old verifier rewards may
+  therefore remain learner-admissible by design; policy-lag bounds still apply.
+- `verification_aware_async`: generation/verification/learning remain decoupled,
+  while verifier freshness and verification-debt backpressure are both enforced.
+
+The replay layer has an explicit `enforce_verifier_freshness` switch so the
+policy-only control does not accidentally inherit stale-reward requeue behavior
+from the treatment arm. Contract tests exercise both paths.
+
 ## Verification debt backpressure
 
 The runtime now treats unverified work as a bounded systems liability rather than only a queue length. `VerificationDebtController` scores observable replay state from pending/verifying work, stale ready rewards, policy lag, verifier lag, and age of the oldest unverified group. The scalar is used only for rollout backpressure and telemetry; it is not a safety or quality certificate.
