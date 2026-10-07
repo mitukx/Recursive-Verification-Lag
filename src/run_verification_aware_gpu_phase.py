@@ -55,8 +55,7 @@ def hardware_snapshot(*, require_gpu: bool) -> dict[str, Any]:
         snapshot["nvidia_smi_stderr"] = proc.stderr.strip()
     else:
         snapshot["gpus"] = []
-    if require_gpu and not snapshot["gpus"]:
-        raise RuntimeError("GPU evidence run requires a visible NVIDIA GPU")
+    snapshot["gpu_requirement_satisfied"] = bool(snapshot["gpus"]) or not require_gpu
     return snapshot
 
 
@@ -128,6 +127,8 @@ def execute_cell(
         (cell_root / "hardware.json").write_text(
             json.dumps(hardware, indent=2, sort_keys=True) + "\n"
         )
+        if require_gpu and not hardware["gpus"]:
+            raise RuntimeError("GPU evidence run requires a visible NVIDIA GPU")
         env = dict(os.environ)
         env.update(
             {
