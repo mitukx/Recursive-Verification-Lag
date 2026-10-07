@@ -1,5 +1,23 @@
 # Recursive Verification Lag
 
+## Frontier RL / AI4AI target
+
+The repository is now organized around one north-star problem: **train long-horizon
+agents to improve real AI engineering work, while keeping optimization grounded
+by executable/trusted evaluation and reliable RL infrastructure.**
+
+Six evidence tracks share the same platform: **RSI/research automation for
+MLSys/MLE, long-horizon RL, coding RL, RL infrastructure, end-to-end model
+building, and post-training/RL**. Their current evidence gaps and fail-closed
+claim requirements are locked in
+[`configs/xai_frontier_tracks_v1.json`](configs/xai_frontier_tracks_v1.json).
+See [the portfolio architecture](docs/xai_frontier_rl_portfolio.md).
+
+The next headline results should be real measurements, not additional feature
+count: (1) held-out AI-engineering/coding improvement, (2) successful
+long-horizon trajectories with recovery and an RL gain, and (3) measured
+GPU/serving performance or upstream systems impact.
+
 ## Post-training capability track
 
 The repository now treats **real post-training capability improvement** as the primary acceptance target. The central empirical question is whether verified RL can improve an independent held-out capability metric, and whether a learned reward/verifier remains useful as policy optimization shifts the model distribution.
