@@ -184,7 +184,7 @@ class VerifierDeploymentTests(unittest.TestCase):
                     await asyncio.gather(*(server.close() for server in servers))
         asyncio.run(run())
 
-    def test_new_coordinator_epoch_fences_old_coordinator(self):
+    def test_new_coordinator_epoch_fences_old_before_workers_observe_takeover(self):
         async def run():
             with tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
@@ -204,18 +204,33 @@ class VerifierDeploymentTests(unittest.TestCase):
                         [client], state_path=root / "coordinator.json"
                     )
                     await old.deploy(m1)
+
+                    # Takeover advances durable coordinator epoch but has not yet
+                    # contacted the worker. The worker therefore still reports
+                    # the old epoch, which is the critical race window.
                     new = VerifierDeploymentCoordinator(
                         [client], state_path=root / "coordinator.json"
                     )
+                    before = await client.ping()
+                    self.assertEqual(before["verifier_version"], 1)
+                    self.assertEqual(before["coordinator_epoch"], old.epoch)
+
+                    m3 = publish_verifier_artifact(
+                        root / "artifacts", version=3, content=b'{"reward":0.3}', suffix=".json"
+                    )
+                    with self.assertRaisesRegex(RuntimeError, "stale verifier coordinator fenced"):
+                        await old.prepare(m3)
+
+                    # The rejected stale coordinator must not mutate the worker.
+                    still_old = await client.ping()
+                    self.assertEqual(still_old["verifier_version"], 1)
+                    self.assertEqual(still_old["coordinator_epoch"], old.epoch)
+                    self.assertIsNone(still_old["prepared_verifier_version"])
+
                     m2 = publish_verifier_artifact(
                         root / "artifacts", version=2, content=b'{"reward":0.2}', suffix=".json"
                     )
                     await new.deploy(m2)
-                    m3 = publish_verifier_artifact(
-                        root / "artifacts", version=3, content=b'{"reward":0.3}', suffix=".json"
-                    )
-                    with self.assertRaisesRegex(RuntimeError, "stale|incomplete"):
-                        await old.prepare(m3)
                     health = await client.ping()
                     self.assertEqual(health["verifier_version"], 2)
                     self.assertEqual(health["coordinator_epoch"], new.epoch)
