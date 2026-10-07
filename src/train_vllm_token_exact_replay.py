@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from collections import defaultdict
@@ -10,6 +11,10 @@ from pathlib import Path
 from src.rvl_systems.hf_backend import HFLocalBackend
 from src.rvl_systems.hf_trainer import HFCausalLMGRPOTrainer, HFTTrainerConfig
 from src.rvl_systems.lab.distributed_learner import read_samples
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def parameter_probe(model, *, tensors: int = 24, values_per_tensor: int = 64):
@@ -122,6 +127,7 @@ def main() -> None:
         "device": backend.resolved_device,
         "precision": backend.resolved_precision,
         "learning_rate": args.learning_rate,
+        "replay_sha256": sha256_file(args.replay),
         **diagnostics,
         "preupdate_parity": {
             "max_abs_log_ratio": max_ratio,
