@@ -110,6 +110,35 @@ class VerifierDeploymentTests(unittest.TestCase):
                     await asyncio.gather(*(server.close() for server in servers))
         asyncio.run(run())
 
+    def test_duplicate_worker_identity_fails_closed(self):
+        async def run():
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                server = VerifierWorkerServer(
+                    FunctionalVerifier(lambda _: 0.0),
+                    worker_id="same",
+                    deployment_loader=json_loader,
+                    deployment_state_path=root / "worker.json",
+                )
+                address = await server.start()
+                client = TCPVerifierClient(*address)
+                coordinator = VerifierDeploymentCoordinator(
+                    [client, client], state_path=root / "coordinator.json"
+                )
+                manifest = publish_verifier_artifact(
+                    root / "artifacts",
+                    version=1,
+                    content=b'{"reward":0.4}',
+                    suffix=".json",
+                )
+                try:
+                    with self.assertRaisesRegex(RuntimeError, "duplicate worker identity"):
+                        await coordinator.prepare(manifest)
+                    self.assertEqual((await client.ping())["verifier_version"], 0)
+                finally:
+                    await server.close()
+        asyncio.run(run())
+
     def test_partial_activation_retry_converges_idempotently(self):
         async def run():
             with tempfile.TemporaryDirectory() as tmp:
