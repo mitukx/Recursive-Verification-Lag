@@ -185,6 +185,13 @@ class VerifierWorkerServer:
         if version == self.verifier_version:
             if self._active_manifest is None or self._active_manifest.version != version:
                 raise RuntimeError("active verifier has no matching artifact identity")
+            if (
+                self._prepared_manifest is not None
+                and self._prepared_manifest.version == version
+            ):
+                self._prepared_manifest = None
+                self._prepared_verifier = None
+                self._persist_deployment_state()
             return {
                 "ok": True,
                 "worker_id": self.worker_id,
