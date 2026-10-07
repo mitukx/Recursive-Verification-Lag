@@ -11,6 +11,7 @@ PINNED_WORKFLOWS = (
     ".github/workflows/qwen-learned-verifier-contract.yml",
     ".github/workflows/real-llm-active-audit-contract.yml",
     ".github/workflows/rsi-controller.yml",
+    ".github/workflows/mlsys-task.yml",
 )
 EVIDENCE_WORKFLOWS = PINNED_WORKFLOWS[:3]
 ACTION = re.compile(
