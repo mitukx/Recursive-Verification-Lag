@@ -173,6 +173,8 @@ class VerifierDeploymentCoordinator:
                 errors.append(f"worker[{index}]: ACK from wrong coordinator epoch")
                 continue
             acks.append(str(result["worker_id"]))
+        if len(set(acks)) != len(acks):
+            errors.append("duplicate worker identity in verifier prepare ACKs")
         self.pending_manifest = payload
         self.acked_workers = acks
         self._persist()
@@ -212,6 +214,10 @@ class VerifierDeploymentCoordinator:
         health = await asyncio.gather(*(client.ping() for client in self.clients))
         versions = {int(row["verifier_version"]) for row in health}
         epochs = {int(row.get("coordinator_epoch", -1)) for row in health}
+        worker_ids = [str(row["worker_id"]) for row in health]
+        if len(set(worker_ids)) != len(worker_ids):
+            self._persist()
+            raise RuntimeError("post-activation convergence has duplicate worker identity")
         if versions != {manifest.version} or epochs != {self.epoch}:
             self._persist()
             raise RuntimeError(
