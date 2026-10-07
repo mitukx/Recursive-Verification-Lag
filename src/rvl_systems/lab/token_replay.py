@@ -235,7 +235,8 @@ class TokenReplay:
             raise
 
     def claim_verification(self,current_version,max_policy_lag,current_verifier_version,
-                           max_verifier_lag=0,lease_s=30,now=None):
+                           max_verifier_lag=0,lease_s=30,now=None,
+                           enforce_verifier_freshness=True):
         if min(current_version,current_verifier_version,max_policy_lag,max_verifier_lag) < 0 or lease_s <= 0:
             raise ValueError("invalid verification lease limits")
         now = time.time() if now is None else now
@@ -253,9 +254,10 @@ class TokenReplay:
                    AND policy_version<?""",
                 (current_version-max_policy_lag,),
             )
-            self._requeue_stale_verifications_unlocked(
-                current_verifier_version,max_verifier_lag
-            )
+            if enforce_verifier_freshness:
+                self._requeue_stale_verifications_unlocked(
+                    current_verifier_version,max_verifier_lag
+                )
             row = self.db.execute(
                 """SELECT id,policy_version,payload FROM groups
                    WHERE status='pending_verification' AND policy_version<=?
@@ -446,7 +448,13 @@ class TokenReplay:
             oldest_unverified_age_s=max(ages or [0.0]),
         )
 
-    def verification_backlog(self,current_verifier_version,max_verifier_lag=0):
+    def verification_backlog(self,current_verifier_version,max_verifier_lag=0,
+                             enforce_verifier_freshness=True):
+        if not enforce_verifier_freshness:
+            return int(self.db.execute(
+                """SELECT COUNT(*) FROM groups
+                   WHERE status IN ('pending_verification','verifying')"""
+            ).fetchone()[0])
         threshold = current_verifier_version-max_verifier_lag
         return int(self.db.execute(
             """SELECT COUNT(*) FROM groups WHERE status IN ('pending_verification','verifying')
