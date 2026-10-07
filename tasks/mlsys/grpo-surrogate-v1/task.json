@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "task_id": "grpo-surrogate-v1",
+  "family": "rl_numerics_performance",
+  "split": "development",
+  "repository": "https://github.com/mitukx/Recursive-Verification-Lag",
+  "source_commit": "30b3a438ac7bd77a0cc216ff250873a9b8818925",
+  "source_path": "src/rvl_systems/triton_grpo.py",
+  "source_function": "torch_grpo_surrogate",
+  "source_file_sha256": "ed7ee082db036e1631c1f8eaacfb8691b102401c8342dcb9ed4dba5d26a22cf9",
+  "function_sha256": "fe1b2cdcde5db7ef1e2edafd60fc52fabc56201af60c1a6e7211f89d4ad508b3",
+  "baseline_sha256": "126b083ee2a837554d269f62ee6e9777c9f74a5b7faeb8b3b5db2e8bf3ec5aef",
+  "entrypoint": "torch_grpo_surrogate",
+  "editable_files": [
+    "solution.py"
+  ],
+  "budget": {
+    "cpu_threads": 1,
+    "memory_mb": 2048,
+    "request_timeout_s": 15,
+    "startup_timeout_s": 45,
+    "max_frame_bytes": 8388608
+  },
+  "evaluation": {
+    "scope": "public_development",
+    "seeds": [
+      17,
+      29,
+      43
+    ],
+    "sizes": [
+      0,
+      1,
+      17,
+      257,
+      4096
+    ],
+    "benchmark_size": 65536,
+    "benchmark_repeats": 7,
+    "warmups": 2,
+    "minimum_speedup": 1.05,
+    "rtol": 1e-05,
+    "atol": 1e-06
+  },
+  "claim_boundary": "One extracted real-repository operator with generated numerical probes; not a held-out task bank, end-to-end training gain, GPU benchmark or long-horizon RL result."
+}

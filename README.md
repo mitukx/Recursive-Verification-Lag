@@ -13,6 +13,15 @@ claim requirements are locked in
 [`configs/xai_frontier_tracks_v1.json`](configs/xai_frontier_tracks_v1.json).
 See [the portfolio architecture](docs/xai_frontier_rl_portfolio.md).
 
+The [MTS execution plan](docs/xai_mts_execution_plan.md) maps the shared campaign
+to verified public role requirements and defines which outcomes can be claimed.
+The first [executable MLSys development task](docs/mlsys_research_automation.md)
+extracts the exact GRPO operator used by the causal-LM trainer: evaluator-owned
+forward/gradient parity, Docker candidate isolation, paired external timing and
+correctness-gated performance reward. It connects to the existing durable coding
+agent. One public operator task does not establish held-out agent capability,
+long-horizon learning or GPU performance.
+
 The next headline results should be real measurements, not additional feature
 count: (1) held-out AI-engineering/coding improvement, (2) successful
 long-horizon trajectories with recovery and an RL gain, and (3) measured

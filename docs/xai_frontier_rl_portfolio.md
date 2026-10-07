@@ -3,6 +3,12 @@
 This repository should be read as one platform with six evidence tracks, not as
 six unrelated demos.
 
+The [MTS execution plan](xai_mts_execution_plan.md) connects these tracks to
+verified public role requirements and sequences one shared evidence campaign.
+The [MLSys task runbook](mlsys_research_automation.md) provides the first real-code
+operator development task and the existing-agent adapter; its development-only
+boundary is explicit.
+
 ## North-star question
 
 **Can an agent improve real AI engineering work over long horizons, learn from
