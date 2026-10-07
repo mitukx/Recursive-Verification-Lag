@@ -1,0 +1,5 @@
+# Frozen evidence and source snapshots must retain their checksum-covered bytes.
+results/colab_rlvr_pilot_20261008/*/raw/** -text
+results/colab_rlvr_pilot_20261008/*/source_snapshots/** -text
+# nvidia-smi emits trailing spaces in its captured timestamp line.
+results/colab_rlvr_pilot_20261008/*/raw/**/nvidia-smi.txt whitespace=-blank-at-eol

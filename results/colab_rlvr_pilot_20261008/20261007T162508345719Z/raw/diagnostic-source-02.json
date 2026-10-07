@@ -1,0 +1,7 @@
+{
+  "source_sha": "e7595d07bcec572c8459dfc9b1365ca194fe4627",
+  "prior_attempt_retained": "behavior-diagnostic",
+  "reason_for_retry": "verify source lock hash separately from sorted protocol copy",
+  "optimization_steps": 0,
+  "paid_compute_started": false
+}

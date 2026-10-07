@@ -1,0 +1,3 @@
+{
+  "traceback": "Traceback (most recent call last):\n  File \"/content/rvl-behavior-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py\", line 123, in main\n    run(args.pilot_evidence, args.output, config)\n    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/content/rvl-behavior-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py\", line 37, in run\n    evidence_manifest = verify_manifest(pilot)\n  File \"/content/rvl-behavior-20261007T162508345719Z/scripts/summarize_colab_rlvr_pilot.py\", line 49, in verify_manifest\n    raise ValueError(\"protocol checksum mismatch\")\nValueError: protocol checksum mismatch\n"
+}

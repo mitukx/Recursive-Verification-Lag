@@ -49,12 +49,16 @@ availability are variable even on paid plans ([official FAQ](https://research.go
 One Colab GPU cannot validate 1-to-2 GPU scaling. Keep that outcome pending
 until suitable hardware exists.
 
-The ready-to-open notebook is [`notebooks/free_colab_mts_pilot.ipynb`](../notebooks/free_colab_mts_pilot.ipynb).
+The historical pilot notebook is [`notebooks/free_colab_mts_pilot.ipynb`](../notebooks/free_colab_mts_pilot.ipynb).
 It pins the existing research commit and original protocol, checks GPU presence,
 retains the Colab CUDA PyTorch, installs only the locked model/data dependencies,
 streams logs and exports successes, failures and partial results. It does not
-execute model-generated code. Notebook code cells have been syntax-checked;
-actual Colab execution remains a separate measurement.
+execute model-generated code. The original locked pilot has now completed on free T4, with no capability gain.
+The notebook deliberately preserves its affected source pin. A separate
+zero-update GPU diagnostic confirms bounded corrected probability parity, while
+historical-score reconstruction fails its own gate. See
+[the raw evidence and limits](free_colab_pilot_evidence.md). A corrected training
+replication needs a new source/protocol lock and separate outputs.
 
 ### 1. Make the real-workload evaluation trustworthy
 
@@ -103,8 +107,9 @@ patch only when a real bottleneck and reproducible reproducer support it.
 
 ## Repository decision
 
-Keep the implementation connected to RVL while the first real agent/model/hardware
-outcomes are missing. Immediately extracting the existing stack would duplicate
+Keep the implementation connected to RVL while independently evaluated agent
+learning and real AI-engineering workload outcomes are missing. The small T4
+numerical diagnostic alone does not meet those extraction criteria. Immediately extracting the existing stack would duplicate
 experiments and leave two repositories with the same missing evidence.
 
 After a reproducible real-model/workload result, extract an independent flagship
@@ -117,8 +122,9 @@ with an adapter. See `systems_split_plan.md` for the existing exit criteria.
 
 ## Current claim boundary
 
-The reviewed main branch already has substantial RL systems implementation and
-real-model/CPU-DDP CI. The new MLSys entry proves only that an exact real-code
+The reviewed main branch already has substantial RL systems implementation,
+real-model/CPU-DDP CI, and a retained free-T4 negative pilot with bounded
+probability-consistency validation. The new MLSys entry proves only that an exact real-code
 operator can be evaluated with external correctness/gradient checks and a
 correctness-gated performance protocol. It is one public development task.
 

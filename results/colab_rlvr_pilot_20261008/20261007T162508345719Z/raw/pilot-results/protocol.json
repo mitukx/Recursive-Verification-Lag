@@ -1,0 +1,37 @@
+{
+  "arms": [
+    "trusted_reward",
+    "within_prompt_shuffled_reward"
+  ],
+  "dataset": "openai/gsm8k",
+  "dataset_revision": "740312add88f781978c0658806c59bc2815b9866",
+  "dependencies": {
+    "accelerate": "1.10.1",
+    "datasets": "3.6.0",
+    "transformers": "4.57.1"
+  },
+  "evaluation": "one initial baseline and terminal greedy evaluation for each seed/arm; no promotion or evaluation-driven tuning; task identities fixed across all seeds",
+  "evaluation_tasks": 16,
+  "failures": "retain all attempts and partial outputs; no precision/model/task substitution without a new amended lock",
+  "learning_rate": 5e-07,
+  "max_new_tokens": 256,
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "precision": "fp32",
+  "primary_reporting": "paired per-task greedy correctness difference, each seed/arm and aggregate; descriptive task-bootstrap; no claim of improvement from training reward or merely nonzero gradients",
+  "prompts_per_step": 1,
+  "samples_per_prompt": 4,
+  "scope": "single T4, <=0.5B model, 16 evaluation tasks, 4 updates; cannot establish frontier-scale learning, RVL failure boundaries or hiring readiness",
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "split_selection": "first 16 rows of each official train/test split, before outcome inspection; all retained",
+  "status": "pre-execution engineering/learning pilot; not confirmatory RVL validation",
+  "steps": 4,
+  "systems_source_sha": "1a63903d22e1233594d1f1f0c269f7f55baf99b7",
+  "train_tasks": 16,
+  "train_temperature": 1.0,
+  "zero_update_control": "repeat all baseline greedy decisions without training; require identical responses and correctness"
+}

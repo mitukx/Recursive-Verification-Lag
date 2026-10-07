@@ -27,6 +27,15 @@ count: (1) held-out AI-engineering/coding improvement, (2) successful
 long-horizon trajectories with recovery and an RL gain, and (3) measured
 GPU/serving performance or upstream systems impact.
 
+**Measured free-T4 evidence (2026-10-08):** [six-condition RL pilot and numerical diagnosis](docs/free_colab_pilot_evidence.md).
+The locked Qwen/GSM8K pilot completed 24 updates and 96 rollouts. Both reward
+arms fell from 31.25% baseline accuracy to 18.75% mean terminal accuracy; no
+capability gain was observed. A sampler/learner probability mismatch was found
+and repaired. Six short corrected T4 samples passed the declared 1e-4 log-ratio
+gate (maximum 7.46e-5), but historical-score reconstruction failed its separate
+gate; the diagnostic is retained as an overall failure. Raw evidence and a
+CI-recomputed scorecard include both failed diagnostic attempts.
+
 ## Post-training capability track
 
 The repository now treats **real post-training capability improvement** as the primary acceptance target. The central empirical question is whether verified RL can improve an independent held-out capability metric, and whether a learned reward/verifier remains useful as policy optimization shifts the model distribution.
@@ -38,7 +47,7 @@ The current campaign combines two existing real-model paths:
 
 A machine-readable scorecard combines these results without hiding null, negative, failed, or underpowered runs. See [Post-training capability campaign v1](docs/posttraining_capability_campaign.md) and `configs/posttraining_capability_campaign_v1.json`.
 
-**No capability-gain claim is made until the real GPU runs and held-out evidence are retained.** The distributed serving, replay, verifier deployment, failure recovery, and profiling stack below exists to make those experiments reproducible and auditable.
+**The retained small T4 pilot does not establish a capability gain. Independently evaluated positive learning evidence remains required.** The distributed serving, replay, verifier deployment, failure recovery, and profiling stack below exists to make those experiments reproducible and auditable.
 
 
 **Latest evidence (2026-10-07):** [completed development and fresh-task transfer](notes/progress/36_completed_development_and_transfer.md).

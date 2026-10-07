@@ -1,0 +1,8 @@
+{
+  "cuda": "13.0",
+  "device": "Tesla T4",
+  "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+  "research_source_sha": "30b3a438ac7bd77a0cc216ff250873a9b8818925",
+  "systems_source_sha": "1a63903d22e1233594d1f1f0c269f7f55baf99b7",
+  "torch": "2.11.0+cu130"
+}

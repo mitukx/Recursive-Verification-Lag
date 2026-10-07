@@ -1,0 +1,10 @@
+{
+  "global_pip_check_returncode": 1,
+  "global_pip_check_stdout": "ipython 7.34.0 requires jedi, which is not installed.\ngradio 6.29.0 has requirement huggingface-hub<3.0,>=1.16.0, but you have huggingface-hub 0.36.2.\ndiffusers 0.40.0 has requirement huggingface-hub<2.0,>=1.23.0, but you have huggingface-hub 0.36.2.\ngcsfs 2025.12.0 has requirement fsspec==2025.12.0, but you have fsspec 2025.3.0.\n",
+  "global_pip_check_stderr": "",
+  "initial_setup_aborted_before_training": true,
+  "resolution": "Retain unrelated preinstalled Colab package conflicts; verify locked experiment imports in a fresh process.",
+  "experiment_import_smoke_returncode": 0,
+  "experiment_import_smoke_stdout": "{\"versions\": {\"transformers\": \"4.57.1\", \"datasets\": \"3.6.0\", \"accelerate\": \"1.10.1\"}, \"torch\": \"2.11.0+cu130\", \"gpu\": \"Tesla T4\", \"cuda_smoke\": \"passed\"}\n",
+  "experiment_import_smoke_stderr": ""
+}

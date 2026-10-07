@@ -1,0 +1,5 @@
+{
+  "bundle_upload_cancelled_before_diagnostic_execution": true,
+  "reason": "file chooser unavailable; GitHub push recovered, use pinned public commit",
+  "diagnostic_updates_before_retry": 0
+}

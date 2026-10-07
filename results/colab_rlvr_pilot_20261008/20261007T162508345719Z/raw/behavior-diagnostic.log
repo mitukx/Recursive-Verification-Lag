@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/content/rvl-behavior-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py", line 137, in <module>
+    main()
+    ~~~~^^
+  File "/content/rvl-behavior-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py", line 123, in main
+    run(args.pilot_evidence, args.output, config)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/rvl-behavior-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py", line 37, in run
+    evidence_manifest = verify_manifest(pilot)
+  File "/content/rvl-behavior-20261007T162508345719Z/scripts/summarize_colab_rlvr_pilot.py", line 49, in verify_manifest
+    raise ValueError("protocol checksum mismatch")
+ValueError: protocol checksum mismatch

@@ -1,0 +1,3 @@
+{
+  "traceback": "Traceback (most recent call last):\n  File \"/content/rvl-behavior-02-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py\", line 123, in main\n    run(args.pilot_evidence, args.output, config)\n    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/content/rvl-behavior-02-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py\", line 109, in run\n    raise RuntimeError(\"declared numerical diagnostic failed; retain results\")\nRuntimeError: declared numerical diagnostic failed; retain results\n"
+}
