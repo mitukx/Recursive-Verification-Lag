@@ -205,6 +205,54 @@ class VerificationTests(unittest.TestCase):
             ControlConfig(mode="unknown")
 
 
+class VerificationArmReplayTests(unittest.TestCase):
+    def test_policy_only_async_does_not_requeue_stale_verifier_reward(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            from src.rvl_systems.lab.token_replay import TokenReplay
+            from src.rvl_systems.types import Generation, VerifiedGeneration
+            store = TokenReplay(Path(tmp)/"replay.sqlite",capacity=2)
+            try:
+                g = Generation("p","prompt","response",0.0,1,0.0,{})
+                store.put("g",0,[VerifiedGeneration(g,1.0,0.0,0)],now=1)
+                self.assertEqual(
+                    store.verification_backlog(
+                        1,0,enforce_verifier_freshness=False
+                    ),0
+                )
+                self.assertIsNone(
+                    store.claim_verification(
+                        0,1,1,0,now=2,enforce_verifier_freshness=False
+                    )
+                )
+                admitted = store.next(0,1,None,0)
+                self.assertIsNotNone(admitted)
+                self.assertEqual(admitted[2][0].verifier_version,0)
+            finally:
+                store.close()
+
+    def test_verification_aware_async_requeues_stale_verifier_reward(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            from src.rvl_systems.lab.token_replay import TokenReplay
+            from src.rvl_systems.types import Generation, VerifiedGeneration
+            store = TokenReplay(Path(tmp)/"replay.sqlite",capacity=2)
+            try:
+                g = Generation("p","prompt","response",0.0,1,0.0,{})
+                store.put("g",0,[VerifiedGeneration(g,1.0,0.0,0)],now=1)
+                self.assertEqual(
+                    store.verification_backlog(
+                        1,0,enforce_verifier_freshness=True
+                    ),1
+                )
+                claim = store.claim_verification(
+                    0,1,1,0,now=2,enforce_verifier_freshness=True
+                )
+                self.assertIsNotNone(claim)
+                self.assertEqual(claim[1],"g")
+                self.assertIsNone(store.next(0,1,1,0))
+            finally:
+                store.close()
+
+
 class VerificationDebtTests(unittest.TestCase):
     def test_debt_levels_are_monotonic_and_bounded(self):
         controller = VerificationDebtController(
