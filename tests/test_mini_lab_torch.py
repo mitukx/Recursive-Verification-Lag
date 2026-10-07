@@ -76,6 +76,29 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(ValueError, "greedy"):
             trainer._sample_objective(VerifiedGeneration(greedy,1,0,0),1)
 
+    async def test_additional_eos_shared_with_pad_keeps_its_action_logprob(self):
+        from src.rvl_systems.hf_backend import HFLocalBackend
+        from types import SimpleNamespace
+        class Tokenizer:
+            eos_token_id = 8
+            pad_token_id = 2
+            def __call__(self, prompt, return_tensors):
+                return {"input_ids": torch.tensor([[1, 2]])}
+            def decode(self, ids, skip_special_tokens):
+                return " ".join(map(str, ids))
+        model = self.model()
+        model.generation_config.eos_token_id = [8, 2]
+        # Force the alternate EOS in a controlled real-tensor protocol fixture.
+        model.generate = lambda **kwargs: SimpleNamespace(
+            sequences=torch.tensor([[1, 2, 2]]), scores=(torch.zeros(1,32),))
+        backend = HFLocalBackend("offline", max_new_tokens=3, device="cpu", precision="fp32")
+        backend._model, backend._torch, backend._tokenizer = model, torch, Tokenizer()
+        backend._device, backend._resolved_precision = "cpu", "fp32"
+        generation = (await backend.generate("p", "prompt", n=1, temperature=1., seed=17))[0]
+        self.assertEqual(generation.metadata["response_token_ids"], [2])
+        self.assertEqual(generation.token_count, 1)
+        self.assertEqual(len(generation.metadata["response_token_logprobs"]), 1)
+
     async def test_coding_episodes_connect_terminal_credit_rvl_and_optimizer(self):
         # Scripted tool text exercises contracts. The real tiny tensor model
         # supplies token logprobs and receives optimizer updates; no claim that

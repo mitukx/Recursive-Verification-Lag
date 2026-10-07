@@ -159,7 +159,7 @@ class HFLocalBackend:
         special = model.generation_config
         generation_config = GenerationConfig(
             bos_token_id=special.bos_token_id,
-            eos_token_id=special.eos_token_id,
+            eos_token_id=special.eos_token_id if special.eos_token_id is not None else tokenizer.eos_token_id,
             pad_token_id=tokenizer.pad_token_id,
             do_sample=temperature > 0,
             temperature=temperature if temperature > 0 else 1.0,
@@ -172,7 +172,7 @@ class HFLocalBackend:
         # both and avoid mixing the config object with generation kwargs.
         generation_kwargs = {
             key: value for key, value in generation_config.to_dict().items()
-            if not key.startswith("_") and key != "transformers_version"
+            if not key.startswith("_") and key not in {"transformers_version", "max_length"}
         }
         generation_kwargs.update({
             "do_sample": temperature > 0,
@@ -206,16 +206,17 @@ class HFLocalBackend:
         latency = time.perf_counter() - start
 
         generations: list[Generation] = []
-        eos_id = tokenizer.eos_token_id
+        eos = generation_config.eos_token_id
+        eos_ids = set(eos if isinstance(eos, (list, tuple)) else ([] if eos is None else [eos]))
         pad_id = tokenizer.pad_token_id
         for row in range(outputs.sequences.shape[0]):
             raw_ids = outputs.sequences[row, input_length:].tolist()
             response_ids: list[int] = []
             for token_id in raw_ids:
-                if token_id == pad_id and pad_id != eos_id:
+                if token_id == pad_id and pad_id not in eos_ids:
                     break
                 response_ids.append(int(token_id))
-                if eos_id is not None and token_id == eos_id:
+                if token_id in eos_ids:
                     break
             token_logprobs = [
                 float(x)
