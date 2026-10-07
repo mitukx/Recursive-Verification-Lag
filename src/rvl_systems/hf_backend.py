@@ -166,16 +166,22 @@ class HFLocalBackend:
             top_k=0,
             top_p=1.0,
         )
+        # Expand every neutral field as an explicit override. Transformers 4.x
+        # otherwise merges model defaults even into a fresh GenerationConfig;
+        # 5.x removed the use_model_defaults switch. Explicit overrides work in
+        # both and avoid mixing the config object with generation kwargs.
         generation_kwargs = {
-            "generation_config": generation_config,
-            "use_model_defaults": False,
+            key: value for key, value in generation_config.to_dict().items()
+            if not key.startswith("_") and key != "transformers_version"
+        }
+        generation_kwargs.update({
             "do_sample": temperature > 0,
             "num_return_sequences": n,
             "max_new_tokens": self.max_new_tokens,
             "return_dict_in_generate": True,
             "output_scores": True,
             "pad_token_id": tokenizer.pad_token_id,
-        }
+        })
         if temperature > 0:
             generation_kwargs.update(
                 {
