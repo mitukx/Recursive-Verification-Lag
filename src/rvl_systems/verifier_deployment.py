@@ -131,6 +131,13 @@ class VerifierDeploymentCoordinator:
         return value
 
     def _persist(self) -> None:
+        existing = self._read_state()
+        existing_epoch = int(existing.get("coordinator_epoch", 0))
+        if existing_epoch > self.epoch:
+            raise RuntimeError(
+                f"stale verifier coordinator epoch {self.epoch}; "
+                f"durable epoch is {existing_epoch}"
+            )
         _atomic_json(
             self.state_path,
             {
