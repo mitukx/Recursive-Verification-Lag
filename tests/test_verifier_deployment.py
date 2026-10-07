@@ -46,6 +46,28 @@ def slow_loader(manifest):
     return SlowVerifier(float(payload["reward"]), float(payload.get("delay_s", 0)))
 
 
+class FailOnceActivationClient:
+    def __init__(self, inner):
+        self.inner = inner
+        self.failed = False
+
+    async def ping(self):
+        return await self.inner.ping()
+
+    async def prepare_verifier(self, manifest, *, coordinator_epoch):
+        return await self.inner.prepare_verifier(
+            manifest, coordinator_epoch=coordinator_epoch
+        )
+
+    async def activate_verifier(self, version, *, coordinator_epoch):
+        if not self.failed:
+            self.failed = True
+            raise RuntimeError("injected activation failure")
+        return await self.inner.activate_verifier(
+            version, coordinator_epoch=coordinator_epoch
+        )
+
+
 class VerifierDeploymentTests(unittest.TestCase):
     def test_two_phase_deploy_converges_two_workers(self):
         async def run():
@@ -84,6 +106,51 @@ class VerifierDeploymentTests(unittest.TestCase):
                         *(client.verify(generation(), expected_verifier_version=1) for client in clients)
                     )
                     self.assertTrue(all(row.reward == 0.75 for row in rows))
+                finally:
+                    await asyncio.gather(*(server.close() for server in servers))
+        asyncio.run(run())
+
+    def test_partial_activation_retry_converges_idempotently(self):
+        async def run():
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                servers = [
+                    VerifierWorkerServer(
+                        FunctionalVerifier(lambda _: 0.0),
+                        worker_id=f"v{i}",
+                        deployment_loader=json_loader,
+                        deployment_state_path=root / f"worker-{i}.json",
+                    )
+                    for i in range(2)
+                ]
+                addresses = [await server.start() for server in servers]
+                raw_clients = [TCPVerifierClient(*address) for address in addresses]
+                clients = [raw_clients[0], FailOnceActivationClient(raw_clients[1])]
+                coordinator = VerifierDeploymentCoordinator(
+                    clients, state_path=root / "coordinator.json"
+                )
+                manifest = publish_verifier_artifact(
+                    root / "artifacts",
+                    version=1,
+                    content=b'{"reward":0.4}',
+                    suffix=".json",
+                )
+                try:
+                    with self.assertRaisesRegex(RuntimeError, "activation incomplete"):
+                        await coordinator.deploy(manifest)
+                    versions = {
+                        int((await client.ping())["verifier_version"])
+                        for client in raw_clients
+                    }
+                    self.assertEqual(versions, {0, 1})
+                    self.assertEqual(await coordinator.deploy(manifest), 1)
+                    health = await asyncio.gather(
+                        *(client.ping() for client in raw_clients)
+                    )
+                    self.assertEqual({row["verifier_version"] for row in health}, {1})
+                    self.assertTrue(
+                        all(row["prepared_verifier_version"] is None for row in health)
+                    )
                 finally:
                     await asyncio.gather(*(server.close() for server in servers))
         asyncio.run(run())
