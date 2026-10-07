@@ -1,0 +1,28 @@
+name: xai-frontier-track-contract
+
+on:
+  pull_request:
+    paths:
+      - 'configs/xai_frontier_tracks_v1.json'
+      - 'docs/xai_frontier_rl_portfolio.md'
+      - 'scripts/validate_xai_frontier_tracks.py'
+      - 'tests/test_xai_frontier_tracks.py'
+      - '.github/workflows/xai-frontier-tracks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Validate frontier track contract
+        run: |
+          python scripts/validate_xai_frontier_tracks.py
+          python -m unittest tests.test_xai_frontier_tracks -v
