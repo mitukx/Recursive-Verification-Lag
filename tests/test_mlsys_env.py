@@ -1,5 +1,6 @@
 import ast
 import hashlib
+import importlib.util
 import json
 import tempfile
 import unittest
@@ -7,14 +8,17 @@ from pathlib import Path
 
 import numpy as np
 
-from src.mlsys_env.agent import coding_task
-from src.mlsys_env.evaluator import (
-    ROOT, TASK, NumericWorker, case, load_task, prepare, run, same_result,
-    summarize, validate_evaluation,
-)
-from src.mlsys_env.worker import metadata, pack, unpack
+TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
+if TORCH_AVAILABLE:
+    from src.mlsys_env.agent import coding_task
+    from src.mlsys_env.evaluator import (
+        ROOT, TASK, NumericWorker, case, load_task, prepare, run, same_result,
+        summarize, validate_evaluation,
+    )
+    from src.mlsys_env.worker import metadata, pack, unpack
 
 
+@unittest.skipUnless(TORCH_AVAILABLE, "MLSys task workflow installs optional PyTorch")
 class MLSysEnvironmentTests(unittest.TestCase):
     def test_task_is_exact_real_repo_function(self):
         spec, baseline = load_task()
