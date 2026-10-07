@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "status": "prospective post-training capability campaign; negative/null/underpowered outcomes retained",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "dataset": "openai/gsm8k",
+  "seeds": [17, 29, 43],
+  "evidence_tracks": {
+    "oracle_rlvr": {
+      "runner": "src/run_qwen_rlvr_experiment.py",
+      "primary_metric": "held-out greedy exact-match accuracy delta",
+      "required_outputs": ["benchmark.json", "predictions-before.jsonl", "predictions-after.jsonl", "history.json", "telemetry.json"]
+    },
+    "learned_reward_model": {
+      "runner": "scripts/run_qwen_learned_verifier_bridge.py",
+      "arms": ["oracle", "fresh", "stale", "shuffled"],
+      "primary_metric": "trusted terminal preference shift at matched realized update drift",
+      "secondary_metrics": ["Cov(y,v)", "Brier score", "ECE", "ranking accuracy", "effect-update k3"]
+    }
+  },
+  "scorecard": {
+    "capability_gain": "after_accuracy - before_accuracy",
+    "fresh_minus_stale_trusted_shift": "mean_preference_shift[fresh] - mean_preference_shift[stale]",
+    "fresh_minus_shuffled_trusted_shift": "mean_preference_shift[fresh] - mean_preference_shift[shuffled]",
+    "oracle_gap": "mean_preference_shift[oracle] - mean_preference_shift[fresh]",
+    "claim_gate": "No post-training capability claim unless real-model held-out evidence exists; no verifier-refresh benefit claim unless eligible learned-verifier seeds are available."
+  }
+}

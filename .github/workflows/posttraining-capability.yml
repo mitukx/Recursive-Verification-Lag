@@ -1,0 +1,28 @@
+name: posttraining-capability-contract
+
+on:
+  pull_request:
+    paths:
+      - 'configs/posttraining_capability_campaign_v1.json'
+      - 'scripts/summarize_posttraining_campaign.py'
+      - 'tests/test_posttraining_campaign.py'
+      - 'docs/posttraining_capability_campaign.md'
+      - '.github/workflows/posttraining-capability.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.11'
+      - name: Scorecard contracts
+        run: python -m unittest tests.test_posttraining_campaign -v
+      - name: Syntax check
+        run: python -m py_compile scripts/summarize_posttraining_campaign.py
