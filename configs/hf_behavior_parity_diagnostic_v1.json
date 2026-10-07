@@ -1,0 +1,16 @@
+{
+  "status": "exploratory numerical diagnostic locked after observing the original T4 pilot; not a learning-effect replication",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "precision": "fp32",
+  "legacy_group": "first four 17_trusted_reward rollouts from the original locked pilot, before its first optimizer step",
+  "legacy_systems_source_sha": "1a63903d22e1233594d1f1f0c269f7f55baf99b7",
+  "corrected_temperatures": [0.7, 1.0, 1.3],
+  "samples_per_temperature": 2,
+  "max_new_tokens": 64,
+  "seed": 17,
+  "same_weights_max_abs_log_ratio_tolerance": 0.0001,
+  "legacy_repetition_replay_tolerance": 0.0001,
+  "optimization_steps": 0,
+  "scope": "single-T4 sampler/learner probability consistency, with retained tokens and scores; no capability, speedup, scaling or learning-effect claim"
+}

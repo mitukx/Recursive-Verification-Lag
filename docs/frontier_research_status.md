@@ -1,16 +1,10 @@
 # Frontier-lab research evidence: October 7, 2026
 
-This is a research-readiness assessment, not a prediction of employment.
-The user's target is xAI and comparable frontier research groups.
-
-The [current xAI Post-Training and RL role](https://job-boards.greenhouse.io/xai/jobs/5114737007)
-emphasizes reward modeling, preference optimization, reasoning, truthfulness and
-real-world capabilities. The [RL Training Framework role](https://job-boards.greenhouse.io/xai/jobs/5186992007)
-also emphasizes end-to-end RL systems, small-scale ablations through production
-training, profiling, scalability, observability and RL numerics. This repository
-now has a credible bridge across those two surfaces: a falsifiable verifier/RL
-research mechanism plus a separate systems implementation track. Real-model
-external validity and real GPU evidence remain the main unresolved gates.
+This assessment separates a falsifiable verifier/RL research mechanism from its
+systems implementation and tracks the evidence required for external validity.
+The retained free-T4 pilot adds a negative real-model learning outcome and a
+bounded numerical diagnosis; independent capability gains, serving measurements
+and multi-GPU scaling remain unresolved. See [the T4 evidence](free_colab_pilot_evidence.md).
 
 ## What the latest work established
 
@@ -96,7 +90,7 @@ The repository is now meaningfully stronger than a broad "mini frontier lab"
 demo because it contains a falsifiable mechanism, a pre-outcome protocol, a
 completed intervention, negative results that were preserved, and systems code
 that maps to current frontier-RL work. It should still not be described as
-"xAI-level" in the sense of proven production-scale model training. The two
+proven production-scale model training. The
 highest-value missing pieces are:
 
 1. execute the locked Qwen matched-drift bridge and retain the result even if
@@ -111,5 +105,5 @@ highest-value missing pieces are:
 4. execute and retain the real-GPU RL systems evidence (serving, RL update,
    synchronization, profiling and multi-GPU scaling) already scaffolded on main.
 
-Those measured results would be substantially more valuable for hiring evidence than
+Those measured results would be substantially more valuable for research evidence than
 adding additional orchestration abstractions or README claims.

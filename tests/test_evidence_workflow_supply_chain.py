@@ -12,6 +12,7 @@ PINNED_WORKFLOWS = (
     ".github/workflows/real-llm-active-audit-contract.yml",
     ".github/workflows/rsi-controller.yml",
     ".github/workflows/mlsys-task.yml",
+    ".github/workflows/posttraining-capability.yml",
 )
 EVIDENCE_WORKFLOWS = PINNED_WORKFLOWS[:3]
 ACTION = re.compile(

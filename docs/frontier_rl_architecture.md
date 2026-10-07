@@ -1,10 +1,10 @@
-# xAI-aligned frontier RL / AI4AI portfolio
+# Frontier RL / AI4AI research architecture
 
 This repository should be read as one platform with six evidence tracks, not as
 six unrelated demos.
 
-The [MTS execution plan](xai_mts_execution_plan.md) connects these tracks to
-verified public role requirements and sequences one shared evidence campaign.
+The [research execution plan](research_execution_plan.md) sequences one shared
+experimental campaign and defines the evidence required for each outcome.
 The [MLSys task runbook](mlsys_research_automation.md) provides the first real-code
 operator development task and the existing-agent adapter; its development-only
 boundary is explicit.
@@ -89,7 +89,7 @@ the complete agent trajectory.
 behavioral analysis (repository exploration, testing, self-verification,
 recovery from failed edits).
 
-## Track 4 — Grok-style RL infrastructure
+## Track 4 — RL training and inference infrastructure
 
 The codebase already has substantial control-plane depth. Stop adding isolated
 features unless a measurement requires them. The next signal is real hardware:
@@ -126,7 +126,7 @@ synthetic queue benchmarks frontier-scale results. Do not use the sealed set
 during iterative selection. Do not replace failed GPU runs. Do not add a new
 scheduler, verifier or RSI primitive unless it closes a named evidence gap.
 
-The portfolio should eventually have three headline numbers:
+The research program should eventually have three headline numbers:
 1. held-out AI-engineering/coding task improvement;
 2. long-horizon success and recovery improvement;
 3. measured RL systems throughput/latency improvement.

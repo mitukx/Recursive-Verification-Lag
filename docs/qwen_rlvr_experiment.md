@@ -49,7 +49,7 @@ Increase train/eval examples only after the full pipeline is stable.
 
 A positive accuracy delta is not hard-coded as a test condition. RL results are
 empirical, and a negative or zero result must remain visible rather than being
-hidden by a benchmark script. The hiring evidence is the raw before/after
+hidden by a benchmark script. The empirical evidence is the raw before/after
 result, training diagnostics, exact config and the engineering explanation of
 why the result moved or did not move.
 

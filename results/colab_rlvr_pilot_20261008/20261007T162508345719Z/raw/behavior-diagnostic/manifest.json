@@ -1,0 +1,12 @@
+{
+  "files": {
+    "failure.json": "3e1bebf271ae571a4b55b65b02445aef4195b183409d173b2380594ab81cd3c6",
+    "protocol.json": "f414f9be7cc572054c0efe1ac3f4f05a7172955bb2633563d41955f6e1958497"
+  },
+  "source_files": {
+    "src/rvl_systems/hf_backend.py": "dca31dd2399d16bb7f999d7559be6b0cb192294e760cffbb64053b021d3c4593",
+    "src/rvl_systems/hf_trainer.py": "375985c1d0cca49a9d98d8b00ed41cefe000b91461e9a0783e94312466fd0210",
+    "scripts/run_hf_behavior_parity_diagnostic.py": "7f488553b740a88b19e153f08552b6dac06a7614250a58e32e1e15e8bbb4a533",
+    "configs/hf_behavior_parity_diagnostic_v1.json": "c2f9e0284671c93f7416e93837c6262dcba7485f531a9dffdc83b9c84a4748c9"
+  }
+}

@@ -45,4 +45,4 @@ artifact checksum manifest.
 
 No speedup is claimed in the repository until a real CUDA run is committed as
 evidence. Small tensors may be slower because launch overhead dominates; the
-portfolio-relevant result is the measured crossover and large-token regime.
+research-relevant result is the measured crossover and large-token regime.

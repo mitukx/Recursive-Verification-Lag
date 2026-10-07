@@ -1,7 +1,7 @@
 # Mini frontier lab: executable systems research
 
 This lab reproduces post-training failure modes at small scale. It is not a
-frontier model, a hiring guarantee, or evidence of 7B/30B capability gains.
+frontier model, evidence of production scale or 7B/30B capability gains.
 The research question is whether adaptive trusted verification improves learning
 relative to fixed cadence at comparable actual label cost.
 
@@ -220,7 +220,6 @@ audits and verifier fitting, using an explicitly non-capability parity reward.
 | Distributed learner | two-rank CPU DDP clipped token RL | CUDA/NCCL/FSDP and multi-node 7B/30B validation |
 | Profiling | actual CPU/LM timings; GPU sampler; explicit-input MFU | sustained GPU/MFU scaling curves |
 
-A researcher can use this code to study real control-plane errors and narrow
-learning dynamics. Evaluation by xAI/OpenAI/Anthropic depends on demonstrated
-results, debugging ability and explaining these limitations; the project does
-not claim their internal architecture or hiring approval.
+A researcher can use this code to study control-plane errors and narrow
+learning dynamics. Production-scale claims require independently demonstrated
+results and measurements beyond these implementation contracts.

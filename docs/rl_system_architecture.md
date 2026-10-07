@@ -108,4 +108,4 @@ hand-entered headline numbers.
 The control plane is intentionally usable without a GPU. The next evidence
 boundary is empirical rather than architectural: pinned vLLM/SGLang GPU runs,
 held-out Qwen RLVR training/evaluation, weight-sync overhead, and NCCL/FSDP
-multi-GPU profiling. See `docs/xai_evidence_matrix.md` and issues #10-#12.
+multi-GPU profiling. See `docs/evidence_matrix.md` and issues #10-#12.

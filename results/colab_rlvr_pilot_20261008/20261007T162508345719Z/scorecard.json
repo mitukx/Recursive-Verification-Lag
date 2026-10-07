@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "verification": "artifact consistency; no remote hardware attestation or GPU rerun",
+  "pilot": {
+    "schema_version": 1,
+    "status": "completed_small_gpu_pilot",
+    "frontier_or_hiring_readiness_claim": false,
+    "claim_boundary": "single T4, <=0.5B model, 16 evaluation tasks, 4 updates; cannot establish frontier-scale learning, RVL failure boundaries or hiring readiness",
+    "runs": [
+      {
+        "seed": 17,
+        "arm": "trusted_reward",
+        "before_accuracy": 0.3125,
+        "after_accuracy": 0.0625,
+        "accuracy_delta": -0.25,
+        "nonconstant_reward_groups": 2,
+        "nonzero_gradient_updates": 2,
+        "maximum_parameter_probe_change": 5.00120222568512e-07,
+        "max_fresh_rollout_abs_log_ratio": 2.305098056793213,
+        "mean_fresh_rollout_clip_fraction": 0.37634735740721226,
+        "train_wall_s": 6.947349225999915,
+        "peak_allocated_gpu_bytes": 10487644672
+      },
+      {
+        "seed": 17,
+        "arm": "within_prompt_shuffled_reward",
+        "before_accuracy": 0.3125,
+        "after_accuracy": 0.0625,
+        "accuracy_delta": -0.25,
+        "nonconstant_reward_groups": 1,
+        "nonzero_gradient_updates": 1,
+        "maximum_parameter_probe_change": 5.00120222568512e-07,
+        "max_fresh_rollout_abs_log_ratio": 2.7589783668518066,
+        "mean_fresh_rollout_clip_fraction": 0.40107579343020916,
+        "train_wall_s": 6.8748189450000154,
+        "peak_allocated_gpu_bytes": 10488246784
+      },
+      {
+        "seed": 29,
+        "arm": "trusted_reward",
+        "before_accuracy": 0.3125,
+        "after_accuracy": 0.3125,
+        "accuracy_delta": 0.0,
+        "nonconstant_reward_groups": 0,
+        "nonzero_gradient_updates": 0,
+        "maximum_parameter_probe_change": 0.0,
+        "max_fresh_rollout_abs_log_ratio": 2.7371268272399902,
+        "mean_fresh_rollout_clip_fraction": 0.41845703125,
+        "train_wall_s": 7.160062918999756,
+        "peak_allocated_gpu_bytes": 10506167808
+      },
+      {
+        "seed": 29,
+        "arm": "within_prompt_shuffled_reward",
+        "before_accuracy": 0.3125,
+        "after_accuracy": 0.3125,
+        "accuracy_delta": 0.0,
+        "nonconstant_reward_groups": 0,
+        "nonzero_gradient_updates": 0,
+        "maximum_parameter_probe_change": 0.0,
+        "max_fresh_rollout_abs_log_ratio": 2.7371268272399902,
+        "mean_fresh_rollout_clip_fraction": 0.41845703125,
+        "train_wall_s": 7.354075469999543,
+        "peak_allocated_gpu_bytes": 10506167808
+      },
+      {
+        "seed": 43,
+        "arm": "trusted_reward",
+        "before_accuracy": 0.3125,
+        "after_accuracy": 0.1875,
+        "accuracy_delta": -0.125,
+        "nonconstant_reward_groups": 2,
+        "nonzero_gradient_updates": 2,
+        "maximum_parameter_probe_change": 3.762543201446533e-07,
+        "max_fresh_rollout_abs_log_ratio": 2.4720261096954346,
+        "mean_fresh_rollout_clip_fraction": 0.36151933297514915,
+        "train_wall_s": 7.2586030519998985,
+        "peak_allocated_gpu_bytes": 10505589760
+      },
+      {
+        "seed": 43,
+        "arm": "within_prompt_shuffled_reward",
+        "before_accuracy": 0.3125,
+        "after_accuracy": 0.1875,
+        "accuracy_delta": -0.125,
+        "nonconstant_reward_groups": 2,
+        "nonzero_gradient_updates": 2,
+        "maximum_parameter_probe_change": 3.7439167499542236e-07,
+        "max_fresh_rollout_abs_log_ratio": 2.4720261096954346,
+        "mean_fresh_rollout_clip_fraction": 0.36151933297514915,
+        "train_wall_s": 7.146402410999826,
+        "peak_allocated_gpu_bytes": 10505589760
+      }
+    ],
+    "protocol_sha256": "0491a77e6022881379910dc74ddeb3ad405aab37159d02546d9596b175b8343e",
+    "runner_sha256": "6ad6174a5193be320ed16f8bdf1b1a5cfc42b36b0a0060090b1ee5616de679b5",
+    "arm_outcomes": {
+      "trusted_reward": {
+        "mean": -0.125,
+        "task_bootstrap_95_interval": [
+          -0.22916666666666666,
+          -0.041666666666666664
+        ],
+        "uncertainty_scope": "descriptive task bootstrap conditional on retained seeds; not seed uncertainty or a confirmatory test"
+      },
+      "within_prompt_shuffled_reward": {
+        "mean": -0.125,
+        "task_bootstrap_95_interval": [
+          -0.25,
+          -0.020833333333333332
+        ],
+        "uncertainty_scope": "descriptive task bootstrap conditional on retained seeds; not seed uncertainty or a confirmatory test"
+      }
+    },
+    "environment": {
+      "cuda": "13.0",
+      "device": "Tesla T4",
+      "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+      "research_source_sha": "30b3a438ac7bd77a0cc216ff250873a9b8818925",
+      "systems_source_sha": "1a63903d22e1233594d1f1f0c269f7f55baf99b7",
+      "torch": "2.11.0+cu130"
+    },
+    "evaluation_tasks": 16,
+    "training_seeds": [
+      17,
+      29,
+      43
+    ],
+    "baseline_accuracy": 0.3125,
+    "zero_update_reproducible": true,
+    "trusted_minus_shuffled": {
+      "mean": 0.0,
+      "task_bootstrap_95_interval": [
+        -0.0625,
+        0.0625
+      ],
+      "uncertainty_scope": "descriptive task bootstrap conditional on retained seeds; not seed uncertainty or a confirmatory test"
+    },
+    "fresh_rollout_numerical_diagnostic": {
+      "max_abs_log_ratio": 2.7589783668518066,
+      "exceeds_0_01": true,
+      "assessment": "exploratory diagnostic added after first T4 updates; not a preregistered primary outcome",
+      "interpretation": "investigate sampling/learner policy mismatch before attributing capability changes to correct on-policy GRPO"
+    }
+  },
+  "diagnostic": {
+    "status": "completed",
+    "inherited_repetition_penalty": 1.1,
+    "legacy_raw_policy_max_abs_log_ratio": 2.220876693725586,
+    "legacy_penalty_replay_max_abs_error": 0.0011024177074432373,
+    "corrected_max_abs_log_ratio": 7.462501525878906e-05,
+    "optimization_steps": 0,
+    "penalty_reconstruction_passed": false,
+    "corrected_parity_passed": true,
+    "capability_gain_claim": false,
+    "scope": "single-T4 sampler/learner probability consistency, with retained tokens and scores; no capability, speedup, scaling or learning-effect claim"
+  },
+  "diagnostic_process_status": "failed",
+  "corrected_score_scope": "captured learner diagnostics; aggregates verified without independently recomputing model logits",
+  "retained_attempts": [
+    "pilot-results",
+    "behavior-diagnostic",
+    "behavior-diagnostic-02"
+  ],
+  "raw_indexed_files": 52
+}

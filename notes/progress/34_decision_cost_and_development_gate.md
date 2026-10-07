@@ -61,5 +61,5 @@ The research priority is to establish a transferable endogenous failure regime,
 then evaluate **fresh-support progress** at matched generation and verification
 costs. Elaborating one finite-bank acquisition rule has little headroom in the
 observed pilot. Full rationale and commands:
-`docs/frontier_research_upgrade.md`. No frontier-lab readiness or hiring claim
+`docs/frontier_research_upgrade.md`. No production-scale research claim
 is made by this increment.

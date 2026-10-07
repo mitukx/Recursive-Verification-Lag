@@ -2,7 +2,7 @@
 
 This repository has separate acceptance paths for real-model RLVR, FSDP/NCCL
 training, and vLLM serving. The `frontier-gpu-evidence` workflow combines them
-into one auditable two-GPU run so the portfolio can point to raw evidence rather
+into one auditable two-GPU run so the research report can point to raw evidence rather
 than disconnected implementation claims.
 
 ## What one run measures

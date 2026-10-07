@@ -1,0 +1,33 @@
+{
+  "files": {
+    "17_trusted_reward_history.json": "337058bd42205c67b82e9916d5fe9ec3ac5e2817d86f03f28c969fddbfcd7c7b",
+    "17_trusted_reward_rollouts.jsonl": "2131c69df97eaabdd3f44af8db9fd0c066b9c7cb63bfedd7ea737a993e2374ed",
+    "17_trusted_reward_terminal.json": "f638ca2e6d36455b2aa23f6ea5267aacc746a70044f71554f209f1a41477112e",
+    "17_within_prompt_shuffled_reward_history.json": "0c126a8f3d907bbb9a897c87a05359063a7924ad2deaca2c8ebce234e073d963",
+    "17_within_prompt_shuffled_reward_rollouts.jsonl": "c967b4447059ccf26bb93e79a16fc3cafc27cfb82b93fdb271142d6d2ed41a74",
+    "17_within_prompt_shuffled_reward_terminal.json": "dc462571245acc63b1431e3cc4a0797b2a9d98501c9adc285daf51ecaa5cd48c",
+    "29_trusted_reward_history.json": "1d73c7827818888d2b43a4adf81a1596716cab794c8df057df80067f76baf04d",
+    "29_trusted_reward_rollouts.jsonl": "3aa247ef5278966f9e34a12a873ac03c28c2bd98488c89e7815540c0e5ed45f1",
+    "29_trusted_reward_terminal.json": "f99f9b5545a2eb71c07f81f1cc326be59575cc00ff066d720ae4203f2509defc",
+    "29_within_prompt_shuffled_reward_history.json": "ebad878179983c29648a69f771c2fd4ec1811e0eeefbd350118f60e295b120a8",
+    "29_within_prompt_shuffled_reward_rollouts.jsonl": "a150ca7f61f7868a81d7b8ff04bfd22819bd7f1e4e53db233d69125ae21535e0",
+    "29_within_prompt_shuffled_reward_terminal.json": "f9d6769e61870cde13c3595d17ad11f6e23b27bb07b2c3d4a338c8fd2995c3a0",
+    "43_trusted_reward_history.json": "271832308d64e599e550289a3832bfdaf0494494471edb020b72f0ca8c2badce",
+    "43_trusted_reward_rollouts.jsonl": "f5740c322e90f7c58e5817e3d964368f7b4c77f4af6eed8b55be1e4afbe11df2",
+    "43_trusted_reward_terminal.json": "2e30c60361e66478b81361cbd17c58c4dcc49f7ae95052112b907a5090ccaa5d",
+    "43_within_prompt_shuffled_reward_history.json": "ec9a16ba8dc224e3ac918a2c5e59f72d38acf0db3085bd8a65e130d5d423f9ce",
+    "43_within_prompt_shuffled_reward_rollouts.jsonl": "cfbff6b1715c5ba7b4d41bc1e2952e2485d81270fa2546e5fbb98e7409632e80",
+    "43_within_prompt_shuffled_reward_terminal.json": "7aeaab9531032b02c09ccfe94f460d5f46706b85787a4a734a775a211e85bfc4",
+    "baseline.json": "3f23b60350fe3b121e1efe9b1a85d423d2c23a4f45811ca15148847b144a3d05",
+    "completion.json": "217f490458ad76dc190a2cfbfaa54056ea5d06376574309ccec8e7809879b460",
+    "environment.json": "92b4f4a6b8332ddfd7bcce54bbf13ba25fac199ea1e030fac40fab3d9a6cde5b",
+    "nvidia-smi.txt": "20252852112efaa4124b78b28ea5e7fc8491cb47bf44ae16922179c2ce52f932",
+    "protocol.json": "fd59358406c566a0d620ef9745a12c4d564d69fb71ac103a3818672d91163329",
+    "summary.json": "79ee7aefa5c22747f2b18ff2d6897feccb2146f4f356743dd0c9123d95780339",
+    "task_manifest.json": "e7b64b2318e8e1bb7def543d225c40e46845a9b0f05b139fc5c95fa9aa02b467",
+    "zero_update_control.json": "e628d99f13aad0ef8a3bb6ea2a7c1cd5f344929252d5735c03cb0705bc3b9bf6",
+    "zero_update_repeat.json": "da1316f384ee8e60a718b972123493fb64880c56ddf09954752a7ddb06fd2ce6"
+  },
+  "protocol_sha256": "0491a77e6022881379910dc74ddeb3ad405aab37159d02546d9596b175b8343e",
+  "runner_sha256": "6ad6174a5193be320ed16f8bdf1b1a5cfc42b36b0a0060090b1ee5616de679b5"
+}

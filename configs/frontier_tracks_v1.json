@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "portfolio_goal": "Executable long-horizon RL for AI engineering: train agents to improve models, code and ML systems while preserving trusted evaluation and systems provenance.",
-  "claim_policy": "A track is portfolio-ready only when its required real-workload evidence is retained. Implemented harnesses, toy tasks and synthetic measurements are supporting evidence, not substitutes.",
+  "research_goal": "Executable long-horizon RL for AI engineering: train agents to improve models, code and ML systems while preserving trusted evaluation and systems provenance.",
+  "claim_policy": "A track is evidence-ready only when its required real-workload evidence is retained. Implemented harnesses, toy tasks and synthetic measurements are supporting evidence, not substitutes.",
   "tracks": {
     "rsi_research_automation": {
       "target": "AI4AI / research automation for ML systems and machine-learning engineering",
@@ -55,7 +55,7 @@
       ],
       "status": "agent_harness_ready_real_repo_rl_missing"
     },
-    "grok_infra": {
+    "rl_infrastructure": {
       "target": "RL training/inference infrastructure and production-style reliability",
       "existing": [
         "verification-aware actor-verifier-learner pipeline",
@@ -74,7 +74,7 @@
       ],
       "status": "implementation_strong_real_gpu_and_upstream_impact_missing"
     },
-    "built_grok_end_to_end": {
+    "end_to_end_model_building": {
       "target": "end-to-end model-building judgment across data, training, agents, evaluation and serving",
       "existing": [
         "real-model RLVR runner",
@@ -98,7 +98,8 @@
         "token-level GRPO/RLVR",
         "held-out transactional promotion",
         "fresh/stale/shuffled learned-verifier experiment",
-        "capability scorecard"
+        "capability scorecard",
+        "retained free-T4 negative pilot and separate zero-update numerical diagnostic"
       ],
       "required_evidence": [
         "positive or honestly retained null real-model held-out RL result",
@@ -107,7 +108,7 @@
         "DPO or preference-optimization baseline on the same split",
         "reasoning/coding capability result rather than training reward alone"
       ],
-      "status": "experiment_locked_real_gpu_result_and_dpo_baseline_missing"
+      "status": "negative_pilot_retained_corrected_learning_and_dpo_baseline_missing"
     }
   },
   "priority_order": [
@@ -115,7 +116,7 @@
     "long_horizon_rl",
     "coding_rl",
     "post_training_rl",
-    "grok_infra",
-    "built_grok_end_to_end"
+    "rl_infrastructure",
+    "end_to_end_model_building"
   ]
 }

@@ -1,0 +1,6 @@
+{
+  "source_sha": "30b3a438ac7bd77a0cc216ff250873a9b8818925",
+  "attempt": "20261007T162508345719Z",
+  "paid_compute_started": false,
+  "notebook_setup_amendment": "retain global Colab dependency conflicts and verify pinned experiment imports plus CUDA in fresh subprocess"
+}

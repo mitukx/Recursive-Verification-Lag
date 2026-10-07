@@ -1,4 +1,4 @@
-"""Validate the machine-readable xAI frontier evidence-track contract."""
+"""Validate the machine-readable frontier evidence-track contract."""
 from __future__ import annotations
 
 import argparse
@@ -10,8 +10,8 @@ TRACKS = {
     "rsi_research_automation",
     "long_horizon_rl",
     "coding_rl",
-    "grok_infra",
-    "built_grok_end_to_end",
+    "rl_infrastructure",
+    "end_to_end_model_building",
     "post_training_rl",
 }
 
@@ -38,8 +38,8 @@ def validate(path: Path) -> dict:
         status = track.get("status")
         if not isinstance(status, str) or not status:
             raise ValueError(f"{name}: status required")
-        # Fail closed against accidental portfolio-ready claims in the roadmap.
-        if status in {"ready", "portfolio_ready", "complete"}:
+        # Fail closed against accidental evidence-ready claims in the roadmap.
+        if status in {"ready", "evidence_ready", "complete"}:
             raise ValueError(
                 f"{name}: roadmap cannot declare readiness; readiness requires raw evidence"
             )
@@ -57,7 +57,7 @@ def main() -> None:
         "manifest",
         type=Path,
         nargs="?",
-        default=Path("configs/xai_frontier_tracks_v1.json"),
+        default=Path("configs/frontier_tracks_v1.json"),
     )
     args = parser.parse_args()
     print(json.dumps(validate(args.manifest), indent=2, sort_keys=True))

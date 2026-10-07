@@ -1,0 +1,35 @@
+
+Fetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]
+Fetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 16783.93it/s]
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791394145.887662   18114 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1791394148.344816   18114 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+CORRECTED 0.7 [3.9577484130859375e-05, 7.152557373046875e-05]
+CORRECTED 1.0 [3.266334533691406e-05, 3.540515899658203e-05]
+CORRECTED 1.3 [7.462501525878906e-05, 5.4836273193359375e-05]
+{
+  "status": "completed",
+  "inherited_repetition_penalty": 1.1,
+  "legacy_raw_policy_max_abs_log_ratio": 2.220876693725586,
+  "legacy_penalty_replay_max_abs_error": 0.0011024177074432373,
+  "corrected_max_abs_log_ratio": 7.462501525878906e-05,
+  "optimization_steps": 0,
+  "penalty_reconstruction_passed": false,
+  "corrected_parity_passed": true,
+  "capability_gain_claim": false,
+  "scope": "single-T4 sampler/learner probability consistency, with retained tokens and scores; no capability, speedup, scaling or learning-effect claim"
+}
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/content/rvl-behavior-02-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py", line 137, in <module>
+    main()
+    ~~~~^^
+  File "/content/rvl-behavior-02-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py", line 123, in main
+    run(args.pilot_evidence, args.output, config)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/rvl-behavior-02-20261007T162508345719Z/scripts/run_hf_behavior_parity_diagnostic.py", line 109, in run
+    raise RuntimeError("declared numerical diagnostic failed; retain results")
+RuntimeError: declared numerical diagnostic failed; retain results

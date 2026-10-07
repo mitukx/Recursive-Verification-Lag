@@ -1,6 +1,6 @@
 # Post-training capability campaign v1
 
-This is the repository's hiring-facing post-training track. The goal is not to
+This is the repository's post-training research track. The goal is not to
 accumulate more infrastructure features. The goal is to answer two empirical
 questions on a real causal language model:
 
@@ -45,7 +45,7 @@ sufficiency, fresh-vs-stale trusted preference shift, fresh-vs-shuffled trusted
 preference shift, and the gap from the oracle arm. It never turns missing or
 underpowered evidence into a positive claim.
 
-## Hiring claim boundary
+## Research claim boundary
 
 The repository should be described as a post-training research/engineering
 project only to the level supported by retained raw runs. The target signal is:

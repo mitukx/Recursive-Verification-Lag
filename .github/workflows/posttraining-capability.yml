@@ -5,6 +5,13 @@ on:
     paths:
       - 'configs/posttraining_capability_campaign_v1.json'
       - 'scripts/summarize_posttraining_campaign.py'
+      - 'scripts/summarize_colab_rlvr_pilot.py'
+      - 'scripts/verify_colab_evidence_bundle.py'
+      - 'tests/test_colab_rlvr_pilot_summary.py'
+      - 'tests/test_colab_evidence_bundle.py'
+      - 'notebooks/free_colab_rlvr_pilot.ipynb'
+      - 'results/colab_rlvr_pilot_20261008/**'
+      - 'docs/free_colab_pilot_evidence.md'
       - 'tests/test_posttraining_campaign.py'
       - 'docs/posttraining_capability_campaign.md'
       - '.github/workflows/posttraining-capability.yml'
@@ -23,6 +30,19 @@ jobs:
         with:
           python-version: '3.11'
       - name: Scorecard contracts
-        run: python -m unittest tests.test_posttraining_campaign -v
+        run: |
+          pip install numpy==2.2.6
+          python -m unittest tests.test_posttraining_campaign tests.test_colab_rlvr_pilot_summary tests.test_colab_evidence_bundle -v
+      - name: Recompute retained T4 evidence (no GPU rerun)
+        run: python -m scripts.verify_colab_evidence_bundle
       - name: Syntax check
-        run: python -m py_compile scripts/summarize_posttraining_campaign.py
+        run: |
+          python -m py_compile scripts/summarize_posttraining_campaign.py scripts/summarize_colab_rlvr_pilot.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          notebook = json.loads(Path('notebooks/free_colab_rlvr_pilot.ipynb').read_text())
+          for i, cell in enumerate(notebook['cells']):
+              if cell['cell_type'] == 'code':
+                  compile(''.join(cell['source']), f'cell-{i}', 'exec')
+          PY

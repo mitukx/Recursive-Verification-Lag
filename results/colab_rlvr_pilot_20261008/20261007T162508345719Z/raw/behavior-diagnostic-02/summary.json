@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "inherited_repetition_penalty": 1.1,
+  "legacy_raw_policy_max_abs_log_ratio": 2.220876693725586,
+  "legacy_penalty_replay_max_abs_error": 0.0011024177074432373,
+  "corrected_max_abs_log_ratio": 7.462501525878906e-05,
+  "optimization_steps": 0,
+  "penalty_reconstruction_passed": false,
+  "corrected_parity_passed": true,
+  "capability_gain_claim": false,
+  "scope": "single-T4 sampler/learner probability consistency, with retained tokens and scores; no capability, speedup, scaling or learning-effect claim"
+}
