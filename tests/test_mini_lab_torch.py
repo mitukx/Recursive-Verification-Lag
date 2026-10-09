@@ -176,7 +176,11 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_hf_trainer_transaction_restores_mixed_module_modes(self):
         model = self.model()
-        trainer = HFCausalLMGRPOTrainer(model,config=HFTTrainerConfig(learning_rate=1e-3))
+        # Keep one real dropout active so a leaked eval/train mode changes the
+        # next forward, while the rest of the model stays tiny and deterministic.
+        model.transformer.drop.p = 0.5
+        trainer = HFCausalLMGRPOTrainer(
+            model,config=HFTTrainerConfig(learning_rate=1e-3,disable_dropout=False))
         samples = self.samples(model)
         # Seed a nonempty AdamW state before taking the rollback snapshot.
         trainer.train_step(samples)
@@ -187,6 +191,10 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
         expected_model = copy.deepcopy(model.state_dict())
         expected_optimizer = copy.deepcopy(trainer.optimizer.state_dict())
         expected_rng = torch.get_rng_state().clone()
+        probe = torch.tensor([[1, 2, 3, 4]])
+        with torch.no_grad():
+            expected_logits = model(input_ids=probe).logits.clone()
+        torch.set_rng_state(expected_rng)
         before = trainer.snapshot_training_state()
 
         def same_state(left, right):
@@ -225,13 +233,21 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
 
         trainer.restore_training_state(before)
 
-        self.assertTrue(same_state(expected_model, model.state_dict()))
-        self.assertTrue(same_state(expected_optimizer, trainer.optimizer.state_dict()))
-        self.assertTrue(torch.equal(expected_rng, torch.get_rng_state()))
-        self.assertEqual(
-            before_modes,
-            {name: module.training for name, module in model.named_modules()},
-        )
+        failures = []
+        if not same_state(expected_model, model.state_dict()):
+            failures.append("model parameters/buffers")
+        if not same_state(expected_optimizer, trainer.optimizer.state_dict()):
+            failures.append("optimizer state")
+        if not torch.equal(expected_rng, torch.get_rng_state()):
+            failures.append("CPU RNG state")
+        restored_modes = {name: module.training for name, module in model.named_modules()}
+        if before_modes != restored_modes:
+            failures.append("per-module modes")
+        with torch.no_grad():
+            restored_logits = model(input_ids=probe).logits
+        if not torch.equal(expected_logits, restored_logits):
+            failures.append("subsequent dropout forward")
+        self.assertEqual(failures, [])
 
     async def test_hf_trainer_restore_accepts_legacy_snapshot(self):
         model = self.model()
