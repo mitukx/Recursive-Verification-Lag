@@ -20,6 +20,8 @@ class HFTTrainerConfig:
     clip_advantage: float = 5.0
     disable_dropout: bool = True
     objective_backend: str = "torch"
+    # Preserve the effective pre-config behavior of torch.optim.AdamW.
+    weight_decay: float = 0.01
 
 
 class HFCausalLMGRPOTrainer:
@@ -35,6 +37,8 @@ class HFCausalLMGRPOTrainer:
         self.torch = torch
         self.model = model
         self.config = config or HFTTrainerConfig()
+        if not math.isfinite(self.config.weight_decay) or self.config.weight_decay < 0:
+            raise ValueError("weight decay must be finite and non-negative")
         validate_objective_backend(self.config.objective_backend)
         if self.config.disable_dropout:
             for module in self.model.modules():
@@ -45,6 +49,7 @@ class HFCausalLMGRPOTrainer:
         self.optimizer = torch.optim.AdamW(
             self.model.parameters(),
             lr=self.config.learning_rate,
+            weight_decay=self.config.weight_decay,
         )
 
     @staticmethod
