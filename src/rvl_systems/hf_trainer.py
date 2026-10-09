@@ -14,13 +14,14 @@ from .types import VerifiedGeneration
 @dataclass(frozen=True)
 class HFTTrainerConfig:
     learning_rate: float = 1e-6
-    weight_decay: float = 0.0
     clip_eps: float = 0.2
     max_grad_norm: float = 1.0
     advantage_eps: float = 1e-6
     clip_advantage: float = 5.0
     disable_dropout: bool = True
     objective_backend: str = "torch"
+    # Preserve the effective pre-config behavior of torch.optim.AdamW.
+    weight_decay: float = 0.01
 
 
 class HFCausalLMGRPOTrainer:

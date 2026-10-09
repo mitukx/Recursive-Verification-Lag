@@ -174,33 +174,34 @@ class TorchAcceptanceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(set(restored["state"]),set(before["optimizer"]["state"]))
         self.assertTrue(torch.equal(torch.get_rng_state(),before["cpu_rng"]))
 
-    async def test_zero_advantage_does_not_decay_policy_unless_configured(self):
+    async def test_weight_decay_is_explicit_and_preserves_legacy_default(self):
         model = self.model()
         rows = self.samples(model)
         constant = [VerifiedGeneration(row.generation, 1.0, 0.0, 0) for row in rows]
         learning_rate = 1e-3
         before = {key: value.detach().clone() for key, value in model.state_dict().items()}
         trainer = HFCausalLMGRPOTrainer(model, config=HFTTrainerConfig(learning_rate=learning_rate))
-        self.assertEqual(trainer.optimizer.param_groups[0]["weight_decay"], 0.0)
+        self.assertEqual(HFTTrainerConfig().weight_decay, 0.01)
+        self.assertEqual(trainer.optimizer.param_groups[0]["weight_decay"], 0.01)
         metrics = trainer.train_step(constant)
         gradients = [parameter.grad for parameter in model.parameters() if parameter.grad is not None]
         self.assertEqual(metrics["loss"], 0.0)
         self.assertEqual(metrics["grad_norm"], 0.0)
         self.assertTrue(gradients)
         self.assertEqual(sum(int(torch.count_nonzero(grad)) for grad in gradients), 0)
-        for key, value in model.state_dict().items():
-            self.assertTrue(torch.equal(value, before[key]), key)
-
-        regularized = self.model()
-        regularized.load_state_dict(before)
-        configured = HFCausalLMGRPOTrainer(
-            regularized,
-            config=HFTTrainerConfig(learning_rate=learning_rate, weight_decay=0.01),
-        )
-        configured.train_step(constant)
-        for name, parameter in regularized.named_parameters():
+        for name, parameter in model.named_parameters():
             expected = before[name] * (1.0 - learning_rate * 0.01)
             self.assertTrue(torch.allclose(parameter, expected, atol=1e-8, rtol=0), name)
+
+        no_decay = self.model()
+        no_decay.load_state_dict(before)
+        no_decay_trainer = HFCausalLMGRPOTrainer(
+            no_decay, config=HFTTrainerConfig(learning_rate=learning_rate, weight_decay=0.0)
+        )
+        self.assertEqual(no_decay_trainer.optimizer.param_groups[0]["weight_decay"], 0.0)
+        no_decay_trainer.train_step(constant)
+        for name, parameter in no_decay.named_parameters():
+            self.assertTrue(torch.equal(parameter, before[name]), name)
 
         mixed_model = self.model()
         mixed_rows = self.samples(mixed_model)
