@@ -54,8 +54,12 @@ serving recovery or scaling result follows from them.
 
 ## Run and audit
 
-Use an interactive free CUDA runtime and the exact locked dependency versions.
-Do not install a serving/distributed stack or purchase compute for this pilot.
+Use the [versioned Colab notebook](../notebooks/free_colab_rlvr_pilot_v2.ipynb)
+for a free interactive CUDA runtime, or use the command below when running in a
+matching preconfigured environment. The notebook pins its repository revision,
+checks CUDA and dependencies before starting, saves runner output and failures,
+and downloads the complete evidence archive. Do not install a
+serving/distributed stack or purchase compute for this pilot.
 
 ```bash
 python scripts/run_colab_rlvr_pilot_v2.py --output /tmp/rvl-v2-new-attempt
