@@ -27,3 +27,20 @@ rejected instead of being returned as a valid reward.
 The artifact loader is explicit and supplied by the embedding application. This
 control plane does not execute arbitrary artifact content and does not claim the
 loaded verifier is semantically correct; trusted evaluation remains separate.
+
+## Prepare commit fencing
+
+An application-provided artifact loader may be asynchronous. A prepare must
+revalidate its coordinator epoch and active manifest after loading returns,
+before publishing any prepared state. A coordinator takeover during loading
+rejects the old prepare; an active-version advance rejects an older candidate.
+If the same version activated during loading, only the identical manifest is
+accepted idempotently. These checks and the prepared-state write have no
+intervening await in the worker's event loop.
+
+`python -m unittest tests.test_verifier_prepare_fencing -v` exercises
+event-controlled localhost TCP schedules, conflicting artifacts with the same
+version, an active-version advance, idempotence, and restart. It uses no model
+downloads. This contract is scoped to one worker/event loop and its existing
+persistence model; it is not fleet-wide atomic activation or a multi-host
+consensus guarantee.

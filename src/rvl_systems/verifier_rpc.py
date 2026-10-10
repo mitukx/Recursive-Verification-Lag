@@ -164,7 +164,17 @@ class VerifierWorkerServer:
             self._prepared_manifest = manifest
             self._prepared_verifier = self.verifier
         else:
-            self._prepared_verifier = await self._load_deployed_verifier(manifest)
+            prepared_verifier = await self._load_deployed_verifier(manifest)
+            # Loading can yield while a new coordinator takes over or another
+            # deployment activates. Fence the commit, not only request entry.
+            self._accept_coordinator_epoch(epoch)
+            if manifest.version < self.verifier_version:
+                raise RuntimeError("cannot prepare verifier older than active version")
+            if manifest.version == self.verifier_version:
+                if self._active_manifest is None or manifest != self._active_manifest:
+                    raise RuntimeError("active verifier version has different artifact identity")
+                prepared_verifier = self.verifier
+            self._prepared_verifier = prepared_verifier
             self._prepared_manifest = manifest
         self._persist_deployment_state()
         return {
