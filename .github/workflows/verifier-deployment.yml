@@ -6,6 +6,8 @@ on:
       - 'src/rvl_systems/verifier_rpc.py'
       - 'src/rvl_systems/verifier_deployment.py'
       - 'tests/test_verifier_deployment.py'
+      - 'tests/test_verifier_prepare_fencing.py'
+      - 'tests/test_verifier_same_epoch.py'
       - 'docs/verifier_deployment.md'
       - '.github/workflows/verifier-deployment.yml'
   workflow_dispatch:
@@ -23,6 +25,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: Two-phase verifier deployment contracts
-        run: python -m unittest tests.test_verifier_rpc tests.test_verifier_deployment -v
+        run: python -m unittest tests.test_verifier_rpc tests.test_verifier_deployment tests.test_verifier_prepare_fencing tests.test_verifier_same_epoch -v
       - name: Syntax check
         run: python -m py_compile src/rvl_systems/verifier_rpc.py src/rvl_systems/verifier_deployment.py

@@ -63,7 +63,7 @@ async def run_case(case):
                 expected = b
                 try:
                     if case == 'active_advance':
-                        await client.activate_verifier(a.version, coordinator_epoch=current.epoch)
+                        await client.activate_verifier(a.version, coordinator_epoch=current.epoch, artifact_sha256=a.sha256)
                     else:
                         await current.activate()
                     record('activation_returned_success')

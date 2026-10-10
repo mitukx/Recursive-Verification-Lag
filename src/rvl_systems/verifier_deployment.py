@@ -111,6 +111,7 @@ class VerifierDeploymentCoordinator:
         *,
         state_path: str | Path,
     ) -> None:
+        self._deployment_lock = asyncio.Lock()
         self.clients = list(clients)
         if not self.clients:
             raise ValueError("at least one verifier worker client is required")
@@ -159,6 +160,10 @@ class VerifierDeploymentCoordinator:
             )
 
     async def prepare(self, manifest: VerifierArtifactManifest) -> list[str]:
+        async with self._deployment_lock:
+            return await self._prepare(manifest)
+
+    async def _prepare(self, manifest: VerifierArtifactManifest) -> list[str]:
         self._assert_current_epoch()
         if manifest.version < self.active_version:
             raise ValueError("cannot prepare verifier older than active version")
@@ -182,6 +187,9 @@ class VerifierDeploymentCoordinator:
             if int(result["coordinator_epoch"]) != self.epoch:
                 errors.append(f"worker[{index}]: ACK from wrong coordinator epoch")
                 continue
+            if result.get("artifact_sha256") != manifest.sha256:
+                errors.append(f"worker[{index}]: ACK for wrong artifact digest")
+                continue
             acks.append(str(result["worker_id"]))
         if len(set(acks)) != len(acks):
             errors.append("duplicate worker identity in verifier prepare ACKs")
@@ -193,6 +201,10 @@ class VerifierDeploymentCoordinator:
         return acks
 
     async def activate(self) -> int:
+        async with self._deployment_lock:
+            return await self._activate()
+
+    async def _activate(self) -> int:
         self._assert_current_epoch()
         if self.pending_manifest is None:
             raise RuntimeError("no prepared verifier deployment")
@@ -204,6 +216,7 @@ class VerifierDeploymentCoordinator:
                 client.activate_verifier(
                     manifest.version,
                     coordinator_epoch=self.epoch,
+                    artifact_sha256=manifest.sha256,
                 )
                 for client in self.clients
             ],
@@ -216,6 +229,10 @@ class VerifierDeploymentCoordinator:
                 continue
             if int(result["verifier_version"]) != manifest.version:
                 errors.append(f"worker[{index}]: activated wrong verifier version")
+            if int(result.get("coordinator_epoch", -1)) != self.epoch:
+                errors.append(f"worker[{index}]: activation ACK from wrong epoch")
+            if result.get("artifact_sha256") != manifest.sha256:
+                errors.append(f"worker[{index}]: activation ACK for wrong artifact digest")
         if errors:
             # Retain pending state. Calling deploy(manifest) again under the same
             # epoch is safe and converges workers through idempotent prepare/activate.
@@ -229,10 +246,11 @@ class VerifierDeploymentCoordinator:
         if len(set(worker_ids)) != len(worker_ids):
             self._persist()
             raise RuntimeError("post-activation convergence has duplicate worker identity")
-        if versions != {manifest.version} or epochs != {self.epoch}:
+        digests = {row.get("active_artifact_sha256") for row in health}
+        if versions != {manifest.version} or epochs != {self.epoch} or digests != {manifest.sha256}:
             self._persist()
             raise RuntimeError(
-                f"post-activation convergence failed: versions={versions}, epochs={epochs}"
+                f"post-activation convergence failed: versions={versions}, epochs={epochs}, digests={digests}"
             )
         self.active_version = manifest.version
         self.pending_manifest = None
@@ -241,8 +259,9 @@ class VerifierDeploymentCoordinator:
         return self.active_version
 
     async def deploy(self, manifest: VerifierArtifactManifest) -> int:
-        await self.prepare(manifest)
-        return await self.activate()
+        async with self._deployment_lock:
+            await self._prepare(manifest)
+            return await self._activate()
 
     def state(self) -> dict:
         return self._read_state()

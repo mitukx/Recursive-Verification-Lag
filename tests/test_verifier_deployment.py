@@ -59,12 +59,12 @@ class FailOnceActivationClient:
             manifest, coordinator_epoch=coordinator_epoch
         )
 
-    async def activate_verifier(self, version, *, coordinator_epoch):
+    async def activate_verifier(self, version, *, coordinator_epoch, artifact_sha256):
         if not self.failed:
             self.failed = True
             raise RuntimeError("injected activation failure")
         return await self.inner.activate_verifier(
-            version, coordinator_epoch=coordinator_epoch
+            version, coordinator_epoch=coordinator_epoch, artifact_sha256=artifact_sha256
         )
 
 

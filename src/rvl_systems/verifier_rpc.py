@@ -192,9 +192,12 @@ class VerifierWorkerServer:
                 f"activation epoch {epoch} does not match worker epoch {self._coordinator_epoch}"
             )
         version = int(request["verifier_version"])
+        digest = str(request["artifact_sha256"])
         if version == self.verifier_version:
             if self._active_manifest is None or self._active_manifest.version != version:
                 raise RuntimeError("active verifier has no matching artifact identity")
+            if self._active_manifest.sha256 != digest:
+                raise RuntimeError("active artifact digest does not match activation")
             if (
                 self._prepared_manifest is not None
                 and self._prepared_manifest.version == version
@@ -206,12 +209,15 @@ class VerifierWorkerServer:
                 "ok": True,
                 "worker_id": self.worker_id,
                 "verifier_version": version,
+                "artifact_sha256": self._active_manifest.sha256,
                 "coordinator_epoch": self._coordinator_epoch,
             }
         if self._prepared_manifest is None or self._prepared_verifier is None:
             raise RuntimeError("verifier activation requires a prepared artifact")
         if self._prepared_manifest.version != version:
             raise RuntimeError("prepared verifier version does not match activation")
+        if self._prepared_manifest.sha256 != digest:
+            raise RuntimeError("prepared artifact digest does not match activation")
         self.verifier = self._prepared_verifier
         self._active_manifest = self._prepared_manifest
         self._prepared_manifest = None
@@ -221,6 +227,7 @@ class VerifierWorkerServer:
             "ok": True,
             "worker_id": self.worker_id,
             "verifier_version": self.verifier_version,
+            "artifact_sha256": self._active_manifest.sha256,
             "coordinator_epoch": self._coordinator_epoch,
         }
 
@@ -374,10 +381,11 @@ class TCPVerifierClient:
             }
         )
 
-    async def activate_verifier(self, version: int, *, coordinator_epoch: int) -> dict:
+    async def activate_verifier(self, version: int, *, coordinator_epoch: int, artifact_sha256: str) -> dict:
         return await self._management_rpc(
             {
                 "op": "activate_verifier",
+                "artifact_sha256": str(artifact_sha256),
                 "verifier_version": int(version),
                 "coordinator_epoch": int(coordinator_epoch),
             }
