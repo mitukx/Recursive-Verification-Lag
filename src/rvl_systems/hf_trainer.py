@@ -157,10 +157,10 @@ class HFCausalLMGRPOTrainer:
         if "cuda_rng" in state and torch.cuda.is_available():
             torch.cuda.set_rng_state_all([x.cpu() for x in state["cuda_rng"]])
         if module_modes is not None:
-            # Module.train() recursively changes descendants. Restore in
-            # named_modules preorder so nested modules can keep mixed modes.
+            # Assign flags directly: train() recursively visits descendants,
+            # so a later aliased parent could overwrite a shared child's mode.
             for name, module in modules.items():
-                module.train(module_modes[name])
+                module.training = module_modes[name]
 
     def train_step(self, samples: list[VerifiedGeneration], *, advantages: list[float] | None = None) -> dict[str, float]:
         if not samples:
