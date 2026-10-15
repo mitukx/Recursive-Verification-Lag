@@ -217,6 +217,96 @@ class VerifierPrepareFencingTests(unittest.TestCase):
 
         asyncio.run(asyncio.wait_for(check(), timeout=15))
 
+    def test_replace_then_restore_during_load_uses_verified_snapshot(self):
+        import gc
+        from src.rvl_systems.types import Generation
+        from src.rvl_systems.verifier import FunctionalVerifier
+        from src.rvl_systems.verifier_deployment import publish_verifier_artifact
+        from src.rvl_systems.verifier_rpc import TCPVerifierClient, VerifierWorkerServer
+
+        async def check():
+            entered, read_replacement, replacement_read, return_from_loader = (
+                asyncio.Event(),
+                asyncio.Event(),
+                asyncio.Event(),
+                asyncio.Event(),
+            )
+            loader_paths = []
+
+            async def loader(manifest):
+                loader_paths.append(Path(manifest.path))
+                entered.set()
+                await read_replacement.wait()
+                loaded_reward = json.loads(Path(manifest.path).read_text())["reward"]
+                replacement_read.set()
+                await return_from_loader.wait()
+                return FunctionalVerifier(lambda _: loaded_reward)
+
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                original_bytes = b'{"reward":0.1}'
+                artifact = publish_verifier_artifact(
+                    root, version=1, content=original_bytes, suffix=".json"
+                )
+                source_path = Path(artifact.path)
+                server = VerifierWorkerServer(
+                    FunctionalVerifier(lambda _: 0.0),
+                    worker_id="worker",
+                    deployment_loader=loader,
+                    deployment_state_path=root / "worker-state.json",
+                )
+                client = TCPVerifierClient(*(await server.start()))
+                prepare = asyncio.create_task(
+                    client.prepare_verifier(asdict(artifact), coordinator_epoch=1)
+                )
+                try:
+                    await asyncio.wait_for(entered.wait(), timeout=5)
+                    source_path.write_bytes(b'{"reward":0.9}')
+                    read_replacement.set()
+                    await asyncio.wait_for(replacement_read.wait(), timeout=5)
+                    loaded_path = loader_paths[0]
+                    self.assertNotEqual(loaded_path, source_path)
+                    self.assertEqual(
+                        json.loads(loaded_path.read_text())["reward"], 0.1
+                    )
+                    source_path.write_bytes(original_bytes)
+                    return_from_loader.set()
+                    ack = await prepare
+                    self.assertEqual(ack["artifact_sha256"], artifact.sha256)
+                    await client.activate_verifier(
+                        artifact.version,
+                        coordinator_epoch=1,
+                        artifact_sha256=artifact.sha256,
+                    )
+                    result = await client.verify(
+                        Generation("p", "prompt", "response", 0.0, 1, 0.0, {}),
+                        expected_verifier_version=1,
+                    )
+                    self.assertEqual(result.reward, 0.1)
+                    self.assertTrue(loaded_path.exists())
+
+                finally:
+                    read_replacement.set()
+                    return_from_loader.set()
+                    await asyncio.gather(prepare, return_exceptions=True)
+                    await server.close()
+
+                # Shutdown must preserve files while a verifier still holds
+                # them. Once the last verifier reference is dropped, its private
+                # staging directory is removed by the finalizer.
+                self.assertTrue(loaded_path.exists())
+                active_verifier = server.verifier
+                server.verifier = FunctionalVerifier(lambda _: 0.0)
+                del active_verifier
+                for _ in range(100):
+                    gc.collect()
+                    if not loaded_path.exists():
+                        break
+                    await asyncio.sleep(0.01)
+                self.assertFalse(loaded_path.exists())
+
+        asyncio.run(asyncio.wait_for(check(), timeout=15))
+
     def test_restart_after_epoch_takeover(self):
         self.assert_case("restart")
 

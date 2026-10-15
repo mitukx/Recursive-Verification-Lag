@@ -4,9 +4,12 @@ import asyncio
 import inspect
 import json
 import os
+import shutil
+import tempfile
 import time
 import uuid
-from dataclasses import asdict
+import weakref
+from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Iterable
 
@@ -103,6 +106,11 @@ class VerifierWorkerServer:
         os.replace(tmp, self.deployment_state_path)
 
     async def _load_deployed_verifier(self, manifest: VerifierArtifactManifest):
+        """Load bytes bound to the manifest digest.
+
+        Deployment loaders must read artifact data from ``manifest.path`` and
+        retain that path for as long as their returned verifier needs it.
+        """
         if self.deployment_loader is None:
             raise RuntimeError("verifier deployment loader is not configured")
         path = Path(manifest.path)
@@ -110,14 +118,46 @@ class VerifierWorkerServer:
             raise FileNotFoundError(f"verifier artifact missing: {path}")
         if sha256_file(path) != manifest.sha256:
             raise RuntimeError("verifier artifact checksum mismatch")
-        loaded = self.deployment_loader(manifest)
-        if inspect.isawaitable(loaded):
-            loaded = await loaded
-        if not hasattr(loaded, "verify"):
-            raise TypeError("deployment loader did not return a verifier")
-        if sha256_file(path) != manifest.sha256:
-            raise RuntimeError("verifier artifact changed during load")
-        return PinnedVersionVerifier(loaded, manifest.version)
+        staging = tempfile.TemporaryDirectory(prefix="rvl-verifier-artifact-")
+        snapshot_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                prefix="verifier-",
+                suffix=path.suffix,
+                dir=staging.name,
+                delete=False,
+            ) as snapshot:
+                snapshot_path = Path(snapshot.name)
+                with path.open("rb") as source:
+                    shutil.copyfileobj(source, snapshot, length=1024 * 1024)
+                snapshot.flush()
+                os.fsync(snapshot.fileno())
+            os.chmod(snapshot_path, 0o400)
+            if sha256_file(snapshot_path) != manifest.sha256:
+                raise RuntimeError("verifier artifact changed while snapshotting")
+
+            # Load only from the private snapshot whose bytes were verified. Keep
+            # it for this verifier's lifetime because loaders may lazily read it.
+            snapshot_manifest = replace(manifest, path=str(snapshot_path))
+            loaded = self.deployment_loader(snapshot_manifest)
+            if inspect.isawaitable(loaded):
+                loaded = await loaded
+            if not hasattr(loaded, "verify"):
+                raise TypeError("deployment loader did not return a verifier")
+            if sha256_file(snapshot_path) != manifest.sha256:
+                raise RuntimeError("verifier artifact snapshot changed during load")
+            if sha256_file(path) != manifest.sha256:
+                raise RuntimeError("verifier artifact changed during load")
+            pinned = PinnedVersionVerifier(loaded, manifest.version)
+            # Drop superseded candidates only when the wrapper and any in-flight
+            # verify call using it are no longer reachable. Server shutdown alone
+            # must not remove a file still used by a verifier.
+            weakref.finalize(pinned, staging.cleanup)
+            return pinned
+        except BaseException:
+            staging.cleanup()
+            raise
 
     async def _recover_deployment_state(self) -> None:
         if self.deployment_state_path is None or not self.deployment_state_path.exists():
