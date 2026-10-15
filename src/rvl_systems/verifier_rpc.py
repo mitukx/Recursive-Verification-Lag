@@ -115,6 +115,8 @@ class VerifierWorkerServer:
             loaded = await loaded
         if not hasattr(loaded, "verify"):
             raise TypeError("deployment loader did not return a verifier")
+        if sha256_file(path) != manifest.sha256:
+            raise RuntimeError("verifier artifact changed during load")
         return PinnedVersionVerifier(loaded, manifest.version)
 
     async def _recover_deployment_state(self) -> None:

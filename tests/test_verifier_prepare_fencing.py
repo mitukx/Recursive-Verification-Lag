@@ -174,6 +174,49 @@ class VerifierPrepareFencingTests(unittest.TestCase):
     def test_non_racing_async_loader(self):
         self.assert_case("async_control")
 
+    def test_artifact_replaced_during_async_load_is_rejected(self):
+        from src.rvl_systems.verifier import FunctionalVerifier
+        from src.rvl_systems.verifier_deployment import publish_verifier_artifact
+        from src.rvl_systems.verifier_rpc import TCPVerifierClient, VerifierWorkerServer
+
+        async def check():
+            entered, release = asyncio.Event(), asyncio.Event()
+            async def loader(manifest):
+                entered.set()
+                await release.wait()
+                reward = json.loads(Path(manifest.path).read_text())["reward"]
+                return FunctionalVerifier(lambda _: reward)
+
+            with tempfile.TemporaryDirectory() as tmp:
+                artifact = publish_verifier_artifact(
+                    tmp, version=1, content=b'{"reward":0.1}', suffix=".json"
+                )
+                server = VerifierWorkerServer(
+                    FunctionalVerifier(lambda _: 0.0),
+                    worker_id="worker",
+                    deployment_loader=loader,
+                    deployment_state_path=Path(tmp) / "worker-state.json",
+                )
+                client = TCPVerifierClient(*(await server.start()))
+                prepare = asyncio.create_task(
+                    client.prepare_verifier(asdict(artifact), coordinator_epoch=1)
+                )
+                try:
+                    await asyncio.wait_for(entered.wait(), timeout=5)
+                    Path(artifact.path).write_bytes(b'{"reward":0.9}')
+                    release.set()
+                    with self.assertRaisesRegex(RuntimeError, "artifact changed during load"):
+                        await prepare
+                    health = await client.ping()
+                    self.assertIsNone(health["active_artifact_sha256"])
+                    self.assertIsNone(health["prepared_verifier_version"])
+                finally:
+                    release.set()
+                    await asyncio.gather(prepare, return_exceptions=True)
+                    await server.close()
+
+        asyncio.run(asyncio.wait_for(check(), timeout=15))
+
     def test_restart_after_epoch_takeover(self):
         self.assert_case("restart")
 

@@ -61,6 +61,8 @@ requires `artifact_sha256` as well as version and epoch. Missing digests fail cl
 (old management clients must upgrade). Both normal and idempotent activation must
 match that digest. Prepare ACKs, activation ACKs, and final health checks must all
 match the intended artifact; activation ACKs also match the coordinator epoch.
+Workers check the artifact digest both before and after an asynchronous loader runs,
+so a path replacement during loading is rejected before prepared state is published.
 
 A concurrent raw prepare may replace a prepared candidate after its ACK. The
 contract guarantees rejection rather than successful activation of the wrong
