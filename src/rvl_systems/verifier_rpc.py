@@ -4,9 +4,12 @@ import asyncio
 import inspect
 import json
 import os
+import shutil
+import tempfile
 import time
 import uuid
-from dataclasses import asdict
+import weakref
+from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Iterable
 
@@ -103,6 +106,11 @@ class VerifierWorkerServer:
         os.replace(tmp, self.deployment_state_path)
 
     async def _load_deployed_verifier(self, manifest: VerifierArtifactManifest):
+        """Load bytes bound to the manifest digest.
+
+        Deployment loaders must read artifact data from ``manifest.path`` and
+        retain that path for as long as their returned verifier needs it.
+        """
         if self.deployment_loader is None:
             raise RuntimeError("verifier deployment loader is not configured")
         path = Path(manifest.path)
@@ -110,12 +118,46 @@ class VerifierWorkerServer:
             raise FileNotFoundError(f"verifier artifact missing: {path}")
         if sha256_file(path) != manifest.sha256:
             raise RuntimeError("verifier artifact checksum mismatch")
-        loaded = self.deployment_loader(manifest)
-        if inspect.isawaitable(loaded):
-            loaded = await loaded
-        if not hasattr(loaded, "verify"):
-            raise TypeError("deployment loader did not return a verifier")
-        return PinnedVersionVerifier(loaded, manifest.version)
+        staging = tempfile.TemporaryDirectory(prefix="rvl-verifier-artifact-")
+        snapshot_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                prefix="verifier-",
+                suffix=path.suffix,
+                dir=staging.name,
+                delete=False,
+            ) as snapshot:
+                snapshot_path = Path(snapshot.name)
+                with path.open("rb") as source:
+                    shutil.copyfileobj(source, snapshot, length=1024 * 1024)
+                snapshot.flush()
+                os.fsync(snapshot.fileno())
+            os.chmod(snapshot_path, 0o400)
+            if sha256_file(snapshot_path) != manifest.sha256:
+                raise RuntimeError("verifier artifact changed while snapshotting")
+
+            # Load only from the private snapshot whose bytes were verified. Keep
+            # it for this verifier's lifetime because loaders may lazily read it.
+            snapshot_manifest = replace(manifest, path=str(snapshot_path))
+            loaded = self.deployment_loader(snapshot_manifest)
+            if inspect.isawaitable(loaded):
+                loaded = await loaded
+            if not hasattr(loaded, "verify"):
+                raise TypeError("deployment loader did not return a verifier")
+            if sha256_file(snapshot_path) != manifest.sha256:
+                raise RuntimeError("verifier artifact snapshot changed during load")
+            if sha256_file(path) != manifest.sha256:
+                raise RuntimeError("verifier artifact changed during load")
+            pinned = PinnedVersionVerifier(loaded, manifest.version)
+            # Drop superseded candidates only when the wrapper and any in-flight
+            # verify call using it are no longer reachable. Server shutdown alone
+            # must not remove a file still used by a verifier.
+            weakref.finalize(pinned, staging.cleanup)
+            return pinned
+        except BaseException:
+            staging.cleanup()
+            raise
 
     async def _recover_deployment_state(self) -> None:
         if self.deployment_state_path is None or not self.deployment_state_path.exists():
@@ -164,7 +206,17 @@ class VerifierWorkerServer:
             self._prepared_manifest = manifest
             self._prepared_verifier = self.verifier
         else:
-            self._prepared_verifier = await self._load_deployed_verifier(manifest)
+            prepared_verifier = await self._load_deployed_verifier(manifest)
+            # Loading can yield while a new coordinator takes over or another
+            # deployment activates. Fence the commit, not only request entry.
+            self._accept_coordinator_epoch(epoch)
+            if manifest.version < self.verifier_version:
+                raise RuntimeError("cannot prepare verifier older than active version")
+            if manifest.version == self.verifier_version:
+                if self._active_manifest is None or manifest != self._active_manifest:
+                    raise RuntimeError("active verifier version has different artifact identity")
+                prepared_verifier = self.verifier
+            self._prepared_verifier = prepared_verifier
             self._prepared_manifest = manifest
         self._persist_deployment_state()
         return {
@@ -182,9 +234,12 @@ class VerifierWorkerServer:
                 f"activation epoch {epoch} does not match worker epoch {self._coordinator_epoch}"
             )
         version = int(request["verifier_version"])
+        digest = str(request["artifact_sha256"])
         if version == self.verifier_version:
             if self._active_manifest is None or self._active_manifest.version != version:
                 raise RuntimeError("active verifier has no matching artifact identity")
+            if self._active_manifest.sha256 != digest:
+                raise RuntimeError("active artifact digest does not match activation")
             if (
                 self._prepared_manifest is not None
                 and self._prepared_manifest.version == version
@@ -196,12 +251,15 @@ class VerifierWorkerServer:
                 "ok": True,
                 "worker_id": self.worker_id,
                 "verifier_version": version,
+                "artifact_sha256": self._active_manifest.sha256,
                 "coordinator_epoch": self._coordinator_epoch,
             }
         if self._prepared_manifest is None or self._prepared_verifier is None:
             raise RuntimeError("verifier activation requires a prepared artifact")
         if self._prepared_manifest.version != version:
             raise RuntimeError("prepared verifier version does not match activation")
+        if self._prepared_manifest.sha256 != digest:
+            raise RuntimeError("prepared artifact digest does not match activation")
         self.verifier = self._prepared_verifier
         self._active_manifest = self._prepared_manifest
         self._prepared_manifest = None
@@ -211,6 +269,7 @@ class VerifierWorkerServer:
             "ok": True,
             "worker_id": self.worker_id,
             "verifier_version": self.verifier_version,
+            "artifact_sha256": self._active_manifest.sha256,
             "coordinator_epoch": self._coordinator_epoch,
         }
 
@@ -364,10 +423,11 @@ class TCPVerifierClient:
             }
         )
 
-    async def activate_verifier(self, version: int, *, coordinator_epoch: int) -> dict:
+    async def activate_verifier(self, version: int, *, coordinator_epoch: int, artifact_sha256: str) -> dict:
         return await self._management_rpc(
             {
                 "op": "activate_verifier",
+                "artifact_sha256": str(artifact_sha256),
                 "verifier_version": int(version),
                 "coordinator_epoch": int(coordinator_epoch),
             }
